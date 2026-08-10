@@ -88,23 +88,33 @@ export function useRoutePlanner() {
         selectedCategories.includes(category.id)
       );
 
-      const stops: RouteStop[] = await Promise.all(
-        stopPoints.map(async (point, index) => {
-          const poisByCategory =
-            activeCategories.length > 0
-              ? await findPoisNearPoint({ lon: point.lon, lat: point.lat }, activeCategories)
-              : {};
+      // Giải pháp 1: Xử lý tuần tự với delay giữa các requests thay vì Promise.all
+      // Điều này tránh gửi quá nhiều requests đồng thời đến Overpass API
+      const stops: RouteStop[] = [];
+      
+      for (let index = 0; index < stopPoints.length; index++) {
+        const point = stopPoints[index];
 
-          return {
-            id: `stop-${index}`,
-            order: index + 1,
-            lon: point.lon,
-            lat: point.lat,
-            distanceFromStartKm: point.distanceFromStartKm,
-            pois: Object.values(poisByCategory).flat(),
-          };
-        })
-      );
+        // Thêm delay 1.5 giây giữa mỗi request (trừ request đầu tiên)
+        // Overpass API yêu cầu ít nhất 1 giây giữa các requests
+        if (index > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+        }
+
+        const poisByCategory =
+          activeCategories.length > 0
+            ? await findPoisNearPoint({ lon: point.lon, lat: point.lat }, activeCategories)
+            : {};
+
+        stops.push({
+          id: `stop-${index}`,
+          order: index + 1,
+          lon: point.lon,
+          lat: point.lat,
+          distanceFromStartKm: point.distanceFromStartKm,
+          pois: Object.values(poisByCategory).flat(),
+        });
+      }
 
       setState((prev) => ({ ...prev, plan: { route, stops }, isLoading: false }));
 
