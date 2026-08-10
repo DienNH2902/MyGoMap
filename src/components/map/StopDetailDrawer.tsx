@@ -1,0 +1,84 @@
+'use client';
+
+import { POI_CATEGORIES } from '@/lib/constants';
+import type { RouteStop } from '@/lib/types';
+
+interface StopDetailDrawerProps {
+  stop: RouteStop | null;
+  onClose: () => void;
+}
+
+function categoryLabel(categoryId: string): string {
+  return POI_CATEGORIES.find((category) => category.id === categoryId)?.label ?? categoryId;
+}
+
+function categoryIcon(categoryId: string): string {
+  return POI_CATEGORIES.find((category) => category.id === categoryId)?.icon ?? '📍';
+}
+
+/**
+ * Slide-in panel shown after clicking a numbered stop marker on the map.
+ * Lists the real POIs found nearby (name, category, address, and a photo when
+ * OpenStreetMap happens to have one tagged for that place).
+ */
+export function StopDetailDrawer({ stop, onClose }: StopDetailDrawerProps) {
+  if (!stop) return null;
+
+  return (
+    <div className="absolute inset-y-0 right-0 z-40 w-full max-w-sm overflow-y-auto border-l border-ink/10 bg-white shadow-2xl">
+      <div className="sticky top-0 flex items-center justify-between border-b border-ink/10 bg-white px-5 py-4">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-ink/40">
+            Điểm dừng {stop.order}
+          </p>
+          <p className="font-mono text-sm text-ink/70">
+            Cách điểm xuất phát {stop.distanceFromStartKm.toFixed(1)} km
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-8 w-8 items-center justify-center rounded-full text-ink/50 transition hover:bg-ink/5 hover:text-ink"
+          aria-label="Đóng"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="flex flex-col divide-y divide-ink/5">
+        {stop.pois.length === 0 && (
+          <p className="px-5 py-6 text-sm text-ink/40">
+            Không tìm thấy địa điểm phù hợp trong bán kính đã chọn quanh điểm dừng này.
+          </p>
+        )}
+
+        {stop.pois.map((poi) => (
+          <div key={poi.id} className="flex gap-3 px-5 py-4">
+            {poi.imageUrl ? (
+              // OSM's `image` tag is optional and only present on a minority of
+              // places, so this always falls back to a category icon below.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={poi.imageUrl}
+                alt={poi.name}
+                className="h-16 w-16 flex-shrink-0 rounded-xl object-cover"
+              />
+            ) : (
+              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-xl bg-surface-muted text-2xl">
+                {categoryIcon(poi.category)}
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-ink">{poi.name}</p>
+              <p className="text-xs text-ink/50">{categoryLabel(poi.category)}</p>
+              {poi.address && <p className="mt-1 truncate text-xs text-ink/60">{poi.address}</p>}
+              <p className="mt-1 font-mono text-xs text-primary">
+                Cách điểm dừng ~{poi.distanceFromStopKm.toFixed(1)} km
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

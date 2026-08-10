@@ -1,0 +1,20 @@
+# dependencies
+node_modules
+
+# next.js build output
+.next
+out
+
+# environment variables (contains your free API keys — never commit these)
+.env.local
+.env*.local
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# misc
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
