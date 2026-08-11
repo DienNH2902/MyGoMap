@@ -25,11 +25,11 @@ export const MAX_POIS_PER_CATEGORY_PER_STOP = 3;
 
 /** The catalogue of POI categories the user can toggle on/off for stop suggestions. */
 export const POI_CATEGORIES: PoiCategoryDefinition[] = [
-  { id: 'fuel', label: 'Trạm xăng', icon: '⛽', osmKey: 'amenity', osmValue: 'fuel' },
-  { id: 'rest_area', label: 'Trạm dừng chân', icon: '🛣️', osmKey: 'highway', osmValue: 'rest_area' },
-  { id: 'restaurant', label: 'Quán ăn', icon: '🍜', osmKey: 'amenity', osmValue: 'restaurant' },
-  { id: 'cafe', label: 'Cà phê', icon: '☕', osmKey: 'amenity', osmValue: 'cafe' },
-  { id: 'hotel', label: 'Khách sạn', icon: '🛏️', osmKey: 'tourism', osmValue: 'hotel' },
-  { id: 'atm', label: 'ATM', icon: '🏧', osmKey: 'amenity', osmValue: 'atm' },
-  { id: 'convenience', label: 'Cửa hàng tiện lợi', icon: '🏪', osmKey: 'shop', osmValue: 'convenience' },
+  { id: 'fuel', label: 'Trạm xăng', icon: '⛽', osmKey: 'amenity', osmValue: 'fuel', color: '#EF4444' },
+  { id: 'rest_area', label: 'Trạm dừng chân', icon: '🛣️', osmKey: 'highway', osmValue: 'rest_area', color: '#8B5CF6' },
+  { id: 'restaurant', label: 'Quán ăn', icon: '🍜', osmKey: 'amenity', osmValue: 'restaurant', color: '#F59E0B' },
+  { id: 'cafe', label: 'Cà phê', icon: '☕', osmKey: 'amenity', osmValue: 'cafe', color: '#78350F' },
+  { id: 'hotel', label: 'Khách sạn', icon: '🛏️', osmKey: 'tourism', osmValue: 'hotel', color: '#0EA5E9' },
+  { id: 'atm', label: 'ATM', icon: '🏧', osmKey: 'amenity', osmValue: 'atm', color: '#10B981' },
+  { id: 'convenience', label: 'Cửa hàng tiện lợi', icon: '🏪', osmKey: 'shop', osmValue: 'convenience', color: '#EC4899' },
 ];

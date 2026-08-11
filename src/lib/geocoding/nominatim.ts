@@ -39,3 +39,42 @@ export async function searchPlaces(query: string, signal?: AbortSignal): Promise
     lat: Number(item.lat),
   }));
 }
+
+interface NominatimReverseResponse {
+  display_name?: string;
+}
+
+/**
+ * Looks up a human-readable address for a single coordinate. Used ONLY
+ * on-demand (e.g. when the user opens a stop's detail drawer and a POI has
+ * no address from its OSM tags) rather than for every POI up front — Nominatim's
+ * free tier asks for at most ~1 request/second and no bulk use, so this must
+ * stay a rare, user-triggered lookup, not something called for dozens of POIs
+ * at once. Callers are responsible for spacing out repeated calls.
+ */
+export async function reverseGeocode(
+  lat: number,
+  lon: number,
+  signal?: AbortSignal
+): Promise<string | null> {
+  const url = new URL('https://nominatim.openstreetmap.org/reverse');
+  url.searchParams.set('lat', String(lat));
+  url.searchParams.set('lon', String(lon));
+  url.searchParams.set('format', 'json');
+  url.searchParams.set('accept-language', 'vi');
+
+  try {
+    const response = await fetch(url.toString(), {
+      signal,
+      headers: { Accept: 'application/json' },
+    });
+    if (!response.ok) return null;
+
+    const data = (await response.json()) as NominatimReverseResponse;
+    return data.display_name ?? null;
+  } catch {
+    // Network hiccup or aborted — the caller just keeps showing "no address"
+    // rather than surfacing an error for a non-critical enhancement.
+    return null;
+  }
+}

@@ -29,6 +29,8 @@ export interface PoiCategoryDefinition {
   icon: string;
   osmKey: string;
   osmValue: string;
+  /** Hex color used to draw this category's dots on the map (kept distinct per category). */
+  color: string;
 }
 
 /** A single point of interest returned by the Overpass API near a route stop. */

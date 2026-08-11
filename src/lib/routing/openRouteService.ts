@@ -14,12 +14,26 @@ interface OrsGeoJsonResponse {
   }>;
 }
 
+/** ORS returns this shape when a request fails (invalid coords, no route found, etc). */
+interface OrsErrorResponse {
+  error?: { message?: string } | string;
+}
+
 export class RoutingError extends Error {}
+
+/** How long we wait for ORS before giving up and telling the user to retry. */
+const ORS_TIMEOUT_MS = 20000;
 
 /**
  * Requests a driving route between two points from OpenRouteService — a free,
  * key-based routing API that (unlike the OSRM public demo server) is safe to
  * call from a real app within its free-tier limits. Runs entirely client-side.
+ *
+ * IMPORTANT: `options.avoid_borders: "all"` is set below so the router never
+ * produces a path that briefly crosses into Laos/Cambodia/China even when that
+ * would be geometrically shorter (this happens on a few roads that hug the
+ * Vietnamese border, e.g. sections of the Ho Chi Minh Trail). This keeps the
+ * whole route inside Vietnam, which is what the app promises the user.
  */
 export async function fetchDrivingRoute(
   start: { lon: number; lat: number },
@@ -32,26 +46,60 @@ export async function fetchDrivingRoute(
     );
   }
 
-  // ORS v2 requires POST with the API key in the Authorization header and the
-  // coordinates in a JSON body — the old GET-with-query-params form now
-  // returns 405 Method Not Allowed.
-  const response = await fetch(ORS_DIRECTIONS_URL, {
-    method: "POST",
-    headers: {
-      Authorization: apiKey,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      coordinates: [
-        [start.lon, start.lat],
-        [end.lon, end.lat],
-      ],
-    }),
-  });
-  if (!response.ok) {
+  // Abort the request ourselves after ORS_TIMEOUT_MS so a slow/unresponsive
+  // ORS server can't hang the "Bắt đầu" button forever.
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), ORS_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(ORS_DIRECTIONS_URL, {
+      method: "POST",
+      headers: {
+        Authorization: apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        coordinates: [
+          [start.lon, start.lat],
+          [end.lon, end.lat],
+        ],
+        // Keep the entire route inside Vietnam — never cross a country border,
+        // even if a cross-border shortcut would technically be faster.
+        options: {
+          avoid_borders: "all",
+        },
+      }),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    // AbortError (timeout) or a genuine network failure both land here.
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new RoutingError(
+        "Yêu cầu tính lộ trình mất quá lâu (quá 20 giây). Vui lòng thử lại.",
+      );
+    }
     throw new RoutingError(
-      `Không thể tính lộ trình (mã lỗi ${response.status}). Vui lòng thử lại.`,
+      "Không thể kết nối tới OpenRouteService. Vui lòng kiểm tra kết nối mạng và thử lại.",
     );
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (!response.ok) {
+    // Try to surface ORS's own error message (e.g. "could not find routable
+    // point") instead of just the HTTP status code, since it's usually more
+    // actionable for the user.
+    let detail = `mã lỗi ${response.status}`;
+    try {
+      const errorBody = (await response.json()) as OrsErrorResponse;
+      const message =
+        typeof errorBody.error === "string" ? errorBody.error : errorBody.error?.message;
+      if (message) detail = message;
+    } catch {
+      // Response wasn't JSON — keep the generic status-code message above.
+    }
+    throw new RoutingError(`Không thể tính lộ trình (${detail}). Vui lòng thử lại.`);
   }
 
   const data = (await response.json()) as OrsGeoJsonResponse;
