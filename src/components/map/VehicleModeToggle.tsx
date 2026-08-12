@@ -1,6 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { clsx } from "clsx";
+
+type GenderTheme = "nam" | "nu" | "khac";
+const STORAGE_KEY_GENDER = "mygomap_user_gender";
 
 interface VehicleModeToggleProps {
   label?: string;
@@ -9,14 +13,37 @@ interface VehicleModeToggleProps {
 }
 
 /**
- * Segmented "Ô tô / Xe máy" toggle component.
- * Cấu trúc wrapper tương thích hoàn toàn với layout flex alignment của RoutePlannerPanel.
+ * Segmented "Ô tô / Xe máy" toggle component styled dynamically based on user gender theme.
  */
 export function VehicleModeToggle({
   label = "Loại xe",
   avoidHighways,
   onChange,
 }: VehicleModeToggleProps) {
+  const [gender, setGender] = useState<GenderTheme>("nam");
+
+  useEffect(() => {
+    const savedGender =
+      (localStorage.getItem(STORAGE_KEY_GENDER) as GenderTheme) || "nam";
+    setGender(savedGender);
+  }, []);
+
+  const getActiveStyles = () => {
+    if (gender === "nu") {
+      return "bg-pink-500 text-white shadow-sm";
+    }
+    if (gender === "khac") {
+      return "bg-gradient-to-r from-amber-400 via-rose-500 to-violet-500 text-white shadow-sm";
+    }
+    return "bg-primary text-white shadow-sm";
+  };
+
+  const getHoverStyles = () => {
+    if (gender === "nu") return "hover:text-pink-500";
+    if (gender === "khac") return "hover:text-purple-500";
+    return "hover:text-primary";
+  };
+
   return (
     <div className="flex flex-1 flex-col justify-end">
       {label && (
@@ -30,10 +57,10 @@ export function VehicleModeToggle({
           onClick={() => onChange(false)}
           aria-pressed={!avoidHighways}
           className={clsx(
-            "flex w-full h-full flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition",
+            "flex h-full flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition",
             !avoidHighways
-              ? "bg-primary text-white shadow-sm"
-              : "text-ink/60 hover:text-primary",
+              ? getActiveStyles()
+              : clsx("text-ink/60", getHoverStyles()),
           )}
         >
           🚗 Ô tô
@@ -44,21 +71,15 @@ export function VehicleModeToggle({
           onClick={() => onChange(true)}
           aria-pressed={avoidHighways}
           className={clsx(
-            "flex w-full h-full flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition",
+            "flex h-full flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition",
             avoidHighways
-              ? "bg-primary text-white shadow-sm"
-              : "text-ink/60 hover:text-primary",
+              ? getActiveStyles()
+              : clsx("text-ink/60", getHoverStyles()),
           )}
         >
           🏍️ Xe máy
         </button>
       </div>
-
-      {/* <span className="text-[11px] text-ink/40">
-        {avoidHighways
-          ? "Sẽ tránh mọi đoạn cao tốc"
-          : "Sẽ sử dụng mọi đoạn cao tốc"}
-      </span> */}
     </div>
   );
 }

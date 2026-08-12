@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Map as MapLibreMap,
   Marker,
@@ -20,6 +20,9 @@ import type { PlaceResult, RouteStop, RouteGeometry } from "@/lib/types";
 
 const ROUTE_SOURCE_ID = "mygomap-route";
 const ROUTE_LAYER_ID = "mygomap-route-line";
+const STORAGE_KEY_GENDER = "mygomap_user_gender";
+
+type GenderTheme = "nam" | "nu" | "khac";
 
 interface MapViewProps {
   start: PlaceResult | null;
@@ -38,14 +41,46 @@ function colorForCategory(categoryId: string): string {
   );
 }
 
-/**
- * Renders the MapLibre map itself: the free CARTO basemap, the drawn driving
- * route, start/end pins, numbered stop markers, and small colored dots for
- * every POI found near each stop (so the user can actually see where each
- * suggested trạm xăng / quán ăn / etc. is, not just read its name in a list).
- * Must only ever render on the client (see the dynamic import with
- * `ssr: false` in MapExperience).
- */
+/** Configures theme colors based on user gender from localStorage */
+function getThemeStyles(gender: GenderTheme) {
+  if (gender === "nu") {
+    return {
+      routeColor: "#EC4899", // Pink
+      startBg: "bg-fuchsia-500",
+      startRing: "ring-fuchsia-500/30",
+      endBg: "bg-pink-600",
+      endRing: "ring-pink-600/30",
+      stopBg: "bg-pink-500",
+      stopActiveBg: "bg-purple-600 text-white",
+    };
+  }
+
+  if (gender === "khac") {
+    return {
+      routeColor: "#8B5CF6", // Purple Base Line
+      startBg: "bg-gradient-to-r from-red-500 via-yellow-500 to-green-500",
+      startRing: "ring-purple-500/30",
+      endBg: "bg-gradient-to-r from-blue-500 via-indigo-500 to-pink-500",
+      endRing: "ring-pink-500/30",
+      stopBg:
+        "bg-gradient-to-r from-amber-400 via-rose-400 to-violet-500 text-white",
+      stopActiveBg:
+        "bg-gradient-to-r from-emerald-400 via-cyan-500 to-blue-600 text-white",
+    };
+  }
+
+  // Nam (Default)
+  return {
+    routeColor: "#FF6A1A", // Orange
+    startBg: "bg-emerald-500",
+    startRing: "ring-emerald-500/30",
+    endBg: "bg-rose-500",
+    endRing: "ring-rose-500/30",
+    stopBg: "bg-primary",
+    stopActiveBg: "bg-accent-gold",
+  };
+}
+
 export function MapView({
   start,
   end,
@@ -59,6 +94,17 @@ export function MapView({
   const endpointMarkersRef = useRef<Marker[]>([]);
   const stopMarkersRef = useRef<Marker[]>([]);
   const poiMarkersRef = useRef<Marker[]>([]);
+
+  const [gender, setGender] = useState<GenderTheme>("nam");
+
+  // Read gender from localStorage on mount
+  useEffect(() => {
+    const savedGender =
+      (localStorage.getItem(STORAGE_KEY_GENDER) as GenderTheme) || "nam";
+    setGender(savedGender);
+  }, []);
+
+  const theme = getThemeStyles(gender);
 
   // Initialize the map exactly once.
   useEffect(() => {
@@ -84,7 +130,7 @@ export function MapView({
     };
   }, []);
 
-  // Draw / update the route line whenever a new route is computed.
+  // Draw / update the route line whenever a new route or gender theme changes.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -107,11 +153,16 @@ export function MapView({
           source: ROUTE_SOURCE_ID,
           layout: { "line-cap": "round", "line-join": "round" },
           paint: {
-            "line-color": "#FF6A1A",
-            "line-width": 5,
+            "line-color": theme.routeColor,
+            "line-width": 3,
             "line-opacity": 0.9,
           },
         });
+      }
+
+      // Update layer color if theme changes
+      if (map.getLayer(ROUTE_LAYER_ID)) {
+        map.setPaintProperty(ROUTE_LAYER_ID, "line-color", theme.routeColor);
       }
 
       if (route && route.coordinates.length > 0) {
@@ -131,9 +182,9 @@ export function MapView({
     } else {
       map.once("load", applyRoute);
     }
-  }, [route]);
+  }, [route, theme.routeColor]);
 
-  // Start (A) / end (B) markers.
+  // Start (A) / end (B) markers with dynamic gender styling.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -147,20 +198,22 @@ export function MapView({
 
     endpoints.forEach(({ place, kind }) => {
       const el = document.createElement("div");
-      el.className =
-        kind === "start"
-          ? "flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-sm font-extrabold text-white shadow-md ring-2 ring-emerald-500/30 transition-transform hover:scale-110"
-          : "flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-rose-500 text-sm font-extrabold text-white shadow-md ring-2 ring-rose-500/30 transition-transform hover:scale-110";
-      el.textContent = kind === "start" ? "A" : "B";
+      const isStart = kind === "start";
+
+      const bgClass = isStart ? theme.startBg : theme.endBg;
+      const ringClass = isStart ? theme.startRing : theme.endRing;
+
+      el.className = `flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-sm font-extrabold text-white shadow-md ring-2 ${bgClass} ${ringClass} transition-transform hover:scale-110`;
+      el.textContent = isStart ? "A" : "B";
 
       const marker = new Marker({ element: el })
         .setLngLat([place.lon, place.lat])
         .addTo(map);
       endpointMarkersRef.current.push(marker);
     });
-  }, [start, end]);
+  }, [start, end, theme]);
 
-  // Numbered, clickable stop markers.
+  // Numbered, clickable stop markers with dynamic gender styling.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -172,10 +225,14 @@ export function MapView({
       const el = document.createElement("button");
       el.type = "button";
       const isActive = stop.id === activeStopId;
+      const bgClass = isActive ? theme.stopActiveBg : theme.stopBg;
+
       el.className = [
-        "flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-sm font-bold text-ink shadow-lg transition-transform",
-        isActive ? "scale-125 bg-accent-gold" : "bg-primary",
+        "flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-sm font-bold shadow-lg transition-transform",
+        isActive ? "scale-125" : "",
+        bgClass,
       ].join(" ");
+
       el.textContent = String(stop.order);
       el.setAttribute("aria-label", `Điểm dừng ${stop.order}`);
       el.addEventListener("click", () => onSelectStop(stop.id));
@@ -185,11 +242,9 @@ export function MapView({
         .addTo(map);
       stopMarkersRef.current.push(marker);
     });
-  }, [stops, activeStopId, onSelectStop]);
+  }, [stops, activeStopId, onSelectStop, theme]);
 
-  // Small colored dots for every POI found near each stop, with a popup
-  // showing name/category/address on click — this is what actually lets the
-  // user SEE where each suggested place is, not just read its name in a list.
+  // Small colored dots for POIs near stops
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -221,10 +276,36 @@ export function MapView({
     });
   }, [stops]);
 
+  // Thêm useEffect xử lý animation đổi màu riêng cho giới tính "Khac"
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || gender !== "khac") return;
+
+    let hue = 0;
+    let animationFrameId: number;
+
+    const animateRouteColor = () => {
+      hue = (hue + 1) % 360;
+      const dynamicColor = `hsl(${hue}, 90%, 60%)`;
+
+      if (map.getLayer(ROUTE_LAYER_ID)) {
+        map.setPaintProperty(ROUTE_LAYER_ID, "line-color", dynamicColor);
+      }
+
+      animationFrameId = requestAnimationFrame(animateRouteColor);
+    };
+
+    animateRouteColor();
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [gender, route]);
+
   return <div ref={containerRef} className="h-full w-full" />;
 }
 
-/** Minimal HTML-escaping for text we inject into a MapLibre Popup's innerHTML. */
+/** Minimal HTML-escaping for text injected into MapLibre Popup's innerHTML. */
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")

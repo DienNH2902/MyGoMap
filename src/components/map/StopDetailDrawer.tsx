@@ -7,6 +7,9 @@ import { findNearbyMapillaryImage } from "@/lib/images/mapillaryClient";
 import { findNearbyCommonsImage } from "@/lib/images/wikimediaCommons";
 import type { RouteStop } from "@/lib/types";
 
+type GenderTheme = "nam" | "nu" | "khac";
+const STORAGE_KEY_GENDER = "mygomap_user_gender";
+
 interface StopDetailDrawerProps {
   stop: RouteStop | null;
   onClose: () => void;
@@ -25,17 +28,8 @@ function categoryIcon(categoryId: string): string {
   );
 }
 
-/** Minimum gap between enrichment steps, dominated by Nominatim's ~1 req/sec fair-use policy. */
 const ENRICHMENT_GAP_MS = 1100;
 
-/**
- * Tries every free photo source in priority order and returns the first hit:
- * 1. Mapillary (real street-level photo, best coverage of ordinary places —
- *    only active if NEXT_PUBLIC_MAPILLARY_TOKEN is configured).
- * 2. Wikimedia Commons (geotagged photo, landmark-oriented, needs no setup).
- * Resolves to null if neither source has anything nearby — this is expected
- * and normal for small/unphotographed places, not an error.
- */
 async function resolveImageForPoi(
   lat: number,
   lon: number,
@@ -46,41 +40,27 @@ async function resolveImageForPoi(
   return findNearbyCommonsImage(lat, lon, signal);
 }
 
-/**
- * Slide-in panel shown after clicking a numbered stop marker on the map.
- * Lists the real POIs found nearby (name, category, address, and a photo).
- *
- * Most OSM points only carry a category tag and a name — no address or photo
- * fields at all. For those, this component lazily enriches each POI with:
- * - an address, via Nominatim reverse-geocoding, and
- * - a real photo, via Mapillary then Wikimedia Commons (see `resolveImageForPoi`).
- * Both run ONE POI at a time with a ~1.1s gap between POIs (Nominatim's free
- * tier asks for at most ~1 request/second and no bulk use — the slowest of
- * the three services involved, so we pace everything to that). This only
- * runs for the POIs currently visible in the open drawer, not the whole trip,
- * and stops immediately if the drawer closes.
- *
- * IMPORTANT / honest limitation: even with all three free sources combined,
- * this will NOT find a photo for every single place — small or newly-listed
- * businesses often have no photo anywhere on the open web. Google Maps' much
- * higher hit rate comes from its own paid, proprietary Places Photos database
- * built from years of user contributions; that level of coverage isn't
- * reproducible for free. When no photo is found, the UI clearly says so
- * instead of showing a placeholder that could be mistaken for a real photo.
- */
 export function StopDetailDrawer({ stop, onClose }: StopDetailDrawerProps) {
-  // POI id -> resolved value, or `null` once a lookup was attempted but found
-  // nothing. Undefined (key absent) means "not attempted yet / still loading".
   const [resolvedAddresses, setResolvedAddresses] = useState<
     Record<string, string | null>
   >({});
   const [resolvedImages, setResolvedImages] = useState<
     Record<string, string | null>
   >({});
-  // Tracks image URLs (from OSM tags OR a resolved fallback) that failed to
-  // actually load in the browser, so a stale/broken link doesn't get stuck
-  // showing a broken-image box forever.
   const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set());
+  const [gender, setGender] = useState<GenderTheme>("nam");
+
+  useEffect(() => {
+    const savedGender =
+      (localStorage.getItem(STORAGE_KEY_GENDER) as GenderTheme) || "nam";
+    setGender(savedGender);
+  }, []);
+
+  const getDistanceColorClass = () => {
+    if (gender === "nu") return "text-pink-500";
+    if (gender === "khac") return "text-purple-600 font-bold";
+    return "text-primary";
+  };
 
   useEffect(() => {
     setResolvedAddresses({});
@@ -101,10 +81,6 @@ export function StopDetailDrawer({ stop, onClose }: StopDetailDrawerProps) {
       for (const poi of poisNeedingEnrichment) {
         if (cancelled) return;
 
-        // Address and image lookups for a POI run in parallel (they hit
-        // different services), but we still only move to the NEXT poi after
-        // waiting the gap below — that's what keeps Nominatim usage within
-        // its fair-use rate limit across the whole drawer.
         const [address, image] = await Promise.all([
           poi.address
             ? Promise.resolve(null)
@@ -165,15 +141,12 @@ export function StopDetailDrawer({ stop, onClose }: StopDetailDrawerProps) {
         )}
 
         {stop.pois.map((poi) => {
-          // --- Address: prefer OSM tags, fall back to the lazily-resolved value. ---
-          const addressLookup = resolvedAddresses[poi.id]; // undefined = in progress, null = not found
+          const addressLookup = resolvedAddresses[poi.id];
           const address = poi.address ?? addressLookup ?? undefined;
           const isLookingUpAddress =
             !poi.address && addressLookup === undefined;
 
-          // --- Photo: prefer OSM tags, fall back to Mapillary/Commons, and
-          // ignore anything that already failed to actually load in <img>. ---
-          const imageLookup = resolvedImages[poi.id]; // undefined = in progress, null = not found
+          const imageLookup = resolvedImages[poi.id];
           const rawImageUrl = poi.imageUrl ?? imageLookup ?? undefined;
           const imageUrl =
             rawImageUrl && !brokenImageIds.has(poi.id)
@@ -190,9 +163,6 @@ export function StopDetailDrawer({ stop, onClose }: StopDetailDrawerProps) {
                   alt={poi.name}
                   className="h-16 w-16 flex-shrink-0 rounded-xl object-cover"
                   onError={() => {
-                    // The link resolved but the image itself didn't load (stale
-                    // Commons/Mapillary URL) — fall back to the category icon
-                    // instead of leaving a broken-image box on screen.
                     setBrokenImageIds((prev) => new Set(prev).add(poi.id));
                   }}
                 />
@@ -233,7 +203,9 @@ export function StopDetailDrawer({ stop, onClose }: StopDetailDrawerProps) {
                   </p>
                 )}
 
-                <p className="mt-1 font-mono text-xs text-primary">
+                <p
+                  className={`mt-1 font-mono text-xs ${getDistanceColorClass()}`}
+                >
                   Cách điểm dừng ~{poi.distanceFromStopKm.toFixed(1)} km
                 </p>
               </div>
