@@ -39,11 +39,11 @@ export function Header() {
 
       <nav className="hidden items-center gap-6 text-sm font-medium text-cream/70 sm:flex">
         {userInfo ? (
-          <span className="rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-accent-gold">
-            Hôm nay {getHonorific(userInfo.gender)} {userInfo.name} muốn đi đâu?
+          <span className="rounded-md border border-primary/20 bg-primary/10 px-3.5 py-1 text-md font-semibold text-accent-gold">
+            Hôm nay {userInfo.name} muốn đi đâu?
           </span>
         ) : (
-          <span className="rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-accent-gold">
+          <span className="rounded-md border border-primary/20 bg-primary/10 px-3.5 py-1 text-md font-semibold text-accent-gold">
             Chưa rõ tên bạn
           </span>
         )}

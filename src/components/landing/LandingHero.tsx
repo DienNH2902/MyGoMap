@@ -70,7 +70,7 @@ export function LandingHero() {
       <HeroRouteLine />
 
       <div className="relative z-10 flex max-w-2xl flex-col items-center gap-6 text-center">
-        <span className="rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-medium uppercase tracking-[0.2em] text-accent-gold">
+        <span className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-medium uppercase tracking-[0.2em] text-accent-gold">
           Lộ trình thông minh cho mọi chuyến đi
         </span>
 
