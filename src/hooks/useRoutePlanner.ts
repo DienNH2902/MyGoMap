@@ -1,18 +1,35 @@
-'use client';
+"use client";
 
-import { useCallback, useState } from 'react';
-import { fetchDrivingRoute, RoutingError } from '@/lib/routing/openRouteService';
-import { findPoisForStops, type StopQueryPoint } from '@/lib/overpass/overpassClient';
-import { getEvenlySpacedStopPoints } from '@/lib/geo/turfHelpers';
-import { generateTripTip } from '@/lib/ai/geminiClient';
-import { POI_CATEGORIES } from '@/lib/constants';
-import type { PlaceResult, PoiCategoryId, RouteStop, TripPlan } from '@/lib/types';
+import { useCallback, useState } from "react";
+import {
+  fetchDrivingRoute,
+  RoutingError,
+} from "@/lib/routing/openRouteService";
+import {
+  findPoisForStops,
+  type StopQueryPoint,
+} from "@/lib/overpass/overpassClient";
+import { getEvenlySpacedStopPoints } from "@/lib/geo/turfHelpers";
+import { generateTripTip } from "@/lib/ai/geminiClient";
+import { POI_CATEGORIES } from "@/lib/constants";
+import type {
+  PlaceResult,
+  PoiCategoryId,
+  RouteStop,
+  TripPlan,
+} from "@/lib/types";
 
 interface RoutePlannerState {
   start: PlaceResult | null;
   end: PlaceResult | null;
   stopCount: number;
   selectedCategories: PoiCategoryId[];
+  /**
+   * Xe máy (motorbike) legally cannot use cao tốc (expressways) in Vietnam.
+   * When true, the route is computed to avoid highways entirely — see
+   * RouteOptions in openRouteService.ts.
+   */
+  avoidHighways: boolean;
   plan: TripPlan | null;
   aiTip: string | null;
   isLoading: boolean;
@@ -32,6 +49,7 @@ const DEFAULT_STATE: RoutePlannerState = {
   end: null,
   stopCount: 2,
   selectedCategories: [],
+  avoidHighways: false,
   plan: null,
   aiTip: null,
   isLoading: false,
@@ -68,7 +86,10 @@ export function useRoutePlanner() {
   }, []);
 
   const setStopCount = useCallback((count: number) => {
-    setState((prev) => ({ ...prev, stopCount: Math.max(0, Math.min(10, count)) }));
+    setState((prev) => ({
+      ...prev,
+      stopCount: Math.max(0, Math.min(10, count)),
+    }));
   }, []);
 
   const toggleCategory = useCallback((categoryId: PoiCategoryId) => {
@@ -80,6 +101,10 @@ export function useRoutePlanner() {
     }));
   }, []);
 
+  const setAvoidHighways = useCallback((avoidHighways: boolean) => {
+    setState((prev) => ({ ...prev, avoidHighways }));
+  }, []);
+
   const setActiveStopId = useCallback((id: string | null) => {
     setState((prev) => ({ ...prev, activeStopId: id }));
   }, []);
@@ -87,10 +112,13 @@ export function useRoutePlanner() {
   const reset = useCallback(() => setState(DEFAULT_STATE), []);
 
   const planTrip = useCallback(async () => {
-    const { start, end, stopCount, selectedCategories } = state;
+    const { start, end, stopCount, selectedCategories, avoidHighways } = state;
 
     if (!start || !end) {
-      setState((prev) => ({ ...prev, error: 'Vui lòng chọn cả điểm xuất phát và điểm kết thúc.' }));
+      setState((prev) => ({
+        ...prev,
+        error: "Vui lòng chọn cả điểm xuất phát và điểm kết thúc.",
+      }));
       return;
     }
 
@@ -107,19 +135,21 @@ export function useRoutePlanner() {
     // nothing to show, so this is the one part of planTrip allowed to throw.
     let route;
     try {
-      route = await fetchDrivingRoute(start, end);
+      route = await fetchDrivingRoute(start, end, { avoidHighways });
     } catch (err) {
       const message =
         err instanceof RoutingError || err instanceof Error
           ? err.message
-          : 'Đã xảy ra lỗi không xác định khi tính lộ trình.';
+          : "Đã xảy ra lỗi không xác định khi tính lộ trình.";
       setState((prev) => ({ ...prev, isLoading: false, error: message }));
       return;
     }
 
     // Step 2: split the route into stop points (pure client-side math, can't fail).
     const stopPoints = getEvenlySpacedStopPoints(route.coordinates, stopCount);
-    const activeCategories = POI_CATEGORIES.filter((category) => selectedCategories.includes(category.id));
+    const activeCategories = POI_CATEGORIES.filter((category) =>
+      selectedCategories.includes(category.id),
+    );
 
     // Step 3: POIs for every stop, in a single Overpass request. Wrapped in
     // its own try/catch as a last line of defense — findPoisForStops already
@@ -134,7 +164,10 @@ export function useRoutePlanner() {
         lat: point.lat,
       }));
 
-      const { resultsByStop, fetchFailed } = await findPoisForStops(queryPoints, activeCategories);
+      const { resultsByStop, fetchFailed } = await findPoisForStops(
+        queryPoints,
+        activeCategories,
+      );
 
       if (fetchFailed && activeCategories.length > 0) {
         poiWarning =
@@ -157,8 +190,12 @@ export function useRoutePlanner() {
       // Should be unreachable given findPoisForStops never throws, but if
       // something unexpected happens here, degrade to "no POIs" rather than
       // losing the route the user already waited for.
-      console.warn('Unexpected error while searching for POIs, showing route without suggestions:', err);
-      poiWarning = 'Không thể tải gợi ý địa điểm lúc này. Lộ trình vẫn hiển thị bình thường.';
+      console.warn(
+        "Unexpected error while searching for POIs, showing route without suggestions:",
+        err,
+      );
+      poiWarning =
+        "Không thể tải gợi ý địa điểm lúc này. Lộ trình vẫn hiển thị bình thường.";
       stops = stopPoints.map((point, index) => ({
         id: `stop-${index}`,
         order: index + 1,
@@ -169,7 +206,12 @@ export function useRoutePlanner() {
       }));
     }
 
-    setState((prev) => ({ ...prev, plan: { route, stops }, isLoading: false, poiWarning }));
+    setState((prev) => ({
+      ...prev,
+      plan: { route, stops },
+      isLoading: false,
+      poiWarning,
+    }));
 
     // Step 4: optional AI tip — fire-and-forget, never blocks or fails the trip.
     void generateTripTip({
@@ -187,6 +229,7 @@ export function useRoutePlanner() {
     setStart,
     setEnd,
     setStopCount,
+    setAvoidHighways,
     toggleCategory,
     setActiveStopId,
     reset,

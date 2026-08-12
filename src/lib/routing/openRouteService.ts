@@ -24,6 +24,18 @@ export class RoutingError extends Error {}
 /** How long we wait for ORS before giving up and telling the user to retry. */
 const ORS_TIMEOUT_MS = 20000;
 
+/** Extra routing preferences the caller can request. */
+export interface RouteOptions {
+  /**
+   * When true, the route avoids "highways" (cao tốc / đường cao tốc — limited-
+   * access expressways). Motorbikes are legally barred from these roads in
+   * Vietnam, so without this, ORS's default shortest/fastest route can send a
+   * xe máy trip down a road it's not allowed to use. Defaults to false (car
+   * mode, highways allowed) to preserve prior behavior when not specified.
+   */
+  avoidHighways?: boolean;
+}
+
 /**
  * Requests a driving route between two points from OpenRouteService — a free,
  * key-based routing API that (unlike the OSRM public demo server) is safe to
@@ -38,6 +50,7 @@ const ORS_TIMEOUT_MS = 20000;
 export async function fetchDrivingRoute(
   start: { lon: number; lat: number },
   end: { lon: number; lat: number },
+  routeOptions: RouteOptions = {},
 ): Promise<RouteGeometry> {
   const apiKey = process.env.NEXT_PUBLIC_ORS_API_KEY;
   if (!apiKey) {
@@ -65,9 +78,15 @@ export async function fetchDrivingRoute(
           [end.lon, end.lat],
         ],
         // Keep the entire route inside Vietnam — never cross a country border,
-        // even if a cross-border shortcut would technically be faster.
+        // even if a cross-border shortcut would technically be faster. When
+        // `avoidHighways` is on (xe máy mode), also tell ORS to route around
+        // any "highways" (limited-access expressways) entirely, since those
+        // are off-limits to motorbikes by law.
         options: {
           avoid_borders: "all",
+          ...(routeOptions.avoidHighways
+            ? { avoid_features: ["highways"] }
+            : {}),
         },
       }),
       signal: controller.signal,
@@ -94,12 +113,16 @@ export async function fetchDrivingRoute(
     try {
       const errorBody = (await response.json()) as OrsErrorResponse;
       const message =
-        typeof errorBody.error === "string" ? errorBody.error : errorBody.error?.message;
+        typeof errorBody.error === "string"
+          ? errorBody.error
+          : errorBody.error?.message;
       if (message) detail = message;
     } catch {
       // Response wasn't JSON — keep the generic status-code message above.
     }
-    throw new RoutingError(`Không thể tính lộ trình (${detail}). Lộ trình cần phải ở trên đất liền - Vui lòng thử lại.`);
+    throw new RoutingError(
+      `Không thể tính lộ trình (${detail}). Lộ trình cần phải ở trên đất liền - Vui lòng thử lại.`,
+    );
   }
 
   const data = (await response.json()) as OrsGeoJsonResponse;

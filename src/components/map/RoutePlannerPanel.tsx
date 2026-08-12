@@ -2,6 +2,7 @@
 
 import { PlaceAutocompleteInput } from "./PlaceAutocompleteInput";
 import { CategoryChips } from "./CategoryChips";
+import { VehicleModeToggle } from "./VehicleModeToggle";
 import { NumberStepper } from "../ui/NumberStepper";
 import { Button } from "../ui/Button";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
@@ -126,6 +127,11 @@ export function RoutePlannerPanel({ planner }: RoutePlannerPanelProps) {
             label="Số điểm dừng"
             value={planner.stopCount}
             onChange={planner.setStopCount}
+          />
+          <VehicleModeToggle
+            label="Loại xe"
+            avoidHighways={planner.avoidHighways}
+            onChange={planner.setAvoidHighways}
           />
         </div>
 
