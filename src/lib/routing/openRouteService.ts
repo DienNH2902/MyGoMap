@@ -121,7 +121,7 @@ export async function fetchDrivingRoute(
       // Response wasn't JSON — keep the generic status-code message above.
     }
     throw new RoutingError(
-      `Không thể tính lộ trình (Lỗi: ${detail}). Lộ trình cần phải ở trên đất liền - Trong phạm vi nước Việt Nam - Vui lòng thử lại.`,
+      `Không thể tính lộ trình (Lỗi: ${detail}). Lộ trình cần phải ở trên đất liền - Trên đường bộ - Trong phạm vi nước Việt Nam - Vui lòng thử lại.`,
     );
   }
 

@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import dynamic from 'next/dynamic';
-import { useMemo } from 'react';
-import { useRoutePlanner } from '@/hooks/useRoutePlanner';
-import { RoutePlannerPanel } from './RoutePlannerPanel';
-import { RouteStatsBar } from './RouteStatsBar';
-import { StopDetailDrawer } from './StopDetailDrawer';
-import { LoadingSpinner } from '../ui/LoadingSpinner';
+import dynamic from "next/dynamic";
+import { useMemo, useState, useEffect } from "react";
+import { useRoutePlanner } from "@/hooks/useRoutePlanner";
+import { RoutePlannerPanel } from "./RoutePlannerPanel";
+import { RouteStatsBar } from "./RouteStatsBar";
+import { StopDetailDrawer } from "./StopDetailDrawer";
+import { OwlLoadingSpinner } from "../ui/OwlLoadingSpinner";
 
 // MapLibre reaches into `window`, so it must never render during server-side rendering.
-const MapView = dynamic(() => import('./MapView').then((mod) => mod.MapView), {
+const MapView = dynamic(() => import("./MapView").then((mod) => mod.MapView), {
   ssr: false,
   loading: () => (
     <div className="flex h-full w-full items-center justify-center bg-surface-muted">
-      <LoadingSpinner label="Đang tải bản đồ…" />
+      <OwlLoadingSpinner label="Xong rồi!" />
     </div>
   ),
 });
@@ -25,11 +25,32 @@ const MapView = dynamic(() => import('./MapView').then((mod) => mod.MapView), {
  */
 export function MapExperience() {
   const planner = useRoutePlanner();
+  const [isDelaying, setIsDelaying] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsDelaying(false);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const activeStop = useMemo(
-    () => planner.plan?.stops.find((stop) => stop.id === planner.activeStopId) ?? null,
-    [planner.plan, planner.activeStopId]
+    () =>
+      planner.plan?.stops.find((stop) => stop.id === planner.activeStopId) ??
+      null,
+    [planner.plan, planner.activeStopId],
   );
+
+  if (isDelaying) {
+    return (
+      <div className="absolute inset-0 top-16 flex items-center justify-center bg-surface-muted z-50 whitespace-pre-line">
+        <OwlLoadingSpinner
+          label={`Tôi đang bay lên cao để nhìn rõ hơn\nHãy đợi tôi một chút!`}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="absolute inset-0 top-16">
