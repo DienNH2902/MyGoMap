@@ -99,7 +99,7 @@ export async function fetchDrivingRoute(
     } catch {
       // Response wasn't JSON — keep the generic status-code message above.
     }
-    throw new RoutingError(`Không thể tính lộ trình (${detail}). Vui lòng thử lại.`);
+    throw new RoutingError(`Không thể tính lộ trình (${detail}). Lộ trình cần phải ở trên đất liền - Vui lòng thử lại.`);
   }
 
   const data = (await response.json()) as OrsGeoJsonResponse;
