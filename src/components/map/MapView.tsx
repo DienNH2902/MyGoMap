@@ -8,6 +8,7 @@ import {
   NavigationControl,
   LngLatBounds,
   type GeoJSONSource,
+  GeolocateControl,
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import {
@@ -122,6 +123,24 @@ export function MapView({
       new NavigationControl({ showCompass: false }),
       "bottom-right",
     );
+
+    // Tạo bộ định vị vị trí hiện tại và cập nhật realtime khi di chuyển
+    const geolocateControl = new GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true, // Bật GPS độ chính xác cao
+      },
+      trackUserLocation: true, // Theo dõi và tự động cập nhật tâm bản đồ khi di chuyển
+      showUserLocation: true, // Hiển thị điểm chấm tròn định vị người dùng
+      showAccuracyCircle: true, // Hiển thị vòng bán kính sai số GPS
+    });
+
+    map.addControl(geolocateControl, "bottom-right");
+
+    // Tự động kích hoạt định vị ngay khi bản đồ tải xong
+    map.on("load", () => {
+      geolocateControl.trigger();
+    });
+
     mapRef.current = map;
 
     return () => {
