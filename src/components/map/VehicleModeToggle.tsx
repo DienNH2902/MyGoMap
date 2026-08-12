@@ -30,7 +30,7 @@ export function VehicleModeToggle({
           onClick={() => onChange(false)}
           aria-pressed={!avoidHighways}
           className={clsx(
-            "flex h-full flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition",
+            "flex w-full h-full flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition",
             !avoidHighways
               ? "bg-primary text-white shadow-sm"
               : "text-ink/60 hover:text-primary",
@@ -44,7 +44,7 @@ export function VehicleModeToggle({
           onClick={() => onChange(true)}
           aria-pressed={avoidHighways}
           className={clsx(
-            "flex h-full flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition",
+            "flex w-full h-full flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition",
             avoidHighways
               ? "bg-primary text-white shadow-sm"
               : "text-ink/60 hover:text-primary",
