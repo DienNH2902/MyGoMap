@@ -32,6 +32,7 @@ interface MapViewProps {
   stops: RouteStop[];
   activeStopId: string | null;
   onSelectStop: (stopId: string) => void;
+  onMapClick?: (place: PlaceResult) => void;
 }
 
 /** Looks up the display color configured for a POI category, with a safe fallback. */
@@ -89,6 +90,7 @@ export function MapView({
   stops,
   activeStopId,
   onSelectStop,
+  onMapClick,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -231,6 +233,44 @@ export function MapView({
       endpointMarkersRef.current.push(marker);
     });
   }, [start, end, theme]);
+
+  // Xử lý sự kiện click trực tiếp lên MapLibre
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !onMapClick) return;
+
+    const handleClick = async (e: maplibregl.MapMouseEvent) => {
+      const { lng, lat } = e.lngLat;
+
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+        );
+        const data = await res.json();
+        const label =
+          data.display_name || `Vị trí (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+
+        onMapClick({
+          id: `map-click-${Date.now()}`,
+          label,
+          lat,
+          lon: lng,
+        });
+      } catch {
+        onMapClick({
+          id: `map-click-${Date.now()}`,
+          label: `Tọa độ chọn: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+          lat,
+          lon: lng,
+        });
+      }
+    };
+
+    map.on("click", handleClick);
+    return () => {
+      map.off("click", handleClick);
+    };
+  }, [onMapClick]);
 
   // Numbered, clickable stop markers with dynamic gender styling.
   useEffect(() => {

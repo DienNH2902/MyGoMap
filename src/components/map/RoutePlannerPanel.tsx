@@ -7,6 +7,7 @@ import { NumberStepper } from "../ui/NumberStepper";
 import { Button } from "../ui/Button";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
 import type { UseRoutePlannerReturn } from "@/hooks/useRoutePlanner";
+import { useState } from "react";
 
 interface RoutePlannerPanelProps {
   planner: UseRoutePlannerReturn;
@@ -87,7 +88,68 @@ export const POI_CATEGORIES: PoiCategoryDefinition[] = [
  * of places to look for, then start the trip or reset everything.
  */
 export function RoutePlannerPanel({ planner }: RoutePlannerPanelProps) {
+  const [isLocatingStart, setIsLocatingStart] = useState(false);
+
   const canPlan = Boolean(planner.start && planner.end) && !planner.isLoading;
+
+  // Lấy vị trí hiện tại qua Geolocation API
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Trình duyệt không hỗ trợ định vị GPS.");
+      return;
+    }
+
+    setIsLocatingStart(true);
+    console.log("[GPS] Đang yêu cầu tọa độ từ trình duyệt...");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        console.log(`[GPS] Đã lấy được tọa độ: ${latitude}, ${longitude}`);
+        console.log("[Nominatim] Đang gửi request Reverse Geocoding...");
+
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+          );
+          const data = await res.json();
+          const label = data.display_name || "Vị trí hiện tại của bạn";
+
+          planner.setStart({
+            id: "current-location",
+            label: `Vị trí hiện tại (${label.split(",")[0]})`,
+            lat: latitude,
+            lon: longitude,
+          });
+        } catch (error) {
+          console.error("[Nominatim] Lỗi reverse geocode:", error);
+          planner.setStart({
+            id: "current-location",
+            label: `Vị trí hiện tại (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+            lat: latitude,
+            lon: longitude,
+          });
+        } finally {
+          setIsLocatingStart(false);
+        }
+      },
+      (error) => {
+        setIsLocatingStart(false);
+        console.error("[GPS] Lỗi lấy vị trí:", error);
+        let msg = "Không thể lấy vị trí hiện tại.";
+        if (error.code === error.TIMEOUT)
+          msg = "Quá thời gian lấy định vị GPS.";
+        if (error.code === error.PERMISSION_DENIED)
+          msg = "Bạn đã từ chối cấp quyền vị trí.";
+        alert(msg);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 8000, // Giới hạn thời gian chờ GPS tối đa 8s
+        maximumAge: 10000, // Cho phép dùng tọa độ lưu đệm trong vòng 10s gần nhất để phản hồi tức thì
+      },
+    );
+  };
 
   return (
     <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-2 px-4 pb-4">
@@ -116,6 +178,8 @@ export function RoutePlannerPanel({ planner }: RoutePlannerPanelProps) {
             placeholder="Nhập địa điểm bắt đầu…"
             value={planner.start}
             onSelect={planner.setStart}
+            onUseCurrentLocation={handleUseCurrentLocation}
+            isLocating={isLocatingStart}
           />
           <PlaceAutocompleteInput
             label="Điểm kết thúc"
