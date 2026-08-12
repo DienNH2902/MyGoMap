@@ -22,7 +22,6 @@ export interface PoiCategoryDefinition {
   color: string;
 }
 
-/** Danh sách các loại địa điểm gợi ý */
 export const POI_CATEGORIES: PoiCategoryDefinition[] = [
   {
     id: "fuel",
@@ -82,31 +81,24 @@ export const POI_CATEGORIES: PoiCategoryDefinition[] = [
   },
 ];
 
-/**
- * Bottom control panel — the main way the user drives the app: search for an
- * origin and a destination, choose how many stops to make, pick which kinds
- * of places to look for, then start the trip or reset everything.
- */
 export function RoutePlannerPanel({ planner }: RoutePlannerPanelProps) {
   const [isLocatingStart, setIsLocatingStart] = useState(false);
+  const [isLocatingEnd, setIsLocatingEnd] = useState(false);
 
   const canPlan = Boolean(planner.start && planner.end) && !planner.isLoading;
 
-  // Lấy vị trí hiện tại qua Geolocation API
-  const handleUseCurrentLocation = () => {
+  const fetchCurrentLocation = (target: "start" | "end") => {
     if (!navigator.geolocation) {
       alert("Trình duyệt không hỗ trợ định vị GPS.");
       return;
     }
 
-    setIsLocatingStart(true);
-    console.log("[GPS] Đang yêu cầu tọa độ từ trình duyệt...");
+    if (target === "start") setIsLocatingStart(true);
+    else setIsLocatingEnd(true);
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        console.log(`[GPS] Đã lấy được tọa độ: ${latitude}, ${longitude}`);
-        console.log("[Nominatim] Đang gửi request Reverse Geocoding...");
 
         try {
           const res = await fetch(
@@ -115,27 +107,34 @@ export function RoutePlannerPanel({ planner }: RoutePlannerPanelProps) {
           const data = await res.json();
           const label = data.display_name || "Vị trí hiện tại của bạn";
 
-          planner.setStart({
-            id: "current-location",
+          const placeResult = {
+            id: `current-location-${target}`,
             label: `Vị trí hiện tại (${label.split(",")[0]})`,
             lat: latitude,
             lon: longitude,
-          });
-        } catch (error) {
-          console.error("[Nominatim] Lỗi reverse geocode:", error);
-          planner.setStart({
-            id: "current-location",
+          };
+
+          if (target === "start") planner.setStart(placeResult);
+          else planner.setEnd(placeResult);
+        } catch {
+          const placeResult = {
+            id: `current-location-${target}`,
             label: `Vị trí hiện tại (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
             lat: latitude,
             lon: longitude,
-          });
+          };
+
+          if (target === "start") planner.setStart(placeResult);
+          else planner.setEnd(placeResult);
         } finally {
-          setIsLocatingStart(false);
+          if (target === "start") setIsLocatingStart(false);
+          else setIsLocatingEnd(false);
         }
       },
       (error) => {
-        setIsLocatingStart(false);
-        console.error("[GPS] Lỗi lấy vị trí:", error);
+        if (target === "start") setIsLocatingStart(false);
+        else setIsLocatingEnd(false);
+
         let msg = "Không thể lấy vị trí hiện tại.";
         if (error.code === error.TIMEOUT)
           msg = "Quá thời gian lấy định vị GPS.";
@@ -145,15 +144,14 @@ export function RoutePlannerPanel({ planner }: RoutePlannerPanelProps) {
       },
       {
         enableHighAccuracy: true,
-        timeout: 8000, // Giới hạn thời gian chờ GPS tối đa 8s
-        maximumAge: 10000, // Cho phép dùng tọa độ lưu đệm trong vòng 10s gần nhất để phản hồi tức thì
+        timeout: 8000,
+        maximumAge: 10000,
       },
     );
   };
 
   return (
     <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-2 px-4 pb-4">
-      {/* Khối hiển thị chú thích màu sắc (Color Legend) */}
       <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-ink/10 bg-white/90 px-4 py-1.5 shadow-sm backdrop-blur-md">
         <span className="text-xs font-medium text-slate-500">Chú thích:</span>
         {POI_CATEGORIES.map((category) => (
@@ -170,7 +168,6 @@ export function RoutePlannerPanel({ planner }: RoutePlannerPanelProps) {
         ))}
       </div>
 
-      {/* Panel điều khiển chính */}
       <div className="w-full max-w-4xl rounded-3xl border border-ink/10 bg-white/95 p-5 shadow-2xl backdrop-blur-md">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
           <PlaceAutocompleteInput
@@ -178,7 +175,7 @@ export function RoutePlannerPanel({ planner }: RoutePlannerPanelProps) {
             placeholder="Nhập địa điểm bắt đầu…"
             value={planner.start}
             onSelect={planner.setStart}
-            onUseCurrentLocation={handleUseCurrentLocation}
+            onUseCurrentLocation={() => fetchCurrentLocation("start")}
             isLocating={isLocatingStart}
           />
           <PlaceAutocompleteInput
@@ -186,6 +183,8 @@ export function RoutePlannerPanel({ planner }: RoutePlannerPanelProps) {
             placeholder="Tìm nơi cần đến…"
             value={planner.end}
             onSelect={planner.setEnd}
+            onUseCurrentLocation={() => fetchCurrentLocation("end")}
+            isLocating={isLocatingEnd}
           />
           <NumberStepper
             label="Số điểm dừng"

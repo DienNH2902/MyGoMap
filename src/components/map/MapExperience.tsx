@@ -40,11 +40,18 @@ export function MapExperience() {
         stops={planner.plan?.stops ?? []}
         activeStopId={planner.activeStopId}
         onSelectStop={planner.setActiveStopId}
+        onSelectStartFromMap={planner.setStart} // Chọn từ bản đồ làm điểm A
+        onSelectEndFromMap={planner.setEnd} // Chọn từ bản đồ làm điểm B
       />
 
-      {planner.plan && <RouteStatsBar route={planner.plan.route} stops={planner.plan.stops} />}
+      {planner.plan && (
+        <RouteStatsBar route={planner.plan.route} stops={planner.plan.stops} />
+      )}
 
-      <StopDetailDrawer stop={activeStop} onClose={() => planner.setActiveStopId(null)} />
+      <StopDetailDrawer
+        stop={activeStop}
+        onClose={() => planner.setActiveStopId(null)}
+      />
 
       {planner.error && (
         <div className="absolute left-1/2 top-4 z-30 -translate-x-1/2 rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm text-red-700 shadow-lg">

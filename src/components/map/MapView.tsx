@@ -32,10 +32,10 @@ interface MapViewProps {
   stops: RouteStop[];
   activeStopId: string | null;
   onSelectStop: (stopId: string) => void;
-  onMapClick?: (place: PlaceResult) => void;
+  onSelectStartFromMap?: (place: PlaceResult) => void;
+  onSelectEndFromMap?: (place: PlaceResult) => void;
 }
 
-/** Looks up the display color configured for a POI category, with a safe fallback. */
 function colorForCategory(categoryId: string): string {
   return (
     POI_CATEGORIES.find((category) => category.id === categoryId)?.color ??
@@ -43,11 +43,10 @@ function colorForCategory(categoryId: string): string {
   );
 }
 
-/** Configures theme colors based on user gender from localStorage */
 function getThemeStyles(gender: GenderTheme) {
   if (gender === "nu") {
     return {
-      routeColor: "#EC4899", // Pink
+      routeColor: "#EC4899",
       startBg: "bg-fuchsia-500",
       startRing: "ring-fuchsia-500/30",
       endBg: "bg-pink-600",
@@ -59,7 +58,7 @@ function getThemeStyles(gender: GenderTheme) {
 
   if (gender === "khac") {
     return {
-      routeColor: "#8B5CF6", // Purple Base Line
+      routeColor: "#8B5CF6",
       startBg: "bg-gradient-to-r from-red-500 via-yellow-500 to-green-500",
       startRing: "ring-purple-500/30",
       endBg: "bg-gradient-to-r from-blue-500 via-indigo-500 to-pink-500",
@@ -71,9 +70,8 @@ function getThemeStyles(gender: GenderTheme) {
     };
   }
 
-  // Nam (Default)
   return {
-    routeColor: "#FF6A1A", // Orange
+    routeColor: "#FF6A1A",
     startBg: "bg-emerald-500",
     startRing: "ring-emerald-500/30",
     endBg: "bg-rose-500",
@@ -90,17 +88,18 @@ export function MapView({
   stops,
   activeStopId,
   onSelectStop,
-  onMapClick,
+  onSelectStartFromMap,
+  onSelectEndFromMap,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const clickPopupRef = useRef<Popup | null>(null);
   const endpointMarkersRef = useRef<Marker[]>([]);
   const stopMarkersRef = useRef<Marker[]>([]);
   const poiMarkersRef = useRef<Marker[]>([]);
 
   const [gender, setGender] = useState<GenderTheme>("nam");
 
-  // Read gender from localStorage on mount
   useEffect(() => {
     const savedGender =
       (localStorage.getItem(STORAGE_KEY_GENDER) as GenderTheme) || "nam";
@@ -109,7 +108,6 @@ export function MapView({
 
   const theme = getThemeStyles(gender);
 
-  // Initialize the map exactly once.
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -126,19 +124,17 @@ export function MapView({
       "bottom-right",
     );
 
-    // Tạo bộ định vị vị trí hiện tại và cập nhật realtime khi di chuyển
     const geolocateControl = new GeolocateControl({
       positionOptions: {
-        enableHighAccuracy: true, // Bật GPS độ chính xác cao
+        enableHighAccuracy: true,
       },
-      trackUserLocation: true, // Theo dõi và tự động cập nhật tâm bản đồ khi di chuyển
-      showUserLocation: true, // Hiển thị điểm chấm tròn định vị người dùng
-      showAccuracyCircle: true, // Hiển thị vòng bán kính sai số GPS
+      trackUserLocation: true,
+      showUserLocation: true,
+      showAccuracyCircle: true,
     });
 
     map.addControl(geolocateControl, "bottom-right");
 
-    // Tự động kích hoạt định vị ngay khi bản đồ tải xong
     map.on("load", () => {
       geolocateControl.trigger();
     });
@@ -151,7 +147,6 @@ export function MapView({
     };
   }, []);
 
-  // Draw / update the route line whenever a new route or gender theme changes.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -181,7 +176,6 @@ export function MapView({
         });
       }
 
-      // Update layer color if theme changes
       if (map.getLayer(ROUTE_LAYER_ID)) {
         map.setPaintProperty(ROUTE_LAYER_ID, "line-color", theme.routeColor);
       }
@@ -205,7 +199,6 @@ export function MapView({
     }
   }, [route, theme.routeColor]);
 
-  // Start (A) / end (B) markers with dynamic gender styling.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -234,45 +227,125 @@ export function MapView({
     });
   }, [start, end, theme]);
 
-  // Xử lý sự kiện click trực tiếp lên MapLibre
+  // Xử lý sự kiện click bản đồ: Hiển thị Popup lựa chọn làm điểm A hoặc B
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !onMapClick) return;
+    if (!map || (!onSelectStartFromMap && !onSelectEndFromMap)) return;
+
+    let abortController: AbortController | null = null;
 
     const handleClick = async (e: maplibregl.MapMouseEvent) => {
       const { lng, lat } = e.lngLat;
 
+      if (clickPopupRef.current) {
+        clickPopupRef.current.remove();
+      }
+
+      if (abortController) {
+        abortController.abort();
+      }
+      abortController = new AbortController();
+
+      const loadingPopup = new Popup({ closeButton: true, closeOnClick: true })
+        .setLngLat([lng, lat])
+        .setHTML(
+          `<div style="padding: 4px; font-size: 12px; color: #666;">Đang lấy thông tin vị trí…</div>`,
+        )
+        .addTo(map);
+
+      clickPopupRef.current = loadingPopup;
+
+      let label = `Tọa độ: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
       try {
         const res = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+          { signal: abortController.signal },
         );
         const data = await res.json();
-        const label =
-          data.display_name || `Vị trí (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
-
-        onMapClick({
-          id: `map-click-${Date.now()}`,
-          label,
-          lat,
-          lon: lng,
-        });
-      } catch {
-        onMapClick({
-          id: `map-click-${Date.now()}`,
-          label: `Tọa độ chọn: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
-          lat,
-          lon: lng,
-        });
+        if (data.display_name) {
+          label = data.display_name;
+        }
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === "AbortError") return;
       }
+
+      const place: PlaceResult = {
+        id: `map-click-${Date.now()}`,
+        label,
+        lat,
+        lon: lng,
+      };
+
+      const container = document.createElement("div");
+      container.style.padding = "4px";
+      container.style.maxWidth = "220px";
+
+      const titleEl = document.createElement("p");
+      titleEl.style.fontSize = "12px";
+      titleEl.style.fontWeight = "600";
+      titleEl.style.marginBottom = "8px";
+      titleEl.style.color = "#1e293b";
+      titleEl.style.lineHeight = "1.3";
+      titleEl.textContent = label;
+      container.appendChild(titleEl);
+
+      const btnGroup = document.createElement("div");
+      btnGroup.style.display = "flex";
+      btnGroup.style.gap = "6px";
+
+      if (onSelectStartFromMap) {
+        const btnStart = document.createElement("button");
+        btnStart.type = "button";
+        btnStart.textContent = "Chọn làm Điểm Bắt Đầu";
+        btnStart.style.flex = "1";
+        btnStart.style.padding = "6px 8px";
+        btnStart.style.fontSize = "11px";
+        btnStart.style.fontWeight = "600";
+        btnStart.style.color = "#ffffff";
+        btnStart.style.backgroundColor = "#10b981";
+        btnStart.style.border = "none";
+        btnStart.style.borderRadius = "6px";
+        btnStart.style.cursor = "pointer";
+
+        btnStart.addEventListener("click", () => {
+          onSelectStartFromMap(place);
+          loadingPopup.remove();
+        });
+        btnGroup.appendChild(btnStart);
+      }
+
+      if (onSelectEndFromMap) {
+        const btnEnd = document.createElement("button");
+        btnEnd.type = "button";
+        btnEnd.textContent = "Chọn làm Điểm Kết Thúc";
+        btnEnd.style.flex = "1";
+        btnEnd.style.padding = "6px 8px";
+        btnEnd.style.fontSize = "11px";
+        btnEnd.style.fontWeight = "600";
+        btnEnd.style.color = "#ffffff";
+        btnEnd.style.backgroundColor = "#f43f5e";
+        btnEnd.style.border = "none";
+        btnEnd.style.borderRadius = "6px";
+        btnEnd.style.cursor = "pointer";
+
+        btnEnd.addEventListener("click", () => {
+          onSelectEndFromMap(place);
+          loadingPopup.remove();
+        });
+        btnGroup.appendChild(btnEnd);
+      }
+
+      container.appendChild(btnGroup);
+      loadingPopup.setDOMContent(container);
     };
 
-    map.on("click", handleClick);
+    map.on("contextmenu", handleClick);
     return () => {
-      map.off("click", handleClick);
+      map.off("contextmenu", handleClick);
     };
-  }, [onMapClick]);
+  }, [onSelectStartFromMap, onSelectEndFromMap]);
 
-  // Numbered, clickable stop markers with dynamic gender styling.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -303,7 +376,6 @@ export function MapView({
     });
   }, [stops, activeStopId, onSelectStop, theme]);
 
-  // Small colored dots for POIs near stops
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -335,7 +407,6 @@ export function MapView({
     });
   }, [stops]);
 
-  // Thêm useEffect xử lý animation đổi màu riêng cho giới tính "Khac"
   useEffect(() => {
     const map = mapRef.current;
     if (!map || gender !== "khac") return;
@@ -364,7 +435,6 @@ export function MapView({
   return <div ref={containerRef} className="h-full w-full" />;
 }
 
-/** Minimal HTML-escaping for text injected into MapLibre Popup's innerHTML. */
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")

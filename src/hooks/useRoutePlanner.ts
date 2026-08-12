@@ -47,7 +47,7 @@ interface RoutePlannerState {
 const DEFAULT_STATE: RoutePlannerState = {
   start: null,
   end: null,
-  stopCount: 2,
+  stopCount: 0,
   selectedCategories: [],
   avoidHighways: false,
   plan: null,
