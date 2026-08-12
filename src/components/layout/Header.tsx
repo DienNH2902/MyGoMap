@@ -1,7 +1,33 @@
-import Link from 'next/link';
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+
+const STORAGE_KEY_NAME = "mygomap_user_name";
+const STORAGE_KEY_GENDER = "mygomap_user_gender";
 
 /** Fixed top header shown on every page, carrying the MyGoMap brand mark front and center. */
 export function Header() {
+  const [userInfo, setUserInfo] = useState<{
+    name: string;
+    gender: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const name = localStorage.getItem(STORAGE_KEY_NAME) ?? "";
+    const gender = localStorage.getItem(STORAGE_KEY_GENDER) ?? "";
+
+    if (name.trim()) {
+      setUserInfo({ name: name.trim(), gender });
+    }
+  }, []);
+
+  const getHonorific = (gender: string) => {
+    if (gender === "nam") return "anh";
+    if (gender === "nu") return "chị";
+    return "bạn";
+  };
+
   return (
     <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-white/5 bg-ink/90 px-6 backdrop-blur-md">
       <Link href="/" className="group flex items-center gap-2">
@@ -10,10 +36,17 @@ export function Header() {
           MyGoMap
         </span>
       </Link>
+
       <nav className="hidden items-center gap-6 text-sm font-medium text-cream/70 sm:flex">
-        <Link href="/map" className="transition hover:text-primary">
-          Lập lộ trình
-        </Link>
+        {userInfo ? (
+          <span className="rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-accent-gold">
+            Hôm nay {getHonorific(userInfo.gender)} {userInfo.name} muốn đi đâu?
+          </span>
+        ) : (
+          <span className="rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-accent-gold">
+            Chưa rõ tên bạn
+          </span>
+        )}
       </nav>
     </header>
   );
