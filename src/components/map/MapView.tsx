@@ -16,6 +16,9 @@ import {
   VIETNAM_CENTER,
   DEFAULT_MAP_ZOOM,
   POI_CATEGORIES,
+  SOVEREIGNTY_LABEL_TEXT,
+  HOANG_SA_LOCATION,
+  TRUONG_SA_LOCATION,
 } from "@/lib/constants";
 import type { PlaceResult, RouteStop, RouteGeometry } from "@/lib/types";
 
@@ -97,6 +100,7 @@ export function MapView({
   const endpointMarkersRef = useRef<Marker[]>([]);
   const stopMarkersRef = useRef<Marker[]>([]);
   const poiMarkersRef = useRef<Marker[]>([]);
+  const sovereigntyMarkersRef = useRef<Marker[]>([]);
 
   const [gender, setGender] = useState<GenderTheme>("nam");
 
@@ -134,11 +138,14 @@ export function MapView({
 
     map.on("load", () => {
       geolocateControl.trigger();
+      addSovereigntyLabels(map, sovereigntyMarkersRef);
     });
 
     mapRef.current = map;
 
     return () => {
+      sovereigntyMarkersRef.current.forEach((marker) => marker.remove());
+      sovereigntyMarkersRef.current = [];
       map.remove();
       mapRef.current = null;
     };
@@ -430,6 +437,53 @@ export function MapView({
   }, [gender, route]);
 
   return <div ref={containerRef} className="h-full w-full" />;
+}
+
+/**
+ * Gắn 2 nhãn cố định lên bản đồ tại vị trí quần đảo Hoàng Sa và Trường Sa,
+ * khẳng định chủ quyền Việt Nam. Nhãn luôn hiển thị (không cần click), đè lên
+ * trên nhãn mặc định của basemap vì Marker là lớp DOM nổi trên canvas bản đồ.
+ */
+function addSovereigntyLabels(
+  map: MapLibreMap,
+  markersRef: { current: Marker[] },
+) {
+  markersRef.current.forEach((marker) => marker.remove());
+  markersRef.current = [];
+
+  const locations = [HOANG_SA_LOCATION, TRUONG_SA_LOCATION];
+
+  locations.forEach((location) => {
+    const el = document.createElement("div");
+    el.className = "flex flex-col items-center gap-1 select-none";
+    el.style.pointerEvents = "none";
+    el.innerHTML = `
+      <span style="
+        white-space: nowrap;
+        background-color: orange;
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 11px;
+        line-height: 1.2;
+        padding: 4px 8px;
+        border-radius: 6px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      ">${escapeHtml(SOVEREIGNTY_LABEL_TEXT)}</span>
+      <span style="
+        display: block;
+        height: 10px;
+        width: 10px;
+        border-radius: 9999px;
+        background-color: orange;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+      "></span>
+    `;
+
+    const marker = new Marker({ element: el, anchor: "bottom" })
+      .setLngLat([location.lon, location.lat])
+      .addTo(map);
+    markersRef.current.push(marker);
+  });
 }
 
 function escapeHtml(value: string): string {
