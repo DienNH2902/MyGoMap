@@ -11,6 +11,21 @@ import Image from "next/image";
 import { usePoiEnrichment } from "@/hooks/usePoiEnrichment";
 import { PoiDetailCard } from "./PoiDetailCard";
 
+const STORAGE_KEY_USER_GENDER = "mygomap_user_gender";
+type GenderTheme = "nam" | "nu" | "khac";
+
+function getCatImageByGender(gender: GenderTheme): string {
+  switch (gender) {
+    case "nu":
+      return "/assets/nu.png";
+    case "khac":
+      return "/assets/lgbt.png";
+    case "nam":
+    default:
+      return "/assets/nam.png";
+  }
+}
+
 // MapLibre reaches into `window`, so it must never render during server-side rendering.
 const MapView = dynamic(() => import("./MapView").then((mod) => mod.MapView), {
   ssr: false,
@@ -29,6 +44,7 @@ const MapView = dynamic(() => import("./MapView").then((mod) => mod.MapView), {
 export function MapExperience() {
   const planner = useRoutePlanner();
   const [isDelaying, setIsDelaying] = useState(true);
+  const [gender, setGender] = useState<GenderTheme>("nam");
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -37,6 +53,14 @@ export function MapExperience() {
 
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    const savedGender =
+      (localStorage.getItem(STORAGE_KEY_USER_GENDER) as GenderTheme) || "nam";
+    setGender(savedGender);
+  }, []);
+
+  const catImageSrc = getCatImageByGender(gender);
 
   const activeStop = useMemo(
     () =>
@@ -91,6 +115,17 @@ export function MapExperience() {
         onSelectStartFromMap={planner.setStart} // Chọn từ bản đồ làm điểm A
         onSelectEndFromMap={planner.setEnd} // Chọn từ bản đồ làm điểm B
       />
+
+      {/* Hiệu ứng Mèo Lấp Ló bên mép phải màn hình thay đổi theo giới tính */}
+      <div className="pointer-events-none absolute right-0 top-1/3 z-40 h-40 w-40 animate-peek-cat">
+        <Image
+          src={catImageSrc}
+          alt="Mèo tò mò"
+          fill
+          sizes="160px"
+          className="object-contain drop-shadow-xl"
+        />
+      </div>
 
       {planner.plan && (
         <RouteStatsBar route={planner.plan.route} stops={planner.plan.stops} />
