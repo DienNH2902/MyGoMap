@@ -36,7 +36,7 @@ export default function MapPage() {
   if (!isAuthorized) {
     return (
       <main className="flex h-screen w-screen items-center justify-center bg-surface">
-        <CatBlock/>
+        <CatBlock />
       </main>
     );
   }

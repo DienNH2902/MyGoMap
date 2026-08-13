@@ -1,9 +1,11 @@
-import { Header } from '@/components/layout/Header';
-import { LandingHero } from '@/components/landing/LandingHero';
+import { Header } from "@/components/layout/Header";
+import { LandingHero } from "@/components/landing/LandingHero";
+import { LocationRequest } from "@/components/common/LocationRequest";
 
 export default function HomePage() {
   return (
     <>
+      <LocationRequest />
       <Header />
       <LandingHero />
     </>
