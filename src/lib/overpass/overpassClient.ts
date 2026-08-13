@@ -111,46 +111,62 @@ const OVERPASS_MAX_ATTEMPTS = 2;
  * responses. Never throws — on any failure it logs a warning and resolves to
  * `null`, so a flaky Overpass server can never take down the whole trip plan.
  */
-async function fetchOverpassQuery(query: string, externalSignal?: AbortSignal): Promise<OverpassResponse | null> {
+async function fetchOverpassQuery(
+  query: string,
+  externalSignal?: AbortSignal,
+): Promise<OverpassResponse | null> {
   for (let attempt = 1; attempt <= OVERPASS_MAX_ATTEMPTS; attempt += 1) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), OVERPASS_TIMEOUT_MS);
     const forwardAbort = () => controller.abort();
-    externalSignal?.addEventListener('abort', forwardAbort);
+    externalSignal?.addEventListener("abort", forwardAbort);
 
     try {
-      const response = await fetch(OVERPASS_INTERPRETER_URL, {
+      // Gọi qua API Route trung gian của Next.js
+      const response = await fetch("/api/overpass", {
         method: "POST",
-        body: `data=${encodeURIComponent(query)}`,
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          // Thêm User-Agent nhận diện tên app và email/contact của bạn
-          "User-Agent": "MyGoMap/1.0 (contact@mygomap.com)",
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({ query }),
         signal: controller.signal,
       });
 
       // Server is busy / rate-limiting us — back off briefly and retry once.
-      if ((response.status === 429 || response.status === 504 || response.status === 500) && attempt < OVERPASS_MAX_ATTEMPTS) {
+      if (
+        (response.status === 429 ||
+          response.status === 504 ||
+          response.status === 500) &&
+        attempt < OVERPASS_MAX_ATTEMPTS
+      ) {
         const waitMs = 1500 * attempt;
-        console.warn(`Overpass API đang bận (mã ${response.status}). Thử lại sau ${waitMs}ms...`);
+        console.warn(
+          `Overpass API đang bận (mã ${response.status}). Thử lại sau ${waitMs}ms...`,
+        );
         await new Promise((resolve) => setTimeout(resolve, waitMs));
         continue;
       }
 
       if (!response.ok) {
-        console.warn(`Overpass API trả về lỗi ${response.status}. Bỏ qua gợi ý địa điểm cho lần lập lộ trình này.`);
+        console.warn(
+          `Overpass API trả về lỗi ${response.status}. Bỏ qua gợi ý địa điểm cho lần lập lộ trình này.`,
+        );
         return null;
       }
 
       return (await response.json()) as OverpassResponse;
     } catch (err) {
-      const reason = err instanceof DOMException && err.name === 'AbortError' ? 'hết thời gian chờ' : String(err);
-      console.warn(`Overpass API request thất bại (${reason}), lần thử ${attempt}/${OVERPASS_MAX_ATTEMPTS}.`);
+      const reason =
+        err instanceof DOMException && err.name === "AbortError"
+          ? "hết thời gian chờ"
+          : String(err);
+      console.warn(
+        `Overpass API request thất bại (${reason}), lần thử ${attempt}/${OVERPASS_MAX_ATTEMPTS}.`,
+      );
       if (attempt === OVERPASS_MAX_ATTEMPTS) return null;
     } finally {
       clearTimeout(timeoutId);
-      externalSignal?.removeEventListener('abort', forwardAbort);
+      externalSignal?.removeEventListener("abort", forwardAbort);
     }
   }
   return null;
