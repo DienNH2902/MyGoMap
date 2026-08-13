@@ -119,10 +119,7 @@ export function MapView({
       attributionControl: {},
     });
 
-    map.addControl(
-      new NavigationControl({ showCompass: false }),
-      "bottom-right",
-    );
+    map.addControl(new NavigationControl({ showCompass: false }), "top-right");
 
     const geolocateControl = new GeolocateControl({
       positionOptions: {
@@ -133,7 +130,7 @@ export function MapView({
       showAccuracyCircle: true,
     });
 
-    map.addControl(geolocateControl, "bottom-right");
+    map.addControl(geolocateControl, "top-right");
 
     map.on("load", () => {
       geolocateControl.trigger();
