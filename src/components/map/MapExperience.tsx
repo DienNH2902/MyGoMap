@@ -8,6 +8,8 @@ import { RouteStatsBar } from "./RouteStatsBar";
 import { StopDetailDrawer } from "./StopDetailDrawer";
 import { OwlLoadingSpinner } from "../ui/OwlLoadingSpinner";
 import Image from "next/image";
+import { usePoiEnrichment } from "@/hooks/usePoiEnrichment";
+import { PoiDetailCard } from "./PoiDetailCard";
 
 // MapLibre reaches into `window`, so it must never render during server-side rendering.
 const MapView = dynamic(() => import("./MapView").then((mod) => mod.MapView), {
@@ -43,6 +45,28 @@ export function MapExperience() {
     [planner.plan, planner.activeStopId],
   );
 
+  // Điểm POI đang được chọn (bấm chấm trên bản đồ, hoặc nút "Vị trí" ở
+  // sidebar) — có thể thuộc một điểm dừng khác với điểm dừng đang mở sidebar.
+  const activePoiEntry = useMemo(() => {
+    if (!planner.plan || !planner.activePoiId) return null;
+    for (const stop of planner.plan.stops) {
+      const poi = stop.pois.find(
+        (candidate) => candidate.id === planner.activePoiId,
+      );
+      if (poi) return { poi, stopOrder: stop.order };
+    }
+    return null;
+  }, [planner.plan, planner.activePoiId]);
+
+  const activePoiList = useMemo(
+    () => (activePoiEntry ? [activePoiEntry.poi] : []),
+    [activePoiEntry],
+  );
+  const {
+    getEnriched: getActivePoiEnriched,
+    markImageBroken: markActivePoiImageBroken,
+  } = usePoiEnrichment(activePoiList);
+
   if (isDelaying) {
     return (
       <div className="absolute inset-0 top-16 flex items-center justify-center bg-surface-muted z-50 whitespace-pre-line">
@@ -62,6 +86,8 @@ export function MapExperience() {
         stops={planner.plan?.stops ?? []}
         activeStopId={planner.activeStopId}
         onSelectStop={planner.setActiveStopId}
+        activePoiId={planner.activePoiId}
+        onSelectPoi={planner.setActivePoiId}
         onSelectStartFromMap={planner.setStart} // Chọn từ bản đồ làm điểm A
         onSelectEndFromMap={planner.setEnd} // Chọn từ bản đồ làm điểm B
       />
@@ -73,7 +99,19 @@ export function MapExperience() {
       <StopDetailDrawer
         stop={activeStop}
         onClose={() => planner.setActiveStopId(null)}
+        activePoiId={planner.activePoiId}
+        onSelectPoi={planner.setActivePoiId}
       />
+
+      {activePoiEntry && (
+        <PoiDetailCard
+          poi={activePoiEntry.poi}
+          stopOrder={activePoiEntry.stopOrder}
+          enriched={getActivePoiEnriched(activePoiEntry.poi)}
+          onImageError={() => markActivePoiImageBroken(activePoiEntry.poi.id)}
+          onClose={() => planner.setActivePoiId(null)}
+        />
+      )}
 
       {planner.error && (
         <div className="absolute left-1/2 top-4 z-40 flex w-[90%] max-w-lg -translate-x-1/2 overflow-hidden rounded-2xl border border-red-200 bg-red-50 shadow-2xl backdrop-blur-md m-5 p-2">

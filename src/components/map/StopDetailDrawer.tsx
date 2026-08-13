@@ -13,6 +13,8 @@ const STORAGE_KEY_GENDER = "mygomap_user_gender";
 interface StopDetailDrawerProps {
   stop: RouteStop | null;
   onClose: () => void;
+  activePoiId?: string | null;
+  onSelectPoi?: (id: string | null) => void;
 }
 
 function categoryLabel(categoryId: string): string {
@@ -40,7 +42,12 @@ async function resolveImageForPoi(
   return findNearbyCommonsImage(lat, lon, signal);
 }
 
-export function StopDetailDrawer({ stop, onClose }: StopDetailDrawerProps) {
+export function StopDetailDrawer({
+  stop,
+  onClose,
+  activePoiId,
+  onSelectPoi,
+}: StopDetailDrawerProps) {
   const [resolvedAddresses, setResolvedAddresses] = useState<
     Record<string, string | null>
   >({});

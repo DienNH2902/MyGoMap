@@ -35,9 +35,13 @@ interface MapViewProps {
   stops: RouteStop[];
   activeStopId: string | null;
   onSelectStop: (stopId: string) => void;
+  activePoiId: string | null;
+  onSelectPoi: (poiId: string) => void;
   onSelectStartFromMap?: (place: PlaceResult) => void;
   onSelectEndFromMap?: (place: PlaceResult) => void;
 }
+
+const POI_FOCUS_ZOOM = 16;
 
 function colorForCategory(categoryId: string): string {
   return (
@@ -91,6 +95,8 @@ export function MapView({
   stops,
   activeStopId,
   onSelectStop,
+  activePoiId,
+  onSelectPoi,
   onSelectStartFromMap,
   onSelectEndFromMap,
 }: MapViewProps) {
@@ -99,7 +105,9 @@ export function MapView({
   const clickPopupRef = useRef<Popup | null>(null);
   const endpointMarkersRef = useRef<Marker[]>([]);
   const stopMarkersRef = useRef<Marker[]>([]);
-  const poiMarkersRef = useRef<Marker[]>([]);
+  const poiMarkersRef = useRef<
+    { id: string; dotEl: HTMLDivElement; marker: Marker }[]
+  >([]);
   const sovereigntyMarkersRef = useRef<Marker[]>([]);
 
   const [gender, setGender] = useState<GenderTheme>("nam");
@@ -112,6 +120,7 @@ export function MapView({
 
   const theme = getThemeStyles(gender);
 
+  // Khai báo bản đồ
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -151,6 +160,7 @@ export function MapView({
     };
   }, []);
 
+  // Vẽ tuyến đường
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -203,6 +213,7 @@ export function MapView({
     }
   }, [route, theme.routeColor]);
 
+  // Marker điểm A - B
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -224,14 +235,14 @@ export function MapView({
       el.className = `flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-sm font-extrabold text-white shadow-md ring-2 ${bgClass} ${ringClass} transition-transform hover:scale-110`;
       el.textContent = isStart ? "A" : "B";
 
-      const marker = new Marker({ element: el })
+      const marker = new Marker({ element: el, anchor: "center" })
         .setLngLat([place.lon, place.lat])
         .addTo(map);
       endpointMarkersRef.current.push(marker);
     });
   }, [start, end, theme]);
 
-  // Xử lý sự kiện click bản đồ: Hiển thị Popup lựa chọn làm điểm A hoặc B
+  // Event Contextmenu chọn điểm trên bản đồ
   useEffect(() => {
     const map = mapRef.current;
     if (!map || (!onSelectStartFromMap && !onSelectEndFromMap)) return;
@@ -350,6 +361,7 @@ export function MapView({
     };
   }, [onSelectStartFromMap, onSelectEndFromMap]);
 
+  // Marker các Trạm Dừng (Stop Markers)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -373,44 +385,94 @@ export function MapView({
       el.setAttribute("aria-label", `Điểm dừng ${stop.order}`);
       el.addEventListener("click", () => onSelectStop(stop.id));
 
-      const marker = new Marker({ element: el })
+      const marker = new Marker({ element: el, anchor: "center" })
         .setLngLat([stop.lon, stop.lat])
         .addTo(map);
       stopMarkersRef.current.push(marker);
     });
   }, [stops, activeStopId, onSelectStop, theme]);
 
+  // TẠO CÁC CHẤM POI (ĐÃ SỬA LỖI TÂM KHÔNG BỊ TRƯỢT/LỆCH VỊ TRÍ)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    poiMarkersRef.current.forEach((marker) => marker.remove());
+    poiMarkersRef.current.forEach(({ marker }) => marker.remove());
     poiMarkersRef.current = [];
 
     stops.forEach((stop) => {
       stop.pois.forEach((poi) => {
-        const el = document.createElement("div");
-        el.style.backgroundColor = colorForCategory(poi.category);
-        el.className =
-          "h-3.5 w-3.5 rounded-full border-2 border-white shadow-md cursor-pointer";
-        el.setAttribute("aria-label", poi.name);
+        // Container cố định kích thước 24x24px làm mốc neo chuẩn cho MapLibre
+        const container = document.createElement("div");
+        container.className =
+          "w-6 h-6 flex items-center justify-center cursor-pointer pointer-events-auto";
 
-        const popup = new Popup({ offset: 12, closeButton: true }).setHTML(
-          `<div style="font-family: inherit; max-width: 200px;">
-             <strong style="display:block; margin-bottom:2px;">${escapeHtml(poi.name)}</strong>
-             ${poi.address ? `<span style="font-size:12px; color:#555;">${escapeHtml(poi.address)}</span>` : ""}
-           </div>`,
-        );
+        // Chấm dot thật nằm bên trong container
+        const dotEl = document.createElement("div");
+        dotEl.style.backgroundColor = colorForCategory(poi.category);
+        dotEl.className =
+          "h-3.5 w-3.5 rounded-full border-2 border-white shadow-md transition-all duration-300";
+        dotEl.setAttribute("aria-label", poi.name);
+        dotEl.setAttribute("role", "button");
 
-        const marker = new Marker({ element: el })
+        container.appendChild(dotEl);
+
+        container.addEventListener("click", (event) => {
+          event.stopPropagation();
+          onSelectPoi(poi.id);
+        });
+
+        // anchor: "center" đảm bảo chính giữa Marker luôn đặt đúng tọa độ lon/lat
+        const marker = new Marker({ element: container, anchor: "center" })
           .setLngLat([poi.lon, poi.lat])
-          .setPopup(popup)
           .addTo(map);
-        poiMarkersRef.current.push(marker);
+
+        poiMarkersRef.current.push({ id: poi.id, dotEl, marker });
       });
     });
-  }, [stops]);
+  }, [stops, onSelectPoi]);
 
+  // Cập nhật hiệu ứng Active cho Dot mà không làm hỏng tọa độ Marker
+  useEffect(() => {
+    poiMarkersRef.current.forEach(({ id, dotEl }) => {
+      const isActive = id === activePoiId;
+      if (isActive) {
+        dotEl.className =
+          "h-5 w-5 rounded-full border-2 border-white shadow-2xl ring-4 ring-white/80 scale-125 transition-all duration-300 z-50";
+      } else {
+        dotEl.className =
+          "h-3.5 w-3.5 rounded-full border-2 border-white shadow-md transition-all duration-300";
+      }
+    });
+  }, [activePoiId]);
+
+  // Zoom bản đồ vào POI được chọn
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !activePoiId) return;
+
+    const poi = stops
+      .flatMap((stop) => stop.pois)
+      .find((candidate) => candidate.id === activePoiId);
+    if (!poi) return;
+
+    const flyToPoi = () => {
+      map.flyTo({
+        center: [poi.lon, poi.lat],
+        zoom: Math.max(map.getZoom(), POI_FOCUS_ZOOM),
+        duration: 900,
+        essential: true,
+      });
+    };
+
+    if (map.isStyleLoaded()) {
+      flyToPoi();
+    } else {
+      map.once("load", flyToPoi);
+    }
+  }, [activePoiId, stops]);
+
+  // Hiệu ứng màu cho chủ đề khác
   useEffect(() => {
     const map = mapRef.current;
     if (!map || gender !== "khac") return;
@@ -439,11 +501,6 @@ export function MapView({
   return <div ref={containerRef} className="h-full w-full" />;
 }
 
-/**
- * Gắn 2 nhãn cố định lên bản đồ tại vị trí quần đảo Hoàng Sa và Trường Sa,
- * khẳng định chủ quyền Việt Nam. Nhãn luôn hiển thị (không cần click), đè lên
- * trên nhãn mặc định của basemap vì Marker là lớp DOM nổi trên canvas bản đồ.
- */
 function addSovereigntyLabels(
   map: MapLibreMap,
   markersRef: { current: Marker[] },

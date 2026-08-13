@@ -42,6 +42,8 @@ interface RoutePlannerState {
    */
   poiWarning: string | null;
   activeStopId: string | null;
+  /** POI (dot) currently selected — either by clicking it on the map, or via the "Vị trí" button in the sidebar. */
+  activePoiId: string | null;
 }
 
 const DEFAULT_STATE: RoutePlannerState = {
@@ -56,6 +58,7 @@ const DEFAULT_STATE: RoutePlannerState = {
   error: null,
   poiWarning: null,
   activeStopId: null,
+  activePoiId: null,
 };
 
 /**
@@ -109,6 +112,10 @@ export function useRoutePlanner() {
     setState((prev) => ({ ...prev, activeStopId: id }));
   }, []);
 
+  const setActivePoiId = useCallback((id: string | null) => {
+    setState((prev) => ({ ...prev, activePoiId: id }));
+  }, []);
+
   const reset = useCallback(() => setState(DEFAULT_STATE), []);
 
   const planTrip = useCallback(async () => {
@@ -129,6 +136,7 @@ export function useRoutePlanner() {
       poiWarning: null,
       aiTip: null,
       activeStopId: null,
+      activePoiId: null,
     }));
 
     // Step 1: the route. A failure here IS blocking — without a route there's
@@ -232,6 +240,7 @@ export function useRoutePlanner() {
     setAvoidHighways,
     toggleCategory,
     setActiveStopId,
+    setActivePoiId,
     reset,
     planTrip,
   };
