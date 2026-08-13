@@ -1,4 +1,4 @@
-import { ORS_DIRECTIONS_URL } from "../constants";
+import { ORS_DIRECTIONS_URL, MOTORBIKE_AVERAGE_SPEED_KMH, CAR_AVERAGE_SPEED_KMH } from "../constants";
 import type { RouteGeometry } from "../types";
 
 /** Shape of the fields we actually read from an ORS GeoJSON directions response. */
@@ -47,6 +47,20 @@ export interface RouteOptions {
  * Vietnamese border, e.g. sections of the Ho Chi Minh Trail). This keeps the
  * whole route inside Vietnam, which is what the app promises the user.
  */
+/**
+ * ORS's "driving-car" duration assumes car speeds even when we asked it to
+ * avoid highways for a motorbike route — see MOTORBIKE_AVERAGE_SPEED_KMH in
+ * constants.ts for why. This recomputes a realistic xe máy ETA from distance
+ * instead of trusting ORS's (car-speed) duration for that case.
+ */
+function estimateMotorbikeDurationMinutes(distanceKm: number): number {
+  return (distanceKm / MOTORBIKE_AVERAGE_SPEED_KMH) * 60;
+}
+
+function estimateCarDurationMinutes(distanceKm: number): number {
+  return (distanceKm / CAR_AVERAGE_SPEED_KMH) * 60;
+}
+
 export async function fetchDrivingRoute(
   start: { lon: number; lat: number },
   end: { lon: number; lat: number },
@@ -136,6 +150,10 @@ export async function fetchDrivingRoute(
   return {
     coordinates: feature.geometry.coordinates,
     distanceKm: feature.properties.summary.distance / 1000,
-    durationMinutes: feature.properties.summary.duration / 60,
+    durationMinutes: routeOptions.avoidHighways
+      ? estimateMotorbikeDurationMinutes(
+          feature.properties.summary.distance / 1000,
+        )
+      : estimateCarDurationMinutes(feature.properties.summary.distance / 1000),
   };
 }

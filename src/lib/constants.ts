@@ -16,6 +16,19 @@ export const OVERPASS_INTERPRETER_URL =
   "https://overpass-api.de/api/interpreter";
 export const MAP_STYLE_URL =
   "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+/**
+ * ORS chỉ có profile "driving-car" — không có profile xe máy. Khi
+ * avoidHighways bật (chế độ xe máy), ORS đổi được ĐƯỜNG ĐI (né cao tốc) nhưng
+ * vẫn tính THỜI GIAN theo tốc độ ô tô (~80-100km/h trên quốc lộ), nên thời
+ * gian trả về luôn thấp hơn thực tế rất nhiều (ví dụ TP.HCM - Đà Lạt ORS báo
+ * ~3h trong khi thực tế đi xe máy khoảng 7-8h vì đèo, xe tải, dừng nghỉ...).
+ *
+ * Vì vậy khi ở chế độ xe máy, ta bỏ qua duration của ORS và tự ước tính lại
+ * theo tốc độ trung bình thực tế của xe máy đi quốc lộ Việt Nam (đã tính gộp
+ * cả các đoạn đèo dốc, giao cắt đông xe, và các lần dừng nghỉ dọc đường).
+ */
+export const MOTORBIKE_AVERAGE_SPEED_KMH = 35;
+export const CAR_AVERAGE_SPEED_KMH = 75;
 
 /** Map is centered on Vietnam by default, zoomed out to show the whole country. */
 export const VIETNAM_CENTER = { lon: 105.8342, lat: 21.0278 } as const;
@@ -26,7 +39,8 @@ export const DEFAULT_MAP_ZOOM = 5.2;
  * khẳng định chủ quyền của Việt Nam theo quy định pháp luật và tư liệu lịch sử Việt Nam.
  * Toạ độ là trung tâm gần đúng của mỗi quần đảo (dùng để đặt "chấm" + nhãn trên bản đồ).
  */
-export const SOVEREIGNTY_LABEL_TEXT = "Hoàng Sa và Trường Sa là của Việt Nam, Trung Quốc cút!";
+export const SOVEREIGNTY_LABEL_TEXT =
+  "Hoàng Sa và Trường Sa là của Việt Nam, Trung Quốc cút!";
 
 export const HOANG_SA_LOCATION = { lon: 112.34, lat: 16.83 } as const; // Đảo Phú Lâm, trung tâm quần đảo Hoàng Sa
 export const TRUONG_SA_LOCATION = { lon: 111.92, lat: 8.64 } as const; // Đảo Trường Sa Lớn, trung tâm quần đảo Trường Sa
