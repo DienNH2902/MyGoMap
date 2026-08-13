@@ -7,6 +7,7 @@ import { RoutePlannerPanel } from "./RoutePlannerPanel";
 import { RouteStatsBar } from "./RouteStatsBar";
 import { StopDetailDrawer } from "./StopDetailDrawer";
 import { OwlLoadingSpinner } from "../ui/OwlLoadingSpinner";
+import Image from "next/image";
 
 // MapLibre reaches into `window`, so it must never render during server-side rendering.
 const MapView = dynamic(() => import("./MapView").then((mod) => mod.MapView), {
@@ -75,8 +76,27 @@ export function MapExperience() {
       />
 
       {planner.error && (
-        <div className="absolute left-1/2 top-4 z-30 -translate-x-1/2 rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm text-red-700 shadow-lg">
-          {planner.error}
+        <div className="absolute left-1/2 top-4 z-40 flex w-[90%] max-w-lg -translate-x-1/2 overflow-hidden rounded-2xl border border-red-200 bg-red-50 shadow-2xl backdrop-blur-md m-5 p-2">
+          {/* Bên trái: Hình ảnh chiếm tỷ lệ 1/4 (25%) */}
+          <div className="relative w-1/4 min-w-[90px] bg-red-50 p-10 flex items-center justify-center ">
+            <Image
+              src="/assets/Mèo thủy thủ.png"
+              alt="Lỗi tính lộ trình"
+              fill
+              sizes="1200px"
+              className="object-cover rounded-xl"
+            />
+          </div>
+
+          {/* Bên phải: Nội dung thông báo lỗi chiếm 3/4 (75%) */}
+          <div className="flex w-3/4 flex-col justify-center p-4 bg-red-50">
+            <span className="text-xs font-bold uppercase tracking-wider text-red-600 mb-1">
+              Không thể tính lộ trình
+            </span>
+            <p className="text-xs leading-relaxed text-slate-700">
+              {planner.error}
+            </p>
+          </div>
         </div>
       )}
 
