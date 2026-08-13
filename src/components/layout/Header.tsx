@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 const STORAGE_KEY_NAME = "mygomap_user_name";
 const STORAGE_KEY_GENDER = "mygomap_user_gender";
@@ -31,7 +32,13 @@ export function Header() {
   return (
     <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-white/5 bg-ink/90 px-6 backdrop-blur-md">
       <Link href="/" className="group flex items-center gap-2">
-        <span className="text-2xl">🧭</span>
+        <Image
+          src="/assets/vietnam.png" /* Thay bằng đường dẫn ảnh trong thư mục public của bạn */
+          alt="MyGoMap Logo"
+          width={100}
+          height={100}
+          className="h-8 w-8 rounded-full object-cover transition-transform group-hover:scale-105"
+        />
         <span className="bg-gradient-to-r from-primary via-accent-gold to-primary bg-[length:200%_auto] bg-clip-text text-xl font-extrabold tracking-tight text-transparent transition-[background-position] duration-700 group-hover:bg-right">
           MyGoMap
         </span>

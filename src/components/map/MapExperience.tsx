@@ -46,7 +46,7 @@ export function MapExperience() {
     return (
       <div className="absolute inset-0 top-16 flex items-center justify-center bg-surface-muted z-50 whitespace-pre-line">
         <OwlLoadingSpinner
-          label={`Tôi đang bay lên cao để nhìn rõ hơn\nHãy đợi tôi một chút!`}
+          label={`Tôi đang bay lên cao để nhìn bản đồ rõ hơn\nHãy đợi tôi một chút!`}
         />
       </div>
     );

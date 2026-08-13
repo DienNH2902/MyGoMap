@@ -19,9 +19,12 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'MyGoMap — Lập lộ trình thông minh khắp Việt Nam',
+  title: "MyGoMap — Lập lộ trình thông minh khắp Việt Nam",
+  icons: {
+    icon: "/assets/vietnam.png", // Đường dẫn tính từ thư mục public
+  },
   description:
-    'MyGoMap giúp bạn tìm đường, gợi ý trạm xăng, trạm dừng chân, quán ăn và cà phê dọc tuyến đường — hoàn toàn miễn phí.',
+    "MyGoMap giúp bạn tìm đường, gợi ý trạm xăng, trạm dừng chân, quán ăn và cà phê dọc tuyến đường — hoàn toàn miễn phí.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
