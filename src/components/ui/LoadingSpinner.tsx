@@ -1,3 +1,5 @@
+// https://uiverse.io/Nawsome/wet-mayfly-23
+
 interface LoadingSpinnerProps {
   label?: string;
 }

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export function CatBlock() {
+export default function NotFound() {
   return (
     <div className="flex min-h-screen w-full flex-col bg-surface-muted md:flex-row">
       {/* Màn hình bên trái: Hình ảnh đại diện */}
@@ -11,7 +11,7 @@ export function CatBlock() {
         <div className="absolute inset-0 bg-surface-muted" />
         <div className="relative h-64 w-64 md:h-96 md:w-96 overflow-hidden rounded-xl">
           <Image
-            src="/assets/Mèo lục quân.png"
+            src="/assets/Not found.png"
             alt="Mèo xám hướng dẫn"
             fill
             sizes="1200"
@@ -32,15 +32,15 @@ export function CatBlock() {
 
           <div className="flex flex-col gap-4 text-slate-800">
             <span className="inline-block w-fit rounded-xl bg-amber-100 px-4 py-2 text-xs font-bold uppercase tracking-wider text-amber-800">
-              Cảnh báo truy cập
+              Lỗi 404 | NOT FOUND
             </span>
 
             <h1 className="text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
-              Bạn chưa thể vào bản đồ!
+              Trang không tồn tại
             </h1>
 
             <p className="text-base leading-relaxed text-slate-600">
-              Lì quá! Nhập tên và giới tính đi rồi cho vô.
+              Bạn đang cố gắng truy cập bậy bạ gì vậy?
             </p>
 
             <div className="mt-4 pt-2">
@@ -48,7 +48,7 @@ export function CatBlock() {
                 href="/"
                 className="inline-flex w-full items-center justify-center rounded-xl bg-orange-400 px-6 py-3.5 text-center font-bold text-white shadow-lg transition-all hover:bg-amber-600 hover:shadow-amber-500/25 active:scale-95"
               >
-                Quay lại điền thông tin
+                Quay lại trang chủ
               </Link>
             </div>
           </div>

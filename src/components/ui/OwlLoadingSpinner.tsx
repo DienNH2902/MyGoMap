@@ -1,3 +1,5 @@
+// https://uiverse.io/srinivasaiml/strong-moose-82
+
 interface LoadingSpinnerProps {
   label?: string;
 }
