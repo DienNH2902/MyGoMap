@@ -26,6 +26,19 @@ function getCatImageByGender(gender: GenderTheme): string {
   }
 }
 
+// Đường dẫn 3 ảnh mèo bị bắt tương ứng theo giới tính
+function getCaughtCatImageByGender(gender: GenderTheme): string {
+  switch (gender) {
+    case "nu":
+      return "/assets/nu-caught.png";
+    case "khac":
+      return "/assets/lgbt-caught.png";
+    case "nam":
+    default:
+      return "/assets/nam-caught.png";
+  }
+}
+
 // MapLibre reaches into `window`, so it must never render during server-side rendering.
 const MapView = dynamic(() => import("./MapView").then((mod) => mod.MapView), {
   ssr: false,
@@ -46,6 +59,10 @@ export function MapExperience() {
   const [isDelaying, setIsDelaying] = useState(true);
   const [gender, setGender] = useState<GenderTheme>("nam");
 
+  // State quản lý game Bắt Mèo
+  const [peekCount, setPeekCount] = useState(1);
+  const [isCaught, setIsCaught] = useState(false);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsDelaying(false);
@@ -61,6 +78,7 @@ export function MapExperience() {
   }, []);
 
   const catImageSrc = getCatImageByGender(gender);
+  const caughtCatImageSrc = getCaughtCatImageByGender(gender);
 
   const activeStop = useMemo(
     () =>
@@ -116,16 +134,50 @@ export function MapExperience() {
         onSelectEndFromMap={planner.setEnd} // Chọn từ bản đồ làm điểm B
       />
 
-      {/* Hiệu ứng Mèo Lấp Ló bên mép phải màn hình thay đổi theo giới tính */}
-      <div className="pointer-events-none absolute right-0 top-1/3 z-40 h-40 w-40 animate-peek-cat">
-        <Image
-          src={catImageSrc}
-          alt="Mèo tò mò"
-          fill
-          sizes="160px"
-          className="object-contain drop-shadow-xl"
-        />
-      </div>
+      {/* HIỆU ỨNG MÈO LẤP LÓ & GAME BẮT MÈO */}
+      {!isCaught ? (
+        <div
+          onAnimationIteration={() => setPeekCount((prev) => prev + 1)}
+          className="pointer-events-none absolute right-0 top-1/3 z-40 flex items-center gap-0 animate-peek-cat"
+        >
+          {/* Nút Bắt mèo xuất hiện từ lần lú ra thứ 3 trở đi */}
+          {peekCount >= 3 && (
+            <button
+              type="button"
+              onClick={() => setIsCaught(true)}
+              className="pointer-events-auto cursor-pointer rounded-full bg-accent-gold px-3.5 py-1.5 text-xs font-bold text-ink shadow-2xl border-2 border-white transition-transform hover:scale-110 active:scale-95 whitespace-nowrap"
+            >
+              Bắt mèo
+            </button>
+          )}
+
+          <div className="relative h-40 w-40">
+            <Image
+              src={catImageSrc}
+              alt="Mèo tò mò"
+              fill
+              sizes="160px"
+              className="object-contain drop-shadow-xl"
+            />
+          </div>
+        </div>
+      ) : (
+        /* Mèo đã bị bắt - Cố định góc dưới bên phải */
+        <div className="fixed bottom-6 right-6 z-40 flex flex-col items-center gap-1.5 rounded-2xl border border-amber-200/60 bg-white/90 p-8 shadow-2xl backdrop-blur-md">
+          <div className="h-full w-full">
+            <Image
+              src={caughtCatImageSrc}
+              alt="Mèo đã bị bắt"
+              fill
+              sizes="100px"
+              className="object-contain"
+            />
+          </div>
+          {/* <span className="rounded-full bg-emerald-500 px-2.5 py-0.5 text-[10px] font-extrabold text-white shadow">
+            Đã bắt mèo
+          </span> */}
+        </div>
+      )}
 
       {planner.plan && (
         <RouteStatsBar route={planner.plan.route} stops={planner.plan.stops} />
