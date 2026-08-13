@@ -1,5 +1,5 @@
-import { NOMINATIM_SEARCH_URL } from '../constants';
-import type { PlaceResult } from '../types';
+import { NOMINATIM_SEARCH_URL } from "../constants";
+import type { PlaceResult } from "../types";
 
 interface NominatimItem {
   place_id: number;
@@ -14,20 +14,23 @@ interface NominatimItem {
  * for light, client-side, non-bulk use — browsers send a Referer header automatically,
  * which satisfies their attribution requirement without needing a backend proxy.
  */
-export async function searchPlaces(query: string, signal?: AbortSignal): Promise<PlaceResult[]> {
+export async function searchPlaces(
+  query: string,
+  signal?: AbortSignal,
+): Promise<PlaceResult[]> {
   const trimmed = query.trim();
-  if (trimmed.length < 3) return [];
+  if (trimmed.length < 2) return [];
 
   const url = new URL(NOMINATIM_SEARCH_URL);
-  url.searchParams.set('q', trimmed);
-  url.searchParams.set('format', 'json');
-  url.searchParams.set('countrycodes', 'vn');
-  url.searchParams.set('limit', '5');
-  url.searchParams.set('accept-language', 'vi');
+  url.searchParams.set("q", `${trimmed}*`);
+  url.searchParams.set("format", "json");
+  url.searchParams.set("countrycodes", "vn");
+  url.searchParams.set("limit", "5");
+  url.searchParams.set("accept-language", "vi");
 
   const response = await fetch(url.toString(), {
     signal,
-    headers: { Accept: 'application/json' },
+    headers: { Accept: "application/json" },
   });
   if (!response.ok) return [];
 
@@ -55,18 +58,18 @@ interface NominatimReverseResponse {
 export async function reverseGeocode(
   lat: number,
   lon: number,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<string | null> {
-  const url = new URL('https://nominatim.openstreetmap.org/reverse');
-  url.searchParams.set('lat', String(lat));
-  url.searchParams.set('lon', String(lon));
-  url.searchParams.set('format', 'json');
-  url.searchParams.set('accept-language', 'vi');
+  const url = new URL("https://nominatim.openstreetmap.org/reverse");
+  url.searchParams.set("lat", String(lat));
+  url.searchParams.set("lon", String(lon));
+  url.searchParams.set("format", "json");
+  url.searchParams.set("accept-language", "vi");
 
   try {
     const response = await fetch(url.toString(), {
       signal,
-      headers: { Accept: 'application/json' },
+      headers: { Accept: "application/json" },
     });
     if (!response.ok) return null;
 

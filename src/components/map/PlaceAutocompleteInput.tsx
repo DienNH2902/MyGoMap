@@ -87,7 +87,7 @@ export function PlaceAutocompleteInput({
         className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink placeholder:text-ink/30 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:bg-slate-50"
       />
 
-      {isOpen && query.length >= 3 && (
+      {isOpen && query.length >= 2 && (
         <div className="absolute bottom-full z-50 mb-2 max-h-64 w-full overflow-y-auto rounded-xl border border-ink/10 bg-white shadow-xl">
           {isSearching && (
             <p className="px-4 py-3 text-xs text-ink/40">Đang tìm kiếm…</p>
