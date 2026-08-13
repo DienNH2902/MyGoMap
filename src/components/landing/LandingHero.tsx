@@ -157,7 +157,7 @@ export function LandingHero() {
                     value="khac"
                     className="bg-[#0f172a] text-cream hover:bg-primary/20"
                   >
-                    Khác
+                    🌈?
                   </option>
                 </select>
 

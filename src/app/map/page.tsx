@@ -11,7 +11,7 @@ const STORAGE_KEY_USER_NAME = "mygomap_user_name";
 const STORAGE_KEY_USER_GENDER = "mygomap_user_gender";
 
 export default function MapPage() {
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
     const savedName = localStorage.getItem(STORAGE_KEY_USER_NAME);
