@@ -120,9 +120,13 @@ async function fetchOverpassQuery(query: string, externalSignal?: AbortSignal): 
 
     try {
       const response = await fetch(OVERPASS_INTERPRETER_URL, {
-        method: 'POST',
+        method: "POST",
         body: `data=${encodeURIComponent(query)}`,
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          // Thêm User-Agent nhận diện tên app và email/contact của bạn
+          "User-Agent": "MyGoMap/1.0 (contact@mygomap.com)",
+        },
         signal: controller.signal,
       });
 
