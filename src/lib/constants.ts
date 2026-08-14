@@ -28,7 +28,7 @@ export const MAP_STYLE_URL =
  * cả các đoạn đèo dốc, giao cắt đông xe, và các lần dừng nghỉ dọc đường).
  */
 export const MOTORBIKE_AVERAGE_SPEED_KMH = 35;
-export const CAR_AVERAGE_SPEED_KMH = 75;
+export const CAR_AVERAGE_SPEED_KMH = 60;
 
 /** Map is centered on Vietnam by default, zoomed out to show the whole country. */
 export const VIETNAM_CENTER = { lon: 105.8342, lat: 21.0278 } as const;

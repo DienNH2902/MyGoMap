@@ -149,9 +149,9 @@ export function RoutePlannerPanel({
         alert(msg);
       },
       {
-        enableHighAccuracy: true,
-        timeout: 8000,
-        maximumAge: 10000,
+        enableHighAccuracy: false, // Tắt độ chính xác cao để ưu tiên phản hồi tức thì
+        timeout: 10000, // Giới hạn 10s chờ
+        maximumAge: 300000, // Sử dụng cache trong vòng 5 phút
       },
     );
   };

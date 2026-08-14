@@ -136,7 +136,9 @@ export function MapView({
 
     const geolocateControl = new GeolocateControl({
       positionOptions: {
-        enableHighAccuracy: true,
+        enableHighAccuracy: false, // Chuyển thành false để lấy vị trí nhanh qua Wi-Fi/IP/Cell, tránh treo GPS
+        timeout: 10000, // Tối đa 10 giây nếu không lấy được sẽ nhả ra
+        maximumAge: 300000, // Cho phép dùng vị trí trong cache tối đa 5 phút
       },
       trackUserLocation: true,
       showUserLocation: true,
