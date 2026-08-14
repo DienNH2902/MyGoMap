@@ -12,6 +12,8 @@ import { usePoiEnrichment } from "@/hooks/usePoiEnrichment";
 import { PoiDetailCard } from "./PoiDetailCard";
 
 const STORAGE_KEY_USER_GENDER = "mygomap_user_gender";
+const STORAGE_KEY_LOADER = "mygomap_user_loader";
+
 type GenderTheme = "nam" | "nu" | "khac";
 
 function getCatImageByGender(gender: GenderTheme): string {
@@ -56,12 +58,14 @@ const MapView = dynamic(() => import("./MapView").then((mod) => mod.MapView), {
  */
 export function MapExperience() {
   const planner = useRoutePlanner();
+
   const [isDelaying, setIsDelaying] = useState<boolean>(() => {
-    if (typeof window === "undefined") return true;
-    // Kiểm tra nếu đã lưu giới tính thì không delay nữa
-    const savedGender = localStorage.getItem(STORAGE_KEY_USER_GENDER);
-    return !savedGender;
+    if (typeof window === "undefined") return false;
+    const load = localStorage.getItem(STORAGE_KEY_LOADER);
+    // Nếu đã có flag "true" thì KHÔNG delay nữa (isDelaying = false)
+    return load === "true";
   });
+
   const [gender, setGender] = useState<GenderTheme>("nam");
 
   // State quản lý game Bắt Mèo
@@ -72,11 +76,13 @@ export function MapExperience() {
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
 
   useEffect(() => {
-    // Nếu không cần delay (đã có dữ liệu trong localStorage) thì bỏ qua timer
+    // Nếu đã qua lần đầu rồi thì không bật timer 5s nữa
     if (!isDelaying) return;
 
     const timer = setTimeout(() => {
       setIsDelaying(false);
+      // Lưu lại flag sau khi chạy xong 5 giây lần đầu
+      localStorage.setItem(STORAGE_KEY_LOADER, "false");
     }, 5000);
 
     return () => clearTimeout(timer);

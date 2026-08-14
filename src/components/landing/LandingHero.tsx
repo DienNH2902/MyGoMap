@@ -7,6 +7,7 @@ import { Button } from "../ui/Button";
 
 const STORAGE_KEY_NAME = "mygomap_user_name";
 const STORAGE_KEY_GENDER = "mygomap_user_gender";
+const STORAGE_KEY_LOADER = "mygomap_user_loader";
 
 export type GenderType = "nam" | "nu" | "khac" | "";
 
@@ -31,6 +32,7 @@ export function LandingHero() {
     setUserName(value);
     if (value.trim()) {
       localStorage.setItem(STORAGE_KEY_NAME, value.trim());
+      localStorage.setItem(STORAGE_KEY_LOADER, "true");
     } else {
       localStorage.removeItem(STORAGE_KEY_NAME);
     }
@@ -41,6 +43,7 @@ export function LandingHero() {
     setGender(value);
     if (value) {
       localStorage.setItem(STORAGE_KEY_GENDER, value);
+      localStorage.setItem(STORAGE_KEY_LOADER, "true");
     } else {
       localStorage.removeItem(STORAGE_KEY_GENDER);
     }
@@ -52,6 +55,7 @@ export function LandingHero() {
     setGender("");
     localStorage.removeItem(STORAGE_KEY_NAME);
     localStorage.removeItem(STORAGE_KEY_GENDER);
+    localStorage.removeItem(STORAGE_KEY_LOADER);
   };
 
   const hasUserInfo = Boolean(userName.trim() && gender);
