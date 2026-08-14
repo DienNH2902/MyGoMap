@@ -56,7 +56,12 @@ const MapView = dynamic(() => import("./MapView").then((mod) => mod.MapView), {
  */
 export function MapExperience() {
   const planner = useRoutePlanner();
-  const [isDelaying, setIsDelaying] = useState(true);
+  const [isDelaying, setIsDelaying] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    // Kiểm tra nếu đã lưu giới tính thì không delay nữa
+    const savedGender = localStorage.getItem(STORAGE_KEY_USER_GENDER);
+    return !savedGender;
+  });
   const [gender, setGender] = useState<GenderTheme>("nam");
 
   // State quản lý game Bắt Mèo
@@ -67,12 +72,15 @@ export function MapExperience() {
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
 
   useEffect(() => {
+    // Nếu không cần delay (đã có dữ liệu trong localStorage) thì bỏ qua timer
+    if (!isDelaying) return;
+
     const timer = setTimeout(() => {
       setIsDelaying(false);
     }, 5000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [isDelaying]);
 
   useEffect(() => {
     const savedGender =
