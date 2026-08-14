@@ -11,6 +11,8 @@ import { useState } from "react";
 
 interface RoutePlannerPanelProps {
   planner: UseRoutePlannerReturn;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export interface PoiCategoryDefinition {
@@ -81,7 +83,11 @@ export const POI_CATEGORIES: PoiCategoryDefinition[] = [
   },
 ];
 
-export function RoutePlannerPanel({ planner }: RoutePlannerPanelProps) {
+export function RoutePlannerPanel({
+  planner,
+  isCollapsed = false,
+  onToggleCollapse,
+}: RoutePlannerPanelProps) {
   const [isLocatingStart, setIsLocatingStart] = useState(false);
   const [isLocatingEnd, setIsLocatingEnd] = useState(false);
 
@@ -152,81 +158,108 @@ export function RoutePlannerPanel({ planner }: RoutePlannerPanelProps) {
 
   return (
     <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-2 px-4 pb-4">
-      <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-ink/10 bg-white/90 px-4 py-1.5 shadow-sm backdrop-blur-md">
-        <span className="text-xs font-medium text-slate-500">Chú thích:</span>
-        {POI_CATEGORIES.map((category) => (
-          <div
-            key={category.id}
-            className="flex items-center gap-1.5 px-1.5 py-0.5"
+      {/* Nút bấm Đóng / Mở bảng điều khiển */}
+      {onToggleCollapse && (
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="flex items-center gap-1.5 rounded-full border border-ink/10 bg-white/95 px-4 py-1.5 text-xs font-semibold text-ink shadow-md backdrop-blur-md transition-all hover:bg-slate-50 active:scale-95"
+        >
+          <span>{isCollapsed ? "Mở bảng tìm đường" : "Thu gọn bảng"}</span>
+          <svg
+            className={`h-4 w-4 transition-transform duration-200 ${
+              isCollapsed ? "rotate-180" : ""
+            }`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
           >
-            <span
-              className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: category.color }}
-            />
-            <span className="text-xs text-slate-700">{category.label}</span>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      )}
+
+      {/* Nội dung bảng điều khiển (ẩn/hiện theo state isCollapsed) */}
+      {!isCollapsed && (
+        <>
+          <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-ink/10 bg-white/90 px-4 py-1.5 shadow-sm backdrop-blur-md">
+            <span className="text-xs font-medium text-slate-500">Chú thích:</span>
+            {POI_CATEGORIES.map((category) => (
+              <div
+                key={category.id}
+                className="flex items-center gap-1.5 px-1.5 py-0.5"
+              >
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: category.color }}
+                />
+                <span className="text-xs text-slate-700">{category.label}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      <div className="w-full max-w-4xl rounded-3xl border border-ink/10 bg-white/95 p-5 shadow-2xl backdrop-blur-md">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-          <PlaceAutocompleteInput
-            label="Điểm xuất phát"
-            placeholder="Nhập địa điểm bắt đầu…"
-            value={planner.start}
-            onSelect={planner.setStart}
-            onUseCurrentLocation={() => fetchCurrentLocation("start")}
-            isLocating={isLocatingStart}
-          />
-          <PlaceAutocompleteInput
-            label="Điểm kết thúc"
-            placeholder="Tìm nơi cần đến…"
-            value={planner.end}
-            onSelect={planner.setEnd}
-            onUseCurrentLocation={() => fetchCurrentLocation("end")}
-            isLocating={isLocatingEnd}
-          />
-          <NumberStepper
-            label="Số điểm dừng"
-            value={planner.stopCount}
-            onChange={planner.setStopCount}
-          />
-          <VehicleModeToggle
-            label="Loại xe"
-            avoidHighways={planner.avoidHighways}
-            onChange={planner.setAvoidHighways}
-          />
-        </div>
+          <div className="w-full max-w-4xl rounded-3xl border border-ink/10 bg-white/95 p-5 shadow-2xl backdrop-blur-md transition-all">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <PlaceAutocompleteInput
+                label="Điểm xuất phát"
+                placeholder="Nhập địa điểm bắt đầu…"
+                value={planner.start}
+                onSelect={planner.setStart}
+                onUseCurrentLocation={() => fetchCurrentLocation("start")}
+                isLocating={isLocatingStart}
+              />
+              <PlaceAutocompleteInput
+                label="Điểm kết thúc"
+                placeholder="Tìm nơi cần đến…"
+                value={planner.end}
+                onSelect={planner.setEnd}
+                onUseCurrentLocation={() => fetchCurrentLocation("end")}
+                isLocating={isLocatingEnd}
+              />
+              <NumberStepper
+                label="Số điểm dừng"
+                value={planner.stopCount}
+                onChange={planner.setStopCount}
+              />
+              <VehicleModeToggle
+                label="Loại xe"
+                avoidHighways={planner.avoidHighways}
+                onChange={planner.setAvoidHighways}
+              />
+            </div>
 
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CategoryChips
-            selected={planner.selectedCategories}
-            onToggle={planner.toggleCategory}
-          />
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <CategoryChips
+                selected={planner.selectedCategories}
+                onToggle={planner.toggleCategory}
+              />
 
-          <div className="flex items-center gap-2">
-            {planner.isLoading && (
-              <LoadingSpinner label="Đang tính lộ trình…" />
-            )}
-            <Button
-              variant="ghost"
-              type="button"
-              onClick={planner.reset}
-              className="border border-ink/10"
-            >
-              Đặt lại
-            </Button>
-            <Button
-              variant="primary"
-              type="button"
-              disabled={!canPlan}
-              onClick={() => void planner.planTrip()}
-            >
-              Bắt đầu
-            </Button>
+              <div className="flex items-center gap-2">
+                {planner.isLoading && (
+                  <LoadingSpinner label="Đang tính lộ trình…" />
+                )}
+                <Button
+                  variant="ghost"
+                  type="button"
+                  onClick={planner.reset}
+                  className="border border-ink/10"
+                >
+                  Đặt lại
+                </Button>
+                <Button
+                  variant="primary"
+                  type="button"
+                  disabled={!canPlan}
+                  onClick={() => void planner.planTrip()}
+                >
+                  Bắt đầu
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

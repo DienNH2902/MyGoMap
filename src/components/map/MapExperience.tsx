@@ -63,6 +63,9 @@ export function MapExperience() {
   const [peekCount, setPeekCount] = useState(1);
   const [isCaught, setIsCaught] = useState(false);
 
+  // State đóng/mở thanh RoutePlannerPanel
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsDelaying(false);
@@ -242,7 +245,11 @@ export function MapExperience() {
         </div>
       )}
 
-      <RoutePlannerPanel planner={planner} />
+      <RoutePlannerPanel
+        planner={planner}
+        isCollapsed={isPanelCollapsed}
+        onToggleCollapse={() => setIsPanelCollapsed((prev) => !prev)}
+      />
     </div>
   );
 }
