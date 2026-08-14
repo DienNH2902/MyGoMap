@@ -39,6 +39,8 @@ interface MapViewProps {
   onSelectPoi: (poiId: string) => void;
   onSelectStartFromMap?: (place: PlaceResult) => void;
   onSelectEndFromMap?: (place: PlaceResult) => void;
+  customStops: PlaceResult[];
+  onSelectCustomStopFromMap?: (place: PlaceResult) => void;
 }
 
 const POI_FOCUS_ZOOM = 16;
@@ -99,12 +101,15 @@ export function MapView({
   onSelectPoi,
   onSelectStartFromMap,
   onSelectEndFromMap,
+  customStops,
+  onSelectCustomStopFromMap,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const clickPopupRef = useRef<Popup | null>(null);
   const endpointMarkersRef = useRef<Marker[]>([]);
   const stopMarkersRef = useRef<Marker[]>([]);
+  const customStopMarkersRef = useRef<Marker[]>([]);
   const poiMarkersRef = useRef<
     { id: string; dotEl: HTMLDivElement; marker: Marker }[]
   >([]);
@@ -161,6 +166,32 @@ export function MapView({
       mapRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    customStopMarkersRef.current.forEach((marker) => marker.remove());
+    customStopMarkersRef.current = [];
+
+    customStops
+      .filter(
+        (stop) =>
+          stop.label && Number.isFinite(stop.lat) && Number.isFinite(stop.lon),
+      )
+      .forEach((stop, index) => {
+        const el = document.createElement("div");
+        el.className =
+          "flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-amber-500 text-xs font-extrabold text-white shadow-md ring-2 ring-amber-500/30";
+        el.textContent = String(index + 1);
+
+        const marker = new Marker({ element: el, anchor: "center" })
+          .setLngLat([stop.lon, stop.lat])
+          .addTo(map);
+
+        customStopMarkersRef.current.push(marker);
+      });
+  }, [customStops]);
 
   // Vẽ tuyến đường
   useEffect(() => {
@@ -247,7 +278,13 @@ export function MapView({
   // Event Contextmenu chọn điểm trên bản đồ
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || (!onSelectStartFromMap && !onSelectEndFromMap)) return;
+    if (
+      !map ||
+      (!onSelectStartFromMap &&
+        !onSelectEndFromMap &&
+        !onSelectCustomStopFromMap)
+    )
+      return;
 
     let abortController: AbortController | null = null;
 
@@ -353,6 +390,28 @@ export function MapView({
         btnGroup.appendChild(btnEnd);
       }
 
+      if (onSelectCustomStopFromMap) {
+        const btnStop = document.createElement("button");
+        btnStop.type = "button";
+        btnStop.textContent = "Thêm điểm dừng";
+        btnStop.style.flex = "1";
+        btnStop.style.padding = "6px 8px";
+        btnStop.style.fontSize = "11px";
+        btnStop.style.fontWeight = "600";
+        btnStop.style.color = "#ffffff";
+        btnStop.style.backgroundColor = "#f59e0b";
+        btnStop.style.border = "none";
+        btnStop.style.borderRadius = "6px";
+        btnStop.style.cursor = "pointer";
+
+        btnStop.addEventListener("click", () => {
+          onSelectCustomStopFromMap(place);
+          loadingPopup.remove();
+        });
+
+        btnGroup.appendChild(btnStop);
+      }
+
       container.appendChild(btnGroup);
       loadingPopup.setDOMContent(container);
     };
@@ -361,7 +420,7 @@ export function MapView({
     return () => {
       map.off("contextmenu", handleClick);
     };
-  }, [onSelectStartFromMap, onSelectEndFromMap]);
+  }, [onSelectStartFromMap, onSelectEndFromMap, onSelectCustomStopFromMap]);
 
   // Marker các Trạm Dừng (Stop Markers)
   useEffect(() => {

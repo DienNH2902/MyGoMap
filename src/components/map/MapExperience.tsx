@@ -75,6 +75,16 @@ export function MapExperience() {
   // State đóng/mở thanh RoutePlannerPanel
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
 
+  // State quản lý việc ẩn/hiện thông báo lỗi
+  const [isErrorDismissed, setIsErrorDismissed] = useState(false);
+
+  useEffect(() => {
+    // Nếu có lỗi mới thì reset lại trạng thái để hiển thị thông báo
+    if (planner.error) {
+      setIsErrorDismissed(false);
+    }
+  }, [planner.error]);
+
   useEffect(() => {
     // Nếu đã qua lần đầu rồi thì không bật timer 5s nữa
     if (!isDelaying) return;
@@ -143,12 +153,14 @@ export function MapExperience() {
         end={planner.end}
         route={planner.plan?.route ?? null}
         stops={planner.plan?.stops ?? []}
+        customStops={planner.customStops}
         activeStopId={planner.activeStopId}
         onSelectStop={planner.setActiveStopId}
         activePoiId={planner.activePoiId}
         onSelectPoi={planner.setActivePoiId}
-        onSelectStartFromMap={planner.setStart} // Chọn từ bản đồ làm điểm A
-        onSelectEndFromMap={planner.setEnd} // Chọn từ bản đồ làm điểm B
+        onSelectStartFromMap={planner.setStart}
+        onSelectEndFromMap={planner.setEnd}
+        onSelectCustomStopFromMap={planner.addCustomStopFromMap}
       />
 
       {/* HIỆU ỨNG MÈO LẤP LÓ & GAME BẮT MÈO */}
@@ -217,10 +229,35 @@ export function MapExperience() {
         />
       )}
 
-      {planner.error && (
+      {planner.error && !isErrorDismissed && (
         <div className="absolute left-1/2 top-4 z-40 flex w-[90%] max-w-lg -translate-x-1/2 overflow-hidden rounded-2xl border border-red-200 bg-red-50 shadow-2xl backdrop-blur-md m-5 p-2">
-          {/* Bên trái: Hình ảnh chiếm tỷ lệ 1/4 (25%) */}
-          <div className="relative w-1/4 min-w-[90px] bg-red-50 p-10 flex items-center justify-center ">
+          {/* Nút đóng thông báo lỗi */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsErrorDismissed(true);
+              // Nếu planner có hàm resetError/reset thì có thể gọi ở đây, hoặc dùng planner.reset()
+            }}
+            className="absolute top-3 right-3 z-10 flex h-6 w-6 items-center justify-center rounded-full text-slate-400 transition hover:bg-red-100 hover:text-slate-700"
+            aria-label="Đóng thông báo"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+
+          <div className="relative w-1/4 min-w-[90px] bg-red-50 p-10 flex items-center justify-center">
             <Image
               src="/assets/Mèo thủy thủ.png"
               alt="Lỗi tính lộ trình"
@@ -230,8 +267,7 @@ export function MapExperience() {
             />
           </div>
 
-          {/* Bên phải: Nội dung thông báo lỗi chiếm 3/4 (75%) */}
-          <div className="flex w-3/4 flex-col justify-center p-4 bg-red-50">
+          <div className="flex w-3/4 flex-col justify-center p-4 pr-8 bg-red-50">
             <span className="text-xs font-bold uppercase tracking-wider text-red-600 mb-1">
               Không thể tính lộ trình
             </span>

@@ -67,3 +67,14 @@ export interface TripPlan {
   route: RouteGeometry;
   stops: RouteStop[];
 }
+
+export interface RouteStop {
+  id: string;
+  order: number;
+  lon: number;
+  lat: number;
+  distanceFromStartKm: number;
+  label?: string;
+  source?: "auto" | "custom";
+  pois: PoiResult[];
+}

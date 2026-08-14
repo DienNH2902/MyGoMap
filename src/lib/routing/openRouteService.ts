@@ -65,6 +65,7 @@ export async function fetchDrivingRoute(
   start: { lon: number; lat: number },
   end: { lon: number; lat: number },
   routeOptions: RouteOptions = {},
+  viaPoints: Array<{ lon: number; lat: number }> = [],
 ): Promise<RouteGeometry> {
   const apiKey = process.env.NEXT_PUBLIC_ORS_API_KEY;
   if (!apiKey) {
@@ -73,10 +74,14 @@ export async function fetchDrivingRoute(
     );
   }
 
-  // Abort the request ourselves after ORS_TIMEOUT_MS so a slow/unresponsive
-  // ORS server can't hang the "Bắt đầu" button forever.
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), ORS_TIMEOUT_MS);
+
+  const coordinates = [
+    [start.lon, start.lat],
+    ...viaPoints.map((point) => [point.lon, point.lat]),
+    [end.lon, end.lat],
+  ];
 
   let response: Response;
   try {
@@ -87,15 +92,7 @@ export async function fetchDrivingRoute(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        coordinates: [
-          [start.lon, start.lat],
-          [end.lon, end.lat],
-        ],
-        // Keep the entire route inside Vietnam — never cross a country border,
-        // even if a cross-border shortcut would technically be faster. When
-        // `avoidHighways` is on (xe máy mode), also tell ORS to route around
-        // any "highways" (limited-access expressways) entirely, since those
-        // are off-limits to motorbikes by law.
+        coordinates,
         options: {
           avoid_borders: "all",
           ...(routeOptions.avoidHighways
@@ -106,7 +103,6 @@ export async function fetchDrivingRoute(
       signal: controller.signal,
     });
   } catch (err) {
-    // AbortError (timeout) or a genuine network failure both land here.
     if (err instanceof DOMException && err.name === "AbortError") {
       throw new RoutingError(
         "Yêu cầu tính lộ trình mất quá lâu (quá 20 giây). Vui lòng thử lại.",
@@ -120,9 +116,6 @@ export async function fetchDrivingRoute(
   }
 
   if (!response.ok) {
-    // Try to surface ORS's own error message (e.g. "could not find routable
-    // point") instead of just the HTTP status code, since it's usually more
-    // actionable for the user.
     let detail = `mã lỗi ${response.status}`;
     try {
       const errorBody = (await response.json()) as OrsErrorResponse;
@@ -131,9 +124,8 @@ export async function fetchDrivingRoute(
           ? errorBody.error
           : errorBody.error?.message;
       if (message) detail = message;
-    } catch {
-      // Response wasn't JSON — keep the generic status-code message above.
-    }
+    } catch {}
+
     throw new RoutingError(
       `Không thể tính lộ trình (Lỗi: ${detail}). Lộ trình cần phải ở trên đất liền - Trên đường bộ - Trong phạm vi nước Việt Nam - Vui lòng thử lại.`,
     );
@@ -143,17 +135,17 @@ export async function fetchDrivingRoute(
   const feature = data.features[0];
   if (!feature) {
     throw new RoutingError(
-      "Không tìm thấy lộ trình phù hợp giữa hai điểm này.",
+      "Không tìm thấy lộ trình phù hợp giữa các điểm này.",
     );
   }
 
+  const distanceKm = feature.properties.summary.distance / 1000;
+
   return {
     coordinates: feature.geometry.coordinates,
-    distanceKm: feature.properties.summary.distance / 1000,
+    distanceKm,
     durationMinutes: routeOptions.avoidHighways
-      ? estimateMotorbikeDurationMinutes(
-          feature.properties.summary.distance / 1000,
-        )
-      : estimateCarDurationMinutes(feature.properties.summary.distance / 1000),
+      ? estimateMotorbikeDurationMinutes(distanceKm)
+      : estimateCarDurationMinutes(distanceKm),
   };
 }

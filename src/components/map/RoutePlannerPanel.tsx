@@ -91,7 +91,20 @@ export function RoutePlannerPanel({
   const [isLocatingStart, setIsLocatingStart] = useState(false);
   const [isLocatingEnd, setIsLocatingEnd] = useState(false);
 
-  const canPlan = Boolean(planner.start && planner.end) && !planner.isLoading;
+  const isCustomStopsValid =
+    planner.stopMode !== "custom" ||
+    planner.customStops.every(
+      (stop) =>
+        stop &&
+        typeof stop.lat === "number" &&
+        typeof stop.lon === "number" &&
+        Boolean(stop.label),
+    );
+
+  const canPlan =
+    Boolean(planner.start && planner.end) &&
+    isCustomStopsValid &&
+    !planner.isLoading;
 
   const fetchCurrentLocation = (target: "start" | "end") => {
     if (!navigator.geolocation) {
@@ -175,7 +188,11 @@ export function RoutePlannerPanel({
             stroke="currentColor"
             strokeWidth={2}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </button>
       )}
@@ -184,7 +201,9 @@ export function RoutePlannerPanel({
       {!isCollapsed && (
         <>
           <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-ink/10 bg-white/90 px-4 py-1.5 shadow-sm backdrop-blur-md">
-            <span className="text-xs font-medium text-slate-500">Chú thích:</span>
+            <span className="text-xs font-medium text-slate-500">
+              Chú thích:
+            </span>
             {POI_CATEGORIES.map((category) => (
               <div
                 key={category.id}
@@ -217,11 +236,13 @@ export function RoutePlannerPanel({
                 onUseCurrentLocation={() => fetchCurrentLocation("end")}
                 isLocating={isLocatingEnd}
               />
-              <NumberStepper
-                label="Số điểm dừng"
-                value={planner.stopCount}
-                onChange={planner.setStopCount}
-              />
+              {planner.stopMode === "auto" && (
+                <NumberStepper
+                  label="Số điểm dừng"
+                  value={planner.stopCount}
+                  onChange={planner.setStopCount}
+                />
+              )}
               <VehicleModeToggle
                 label="Loại xe"
                 avoidHighways={planner.avoidHighways}
@@ -229,11 +250,92 @@ export function RoutePlannerPanel({
               />
             </div>
 
+            <div className="flex min-w-[180px] flex-col gap-1.5">
+              <span className="text-xs font-medium uppercase tracking-wide text-ink/50 pt-5">
+                Kiểu điểm dừng
+              </span>
+              <div className="flex rounded-xl border border-ink/10 bg-white p-1">
+                <button
+                  type="button"
+                  onClick={() => planner.setStopMode("auto")}
+                  className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold ${
+                    planner.stopMode === "auto"
+                      ? "bg-primary text-white"
+                      : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  Tự chia đều
+                </button>
+                <button
+                  type="button"
+                  onClick={() => planner.setStopMode("custom")}
+                  className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold ${
+                    planner.stopMode === "custom"
+                      ? "bg-primary text-white"
+                      : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  Tự chọn
+                </button>
+              </div>
+            </div>
+
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CategoryChips
                 selected={planner.selectedCategories}
                 onToggle={planner.toggleCategory}
               />
+
+              {planner.stopMode === "custom" && (
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-3">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                      Điểm dừng tùy chỉnh
+                    </span>
+                    <Button
+                      variant="ghost"
+                      type="button"
+                      onClick={() => planner.addCustomStop()}
+                      className="border border-amber-300 bg-white"
+                    >
+                      Thêm điểm dừng
+                    </Button>
+                  </div>
+
+                  <div className="grid gap-3">
+                    {planner.customStops.map((stop, index) => (
+                      <div
+                        key={`${stop.id}-${index}`}
+                        className="flex items-end gap-2"
+                      >
+                        <PlaceAutocompleteInput
+                          label={`Điểm dừng ${index + 1}`}
+                          placeholder="Tìm địa điểm muốn ghé…"
+                          value={stop?.lat && stop?.lon ? stop : null}
+                          onSelect={(place) =>
+                            planner.updateCustomStop(index, place)
+                          }
+                        />
+                        <Button
+                          variant="ghost"
+                          type="button"
+                          onClick={() => planner.removeCustomStop(index)}
+                          className="mb-0 border border-red-200 text-red-600"
+                        >
+                          Xóa
+                        </Button>
+                      </div>
+                    ))}
+
+                    {planner.customStops.length === 0 && (
+                      <p className="text-xs text-amber-700">
+                        Bạn có thể thêm bằng ô tìm kiếm ở đây hoặc chuột phải
+                        trên bản đồ rồi chọn “Thêm điểm dừng”.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center gap-2">
                 {planner.isLoading && (
