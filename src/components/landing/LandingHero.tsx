@@ -66,8 +66,19 @@ export function LandingHero() {
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-ink px-6 py-12">
       {/* Ambient glow behind the copy, reinforcing the orange brand color. */}
-      <div className="absolute left-1/2 top-1/3 h-[500px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-[140px]" />
-      <HeroRouteLine />
+      {/* Background Video */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 h-full w-full object-cover"
+      >
+        <source src="/assets/china-cat.mp4" type="video/mp4" />
+      </video>
+
+      {/* Overlay lớp phủ tối giúp chữ hiển thị rõ ràng */}
+      <div className="absolute inset-0 bg-ink/75" />
 
       <div className="relative z-10 flex max-w-2xl flex-col items-center gap-6 text-center">
         <span className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-medium uppercase tracking-[0.2em] text-accent-gold">
