@@ -66,6 +66,9 @@ export function LandingHero() {
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-ink px-6 py-12">
       {/* Ambient glow behind the copy, reinforcing the orange brand color. */}
+      {/* <div className="absolute left-1/2 top-1/3 h-[500px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-[140px]" />
+      <HeroRouteLine /> */}
+
       {/* Background Video */}
       <video
         autoPlay
