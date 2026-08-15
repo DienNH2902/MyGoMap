@@ -81,12 +81,22 @@ export function MapExperience() {
   // State quản lý việc ẩn/hiện thông báo lỗi
   const [isErrorDismissed, setIsErrorDismissed] = useState(false);
 
+  // State quản lý việc ẩn/hiện banner "Gợi ý từ AI"
+  const [isAiTipDismissed, setIsAiTipDismissed] = useState(false);
+
   useEffect(() => {
     // Nếu có lỗi mới thì reset lại trạng thái để hiển thị thông báo
     if (planner.error) {
       setIsErrorDismissed(false);
     }
   }, [planner.error]);
+
+  // Reset trạng thái ẩn Gợi ý từ AI mỗi khi có gợi ý mới xuất hiện
+  useEffect(() => {
+    if (planner.aiTip) {
+      setIsAiTipDismissed(false);
+    }
+  }, [planner.aiTip]);
 
   useEffect(() => {
     // Nếu đã qua lần đầu rồi thì không bật timer 5s nữa
@@ -325,12 +335,35 @@ export function MapExperience() {
         </div>
       )}
 
-      {planner.aiTip && (
-        <div className="pointer-events-auto absolute left-4 top-4 z-30 max-w-xs rounded-2xl border border-accent-gold/30 bg-ink/85 px-4 py-3 text-sm text-cream shadow-xl backdrop-blur-md">
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-accent-gold">
-            Gợi ý từ AI
-          </p>
-          <p>{planner.aiTip}</p>
+      {planner.aiTip && !isAiTipDismissed && (
+        <div className="pointer-events-auto absolute left-4 top-4 z-30 max-w-xs rounded-2xl border border-accent-gold/30 bg-ink/85 p-4 text-sm text-cream shadow-xl backdrop-blur-md">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-accent-gold">
+              Gợi ý từ AI
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsAiTipDismissed(true)}
+              className="flex h-5 w-5 items-center justify-center rounded-full text-cream/50 transition hover:bg-white/10 hover:text-cream"
+              aria-label="Đóng gợi ý"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-3.5 w-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+          <p className="text-xs leading-relaxed">{planner.aiTip}</p>
         </div>
       )}
 
