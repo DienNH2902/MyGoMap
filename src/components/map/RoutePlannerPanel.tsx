@@ -7,7 +7,10 @@ import { NumberStepper } from "../ui/NumberStepper";
 import { Button } from "../ui/Button";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
 import type { UseRoutePlannerReturn } from "@/hooks/useRoutePlanner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+type GenderTheme = "nam" | "nu" | "khac";
+const STORAGE_KEY_GENDER = "mygomap_user_gender";
 
 interface RoutePlannerPanelProps {
   planner: UseRoutePlannerReturn;
@@ -90,6 +93,29 @@ export function RoutePlannerPanel({
 }: RoutePlannerPanelProps) {
   const [isLocatingStart, setIsLocatingStart] = useState(false);
   const [isLocatingEnd, setIsLocatingEnd] = useState(false);
+  const [gender, setGender] = useState<GenderTheme>("nam");
+
+  useEffect(() => {
+    const savedGender =
+      (localStorage.getItem(STORAGE_KEY_GENDER) as GenderTheme) || "nam";
+    setGender(savedGender);
+  }, []);
+
+  const getActiveStyles = () => {
+    if (gender === "nu") {
+      return "bg-pink-500 text-white shadow-sm";
+    }
+    if (gender === "khac") {
+      return "bg-gradient-to-r from-amber-400 via-rose-500 to-violet-500 text-white shadow-sm";
+    }
+    return "bg-primary text-white shadow-sm";
+  };
+
+  const getHoverStyles = () => {
+    if (gender === "nu") return "hover:text-pink-500";
+    if (gender === "khac") return "hover:text-purple-500";
+    return "hover:text-primary";
+  };
 
   const isCustomStopsValid =
     planner.stopMode !== "custom" ||
@@ -260,8 +286,8 @@ export function RoutePlannerPanel({
                   onClick={() => planner.setStopMode("auto")}
                   className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold ${
                     planner.stopMode === "auto"
-                      ? "bg-primary text-white"
-                      : "text-slate-600 hover:bg-slate-50"
+                      ? getActiveStyles()
+                      : `text-slate-600 ${getHoverStyles()}`
                   }`}
                 >
                   Tự chia đều
@@ -271,8 +297,8 @@ export function RoutePlannerPanel({
                   onClick={() => planner.setStopMode("custom")}
                   className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold ${
                     planner.stopMode === "custom"
-                      ? "bg-primary text-white"
-                      : "text-slate-600 hover:bg-slate-50"
+                      ? getActiveStyles()
+                      : `text-slate-600 ${getHoverStyles()}`
                   }`}
                 >
                   Tự chọn
