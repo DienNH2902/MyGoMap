@@ -130,6 +130,7 @@ export function LandingHero() {
                 id="user-name"
                 type="text"
                 placeholder="Nhập tên…"
+                maxLength={20}
                 value={userName}
                 onChange={(e) => handleNameChange(e.target.value)}
                 className="w-full rounded-xl border border-cream/15 bg-white/10 px-3.5 py-2 text-sm text-cream placeholder:text-cream/30 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
