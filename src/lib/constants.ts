@@ -1,6 +1,6 @@
 import type { PoiCategoryDefinition } from "./types";
 
-export type MapStyleId = "standard" | "topo" | "outdoor" | "satellite";
+export type MapStyleId = "standard" | "topo" | "outdoor" | "satellite" | "street";
 
 /**
  * Every external service below is free and requires no backend:
@@ -52,6 +52,15 @@ export const MAP_STYLES: Record<MapStyleId, MapStyleDefinition> = {
     description: "Bản đồ vệ tinh, giúp góc nhìn thực tế.",
     url: MAPTILER_KEY
       ? `https://api.maptiler.com/maps/hybrid/style.json?key=${MAPTILER_KEY}`
+      : MAP_STYLE_URL,
+    needsMapTilerKey: true,
+  },
+  street: {
+    id: "street",
+    label: "Đường đi",
+    description: "Bản đồ đường đi, giúp góc nhìn thực tế.",
+    url: MAPTILER_KEY
+      ? `https://api.maptiler.com/maps/streets/style.json?key=${MAPTILER_KEY}`
       : MAP_STYLE_URL,
     needsMapTilerKey: true,
   },
