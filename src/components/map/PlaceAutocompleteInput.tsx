@@ -12,6 +12,7 @@ interface PlaceAutocompleteInputProps {
   onSelect: (place: PlaceResult | null) => void;
   onUseCurrentLocation?: () => void;
   isLocating?: boolean; // State hiển thị đang lấy GPS
+  dropdownPlacement?: "top" | "bottom";
 }
 
 export function PlaceAutocompleteInput({
@@ -21,6 +22,7 @@ export function PlaceAutocompleteInput({
   onSelect,
   onUseCurrentLocation,
   isLocating = false,
+  dropdownPlacement = "top",
 }: PlaceAutocompleteInputProps) {
   const [query, setQuery] = useState(value?.label ?? "");
   const [results, setResults] = useState<PlaceResult[]>([]);
@@ -88,7 +90,13 @@ export function PlaceAutocompleteInput({
       />
 
       {isOpen && query.length >= 2 && (
-        <div className="absolute bottom-full z-50 mb-2 max-h-64 w-full overflow-y-auto rounded-xl border border-ink/10 bg-white shadow-xl">
+        <div
+          className={`absolute z-50 max-h-64 w-full overflow-y-auto rounded-xl border border-ink/10 bg-white shadow-xl ${
+            dropdownPlacement === "bottom"
+              ? "top-full mt-2"
+              : "bottom-full mb-2"
+          }`}
+        >
           {isSearching && (
             <p className="px-4 py-3 text-xs text-ink/40">Đang tìm kiếm…</p>
           )}

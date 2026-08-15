@@ -282,6 +282,7 @@ export function RoutePlannerPanel({
 
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CategoryChips
+                label="Danh mục"
                 selected={planner.selectedCategories}
                 onToggle={planner.toggleCategory}
               />
@@ -302,7 +303,7 @@ export function RoutePlannerPanel({
                     </Button>
                   </div>
 
-                  <div className="grid gap-3">
+                  <div className="relative z-40 flex flex-col gap-3 max-h-60 overflow-y-auto pb-6">
                     {planner.customStops.map((stop, index) => (
                       <div
                         key={`${stop.id}-${index}`}
@@ -315,6 +316,7 @@ export function RoutePlannerPanel({
                           onSelect={(place) =>
                             planner.updateCustomStop(index, place)
                           }
+                          dropdownPlacement="bottom"
                         />
                         <Button
                           variant="ghost"
