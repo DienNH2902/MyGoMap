@@ -10,6 +10,9 @@ import { OwlLoadingSpinner } from "../ui/OwlLoadingSpinner";
 import Image from "next/image";
 import { usePoiEnrichment } from "@/hooks/usePoiEnrichment";
 import { PoiDetailCard } from "./PoiDetailCard";
+import { POI_CATEGORIES } from "@/lib/constants";
+import type { TripContext } from "@/lib/ai/geminiClient";
+import { AiAssistantPanel } from "./AiAssistantPanel";
 
 const STORAGE_KEY_USER_GENDER = "mygomap_user_gender";
 const STORAGE_KEY_LOADER = "mygomap_user_loader";
@@ -136,6 +139,42 @@ export function MapExperience() {
     markImageBroken: markActivePoiImageBroken,
   } = usePoiEnrichment(activePoiList);
 
+  // Ngữ cảnh chuyến đi truyền cho khung "Hỏi AI" — chỉ có khi đã tính xong lộ
+  // trình, để AI luôn trả lời bám sát đúng chuyến đi hiện tại (không phải hỏi
+  // đáp chung chung).
+  const tripContext: TripContext | null = useMemo(() => {
+    if (!planner.plan) return null;
+
+    const activeCategoryLabels = POI_CATEGORIES.filter((category) =>
+      planner.selectedCategories.includes(category.id),
+    ).map((category) => category.label);
+
+    const stopSummaries = planner.plan.stops.map((stop) => {
+      const poiText =
+        stop.pois.length > 0
+          ? `${stop.pois.length} địa điểm gợi ý`
+          : "chưa có địa điểm gợi ý";
+      return `Điểm dừng ${stop.order} (cách điểm xuất phát ~${stop.distanceFromStartKm.toFixed(0)}km): ${poiText}`;
+    });
+
+    return {
+      distanceKm: planner.plan.route.distanceKm,
+      durationMinutes: planner.plan.route.durationMinutes,
+      stopCount: planner.plan.stops.length,
+      categories: activeCategoryLabels,
+      avoidHighways: planner.avoidHighways,
+      startLabel: planner.start?.label,
+      endLabel: planner.end?.label,
+      stopSummaries,
+    };
+  }, [
+    planner.plan,
+    planner.selectedCategories,
+    planner.avoidHighways,
+    planner.start,
+    planner.end,
+  ]);
+
   if (isDelaying) {
     return (
       <div className="absolute inset-0 top-16 flex items-center justify-center bg-surface-muted z-50 whitespace-pre-line">
@@ -192,7 +231,7 @@ export function MapExperience() {
         </div>
       ) : (
         /* Mèo đã bị bắt - Cố định góc dưới bên phải */
-        <div className="fixed bottom-6 right-6 z-40 flex flex-col items-center gap-1.5 rounded-2xl border border-amber-200/60 bg-white/90 p-8 shadow-2xl backdrop-blur-md">
+        <div className="fixed bottom-6 right-12 z-40 flex flex-col items-center gap-1.5 rounded-2xl border border-amber-200/60 bg-white/90 p-8 shadow-2xl backdrop-blur-md">
           <div className="h-full w-full">
             <Image
               src={caughtCatImageSrc}
@@ -294,6 +333,8 @@ export function MapExperience() {
           <p>{planner.aiTip}</p>
         </div>
       )}
+
+      {tripContext && <AiAssistantPanel tripContext={tripContext} />}
 
       <RoutePlannerPanel
         planner={planner}
