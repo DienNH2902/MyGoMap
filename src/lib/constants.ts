@@ -48,8 +48,16 @@ export const TRUONG_SA_LOCATION = { lon: 111.92, lat: 8.64 } as const; // Đảo
 /** How far around each stop point we search for matching POIs (kept within the 5–10km ask). */
 export const POI_SEARCH_RADIUS_METERS = 8000;
 
+/**
+ * When the user doesn't pick a stop count but DOES select at least one
+ * category (e.g. "Cây xăng"), stops are placed every this many km along the
+ * whole route instead — see getPointsAlongRouteEveryKm and its use in
+ * useRoutePlanner.planTrip.
+ */
+export const AUTO_SEARCH_INTERVAL_KM = 50;
+
 /** Caps how many POIs of the same category we keep per stop, to avoid a cluttered drawer. */
-export const MAX_POIS_PER_CATEGORY_PER_STOP = 5;
+export const MAX_POIS_PER_CATEGORY_PER_STOP = 3;
 
 /** The catalogue of POI categories the user can toggle on/off for stop suggestions. */
 export const POI_CATEGORIES: PoiCategoryDefinition[] = [

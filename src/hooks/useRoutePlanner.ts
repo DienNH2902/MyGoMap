@@ -9,9 +9,12 @@ import {
   findPoisForStops,
   type StopQueryPoint,
 } from "@/lib/overpass/overpassClient";
-import { getEvenlySpacedStopPoints } from "@/lib/geo/turfHelpers";
+import {
+  getEvenlySpacedStopPoints,
+  getPointsAlongRouteEveryKm,
+} from "@/lib/geo/turfHelpers";
 import { generateTripTip } from "@/lib/ai/geminiClient";
-import { POI_CATEGORIES } from "@/lib/constants";
+import { POI_CATEGORIES, AUTO_SEARCH_INTERVAL_KM } from "@/lib/constants";
 import type {
   PlaceResult,
   PoiCategoryId,
@@ -269,6 +272,10 @@ export function useRoutePlanner() {
     }
 
     // Step 2: split the route into stop points (pure client-side math, can't fail).
+    const activeCategories = POI_CATEGORIES.filter((category) =>
+      selectedCategories.includes(category.id),
+    );
+
     const stopPoints =
       stopMode === "custom"
         ? validCustomStops.map((stop) => ({
@@ -278,16 +285,26 @@ export function useRoutePlanner() {
             label: stop.label,
             source: "custom" as const,
           }))
-        : getEvenlySpacedStopPoints(route.coordinates, stopCount).map(
-            (point) => ({
-              ...point,
-              source: "auto" as const,
-            }),
-          );
-
-    const activeCategories = POI_CATEGORIES.filter((category) =>
-      selectedCategories.includes(category.id),
-    );
+        : stopCount > 0
+          ? getEvenlySpacedStopPoints(route.coordinates, stopCount).map(
+              (point) => ({
+                ...point,
+                source: "auto" as const,
+              }),
+            )
+          : // Không chọn số điểm dừng cụ thể nhưng CÓ chọn danh mục (ví dụ
+            // "Cây xăng") → không có mốc nào để tìm quanh cả, nên thay vào đó
+            // rải điểm tìm kiếm đều đặn mỗi AUTO_SEARCH_INTERVAL_KM (~50km)
+            // dọc suốt tuyến đường, giống như đi dọc đường ngó chừng cây xăng.
+            activeCategories.length > 0
+            ? getPointsAlongRouteEveryKm(
+                route.coordinates,
+                AUTO_SEARCH_INTERVAL_KM,
+              ).map((point) => ({
+                ...point,
+                source: "interval" as const,
+              }))
+            : [];
 
     // Step 3: POIs for every stop, in a single Overpass request. Wrapped in
     // its own try/catch as a last line of defense — findPoisForStops already

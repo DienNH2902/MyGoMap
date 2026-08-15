@@ -14,13 +14,13 @@ export interface PlaceResult {
 
 /** Identifier for each point-of-interest category the user can filter stops by. */
 export type PoiCategoryId =
-  | 'fuel'
-  | 'rest_area'
-  | 'restaurant'
-  | 'cafe'
-  | 'hotel'
-  | 'atm'
-  | 'convenience';
+  | "fuel"
+  | "rest_area"
+  | "restaurant"
+  | "cafe"
+  | "hotel"
+  | "atm"
+  | "convenience";
 
 /** Static definition of a POI category: label, icon, and the OSM tag used to query Overpass. */
 export interface PoiCategoryDefinition {
@@ -75,6 +75,6 @@ export interface RouteStop {
   lat: number;
   distanceFromStartKm: number;
   label?: string;
-  source?: "auto" | "custom";
+  source?: "auto" | "custom" | "interval";
   pois: PoiResult[];
 }

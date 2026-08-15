@@ -433,27 +433,33 @@ export function MapView({
     stopMarkersRef.current.forEach((marker) => marker.remove());
     stopMarkersRef.current = [];
 
-    stops.forEach((stop) => {
-      const el = document.createElement("button");
-      el.type = "button";
-      const isActive = stop.id === activeStopId;
-      const bgClass = isActive ? theme.stopActiveBg : theme.stopBg;
+    // Không hiện marker số thứ tự (1, 2, 3...) cho các điểm dừng kiểu
+    // "interval" (rải mỗi ~50km khi không chọn số điểm dừng cụ thể) — người
+    // dùng không tự chọn các mốc này nên không cần biết vị trí "điểm dừng",
+    // chỉ cần thấy chấm POI (cây xăng, quán ăn...) tìm được dọc đường thôi.
+    stops
+      .filter((stop) => stop.source !== "interval")
+      .forEach((stop) => {
+        const el = document.createElement("button");
+        el.type = "button";
+        const isActive = stop.id === activeStopId;
+        const bgClass = isActive ? theme.stopActiveBg : theme.stopBg;
 
-      el.className = [
-        "flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-sm font-bold shadow-lg transition-transform",
-        isActive ? "scale-125" : "",
-        bgClass,
-      ].join(" ");
+        el.className = [
+          "flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-sm font-bold shadow-lg transition-transform",
+          isActive ? "scale-125" : "",
+          bgClass,
+        ].join(" ");
 
-      el.textContent = String(stop.order);
-      el.setAttribute("aria-label", `Điểm dừng ${stop.order}`);
-      el.addEventListener("click", () => onSelectStop(stop.id));
+        el.textContent = String(stop.order);
+        el.setAttribute("aria-label", `Điểm dừng ${stop.order}`);
+        el.addEventListener("click", () => onSelectStop(stop.id));
 
-      const marker = new Marker({ element: el, anchor: "center" })
-        .setLngLat([stop.lon, stop.lat])
-        .addTo(map);
-      stopMarkersRef.current.push(marker);
-    });
+        const marker = new Marker({ element: el, anchor: "center" })
+          .setLngLat([stop.lon, stop.lat])
+          .addTo(map);
+        stopMarkersRef.current.push(marker);
+      });
   }, [stops, activeStopId, onSelectStop, theme]);
 
   // TẠO CÁC CHẤM POI (ĐÃ SỬA LỖI TÂM KHÔNG BỊ TRƯỢT/LỆCH VỊ TRÍ)
