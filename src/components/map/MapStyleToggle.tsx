@@ -16,7 +16,7 @@ interface MapStyleToggleProps {
   onChange: (styleId: MapStyleId) => void;
 }
 
-const STYLE_IDS: MapStyleId[] = ["standard", "topo", "outdoor"];
+const STYLE_IDS: MapStyleId[] = ["standard", "topo", "outdoor", "satellite"];
 
 export function MapStyleToggle({ value, onChange }: MapStyleToggleProps) {
   const [gender, setGender] = useState<GenderTheme>("nam");
