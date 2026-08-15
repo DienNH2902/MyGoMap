@@ -17,11 +17,11 @@ interface MapStyleToggleProps {
 }
 
 const STYLE_IDS: MapStyleId[] = [
-  "standard",
+  "street",
   "topo",
   "outdoor",
   "satellite",
-  "street",
+  "standard",
 ];
 
 export function MapStyleToggle({ value, onChange }: MapStyleToggleProps) {

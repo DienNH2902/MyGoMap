@@ -57,7 +57,7 @@ export const MAP_STYLES: Record<MapStyleId, MapStyleDefinition> = {
   },
   street: {
     id: "street",
-    label: "Đường đi",
+    label: "Bản đồ",
     description: "Bản đồ đường đi, giúp góc nhìn thực tế.",
     url: MAPTILER_KEY
       ? `https://api.maptiler.com/maps/streets/style.json?key=${MAPTILER_KEY}`

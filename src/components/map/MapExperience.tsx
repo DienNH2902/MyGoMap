@@ -85,7 +85,7 @@ export function MapExperience() {
   // State quản lý việc ẩn/hiện banner "Gợi ý từ AI"
   const [isAiTipDismissed, setIsAiTipDismissed] = useState(false);
 
-  const [mapStyleId, setMapStyleId] = useState<MapStyleId>("standard");
+  const [mapStyleId, setMapStyleId] = useState<MapStyleId>("street");
 
   useEffect(() => {
     // Nếu có lỗi mới thì reset lại trạng thái để hiển thị thông báo
