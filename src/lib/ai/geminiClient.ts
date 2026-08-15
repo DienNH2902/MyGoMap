@@ -36,8 +36,8 @@ interface GeminiResponse {
 export async function generateTripTip(
   input: TripSummaryInput,
 ): Promise<string | null> {
-  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-  if (!apiKey) return null;
+  // const apiKey = process.env.GEMINI_API_KEY;
+  // if (!apiKey) return null;
 
   const categoriesText =
     input.categories.length > 0
@@ -50,7 +50,7 @@ export async function generateTripTip(
     `hữu ích bằng tiếng Việt cho chuyến đi này.`;
 
   try {
-    const response = await fetch(`${GEMINI_ENDPOINT}?key=${apiKey}`, {
+    const response = await fetch("/api/gemini", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
