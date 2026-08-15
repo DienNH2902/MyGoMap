@@ -83,6 +83,11 @@ export async function fetchDrivingRoute(
     [end.lon, end.lat],
   ];
 
+  // Tăng bán kính "bắt dính" vào đường lên mức tối đa ORS cho phép (-1),
+  // thay vì mặc định 350m — đây là fix chính thức cho lỗi
+  // "Could not find routable point" với các toạ độ xa đường (tâm tỉnh, sân bay...).
+  const radiuses = coordinates.map(() => -1);
+
   let response: Response;
   try {
     response = await fetch(ORS_DIRECTIONS_URL, {
@@ -93,6 +98,7 @@ export async function fetchDrivingRoute(
       },
       body: JSON.stringify({
         coordinates,
+        radiuses,
         options: {
           avoid_borders: "all",
           ...(routeOptions.avoidHighways
