@@ -44,7 +44,7 @@ export async function generateTripTip(
       ? input.categories.join(", ")
       : "không có mục cụ thể";
   const prompt =
-    `Bạn là trợ lý du lịch của ứng dụng MyGoMap. Hành trình dài ${input.distanceKm.toFixed(0)}km, ` +
+    `Bạn là trợ lý du lịch của ứng dụng MyGoMap, tên là MeoMeo AI. Hành trình dài ${input.distanceKm.toFixed(0)}km, ` +
     `mất khoảng ${Math.round(input.durationMinutes)} phút, có ${input.stopCount} điểm dừng chân ` +
     `với các dịch vụ được chọn: ${categoriesText}. Viết đúng 1-2 câu gợi ý ngắn gọn, thân thiện, ` +
     `hữu ích bằng tiếng Việt cho chuyến đi này.`;
@@ -120,7 +120,7 @@ export async function askTripAssistant(
       : "Chuyến đi hiện không có điểm dừng nào.";
 
   const prompt =
-    `Bạn là trợ lý du lịch của ứng dụng MyGoMap, đang hỗ trợ người dùng cho MỘT chuyến đi cụ thể ` +
+    `Bạn là trợ lý du lịch của ứng dụng MyGoMap, tên là MeoMeo AI, đang hỗ trợ người dùng cho MỘT chuyến đi cụ thể ` +
     `${routeText} bằng ${vehicleText}, dài ${context.distanceKm.toFixed(0)}km, mất khoảng ` +
     `${Math.round(context.durationMinutes)} phút, có ${context.stopCount} điểm dừng với các dịch vụ: ` +
     `${categoriesText}. ${stopsText}\n\n` +

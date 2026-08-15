@@ -72,7 +72,7 @@ export function AiAssistantPanel({ tripContext }: AiAssistantPanelProps) {
         <div className="flex h-96 w-80 max-w-[90vw] flex-col overflow-hidden rounded-2xl border border-accent-gold/30 bg-ink/95 shadow-2xl backdrop-blur-md">
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-accent-gold">
-              Hỏi AI về chuyến đi
+              Hỏi MeoMeo AI về chuyến đi
             </p>
             <button
               type="button"
@@ -90,7 +90,7 @@ export function AiAssistantPanel({ tripContext }: AiAssistantPanelProps) {
           >
             {messages.length === 0 && (
               <p className="text-xs italic text-cream/40">
-                Hỏi mình về lộ trình này: có nên nghỉ ở đâu, đường có đèo dốc
+                Hỏi MeoMeo về lộ trình này: có nên nghỉ ở đâu, đường có đèo dốc
                 không, nên mang theo gì, v.v.
               </p>
             )}
@@ -110,7 +110,7 @@ export function AiAssistantPanel({ tripContext }: AiAssistantPanelProps) {
 
             {isLoading && (
               <div className="mr-auto max-w-[85%] rounded-xl bg-white/10 px-3 py-2 text-xs italic text-cream/50">
-                Đang suy nghĩ…
+                MeoMeo đang nghĩ…
               </div>
             )}
           </div>
@@ -144,7 +144,7 @@ export function AiAssistantPanel({ tripContext }: AiAssistantPanelProps) {
         onClick={() => setIsOpen((prev) => !prev)}
         className="flex items-center gap-2 rounded-full bg-accent-gold px-4 py-2.5 text-sm font-bold text-ink shadow-2xl border-2 border-white transition-transform hover:scale-105 active:scale-95"
       >
-        💬 Hỏi AI
+        💬 Hỏi MeoMeo AI
       </button>
     </div>
   );

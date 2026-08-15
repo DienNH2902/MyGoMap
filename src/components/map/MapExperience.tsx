@@ -339,7 +339,7 @@ export function MapExperience() {
         <div className="pointer-events-auto absolute left-4 top-4 z-30 max-w-xs rounded-2xl border border-accent-gold/30 bg-ink/85 p-4 text-sm text-cream shadow-xl backdrop-blur-md">
           <div className="flex items-center justify-between mb-1">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-accent-gold">
-              Gợi ý từ AI
+              Gợi ý từ MeoMeo AI
             </p>
             <button
               type="button"
