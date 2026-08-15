@@ -57,7 +57,7 @@ export const POI_SEARCH_RADIUS_METERS = 8000;
 export const AUTO_SEARCH_INTERVAL_KM = 50;
 
 /** Caps how many POIs of the same category we keep per stop, to avoid a cluttered drawer. */
-export const MAX_POIS_PER_CATEGORY_PER_STOP = 3;
+export const MAX_POIS_PER_CATEGORY_PER_STOP = 5;
 
 /** The catalogue of POI categories the user can toggle on/off for stop suggestions. */
 export const POI_CATEGORIES: PoiCategoryDefinition[] = [
