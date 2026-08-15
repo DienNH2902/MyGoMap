@@ -89,16 +89,16 @@ export async function askTripAssistant(
   context: TripContext,
   signal?: AbortSignal,
 ): Promise<AskTripAssistantResult> {
-  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  // const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
   const trimmedQuestion = question.trim();
 
-  if (!apiKey) {
-    return {
-      text: null,
-      errorReason:
-        "Thiếu NEXT_PUBLIC_GEMINI_API_KEY — kiểm tra file .env.local rồi khởi động lại app.",
-    };
-  }
+  // if (!apiKey) {
+  //   return {
+  //     text: null,
+  //     errorReason:
+  //       "Thiếu NEXT_PUBLIC_GEMINI_API_KEY — kiểm tra file .env.local rồi khởi động lại app.",
+  //   };
+  // }
   if (!trimmedQuestion) {
     return { text: null };
   }
@@ -131,7 +131,7 @@ export async function askTripAssistant(
 
   let response: Response;
   try {
-    response = await fetch(`${GEMINI_ENDPOINT}?key=${apiKey}`, {
+    response = await fetch("/api/gemini", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),

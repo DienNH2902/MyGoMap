@@ -37,8 +37,8 @@ export function AiAssistantPanel({ tripContext }: AiAssistantPanelProps) {
     });
   }, [messages, isLoading]);
 
-  const hasGeminiKey = Boolean(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
-  if (!hasGeminiKey) return null;
+  // const hasGeminiKey = Boolean(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
+  // if (!hasGeminiKey) return null;
 
   const handleSend = async () => {
     const question = input.trim();
