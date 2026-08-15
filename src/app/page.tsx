@@ -1,6 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { LandingHero } from "@/components/landing/LandingHero";
 import { LocationRequest } from "@/components/common/LocationRequest";
+import { LatestUpdatedBadge } from "@/components/landing/LatestUpdateBadge";
 
 export default function HomePage() {
   return (
@@ -8,6 +9,7 @@ export default function HomePage() {
       <LocationRequest />
       <Header />
       <LandingHero />
+      <LatestUpdatedBadge />
     </>
   );
 }
