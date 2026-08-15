@@ -10,9 +10,10 @@ import { OwlLoadingSpinner } from "../ui/OwlLoadingSpinner";
 import Image from "next/image";
 import { usePoiEnrichment } from "@/hooks/usePoiEnrichment";
 import { PoiDetailCard } from "./PoiDetailCard";
-import { POI_CATEGORIES } from "@/lib/constants";
+import { MapStyleId, POI_CATEGORIES } from "@/lib/constants";
 import type { TripContext } from "@/lib/ai/geminiClient";
 import { AiAssistantPanel } from "./AiAssistantPanel";
+import { MapStyleToggle } from "./MapStyleToggle";
 
 const STORAGE_KEY_USER_GENDER = "mygomap_user_gender";
 const STORAGE_KEY_LOADER = "mygomap_user_loader";
@@ -83,6 +84,8 @@ export function MapExperience() {
 
   // State quản lý việc ẩn/hiện banner "Gợi ý từ AI"
   const [isAiTipDismissed, setIsAiTipDismissed] = useState(false);
+
+  const [mapStyleId, setMapStyleId] = useState<MapStyleId>("standard");
 
   useEffect(() => {
     // Nếu có lỗi mới thì reset lại trạng thái để hiển thị thông báo
@@ -210,7 +213,10 @@ export function MapExperience() {
         onSelectStartFromMap={planner.setStart}
         onSelectEndFromMap={planner.setEnd}
         onSelectCustomStopFromMap={planner.addCustomStopFromMap}
+        mapStyleId={mapStyleId}
       />
+
+      <MapStyleToggle value={mapStyleId} onChange={setMapStyleId} />
 
       {/* HIỆU ỨNG MÈO LẤP LÓ & GAME BẮT MÈO */}
       {!isCaught ? (

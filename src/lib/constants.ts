@@ -1,5 +1,7 @@
 import type { PoiCategoryDefinition } from "./types";
 
+export type MapStyleId = "standard" | "topo" | "outdoor";
+
 /**
  * Every external service below is free and requires no backend:
  * - OpenRouteService: free driving-route API (needs a free personal API key).
@@ -16,6 +18,41 @@ export const OVERPASS_INTERPRETER_URL =
   "https://overpass-api.de/api/interpreter";
 export const MAP_STYLE_URL =
   "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+
+const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY;
+
+export const MAP_STYLES: Record<MapStyleId, MapStyleDefinition> = {
+  standard: {
+    id: "standard",
+    label: "Thường",
+    description: "Bản đồ sáng, dễ nhìn cho tìm đường.",
+    url: MAP_STYLE_URL,
+  },
+  topo: {
+    id: "topo",
+    label: "Địa hình",
+    description: "Bản đồ địa hình/topographic có đường đồng mức.",
+    url: MAPTILER_KEY
+      ? `https://api.maptiler.com/maps/topo-v2/style.json?key=${MAPTILER_KEY}`
+      : MAP_STYLE_URL,
+    needsMapTilerKey: true,
+  },
+  outdoor: {
+    id: "outdoor",
+    label: "Outdoor",
+    description: "Bản đồ ngoài trời, phù hợp xem núi/đèo/đường xa.",
+    url: MAPTILER_KEY
+      ? `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${MAPTILER_KEY}`
+      : MAP_STYLE_URL,
+    needsMapTilerKey: true,
+  },
+};
+
+export function hasMapStyleProviderKey(styleId: MapStyleId): boolean {
+  const style = MAP_STYLES[styleId];
+  if (!style.needsMapTilerKey) return true;
+  return Boolean(MAPTILER_KEY);
+}
 /**
  * ORS chỉ có profile "driving-car" — không có profile xe máy. Khi
  * avoidHighways bật (chế độ xe máy), ORS đổi được ĐƯỜNG ĐI (né cao tốc) nhưng
@@ -118,3 +155,11 @@ export const POI_CATEGORIES: PoiCategoryDefinition[] = [
     color: "#EC4899",
   },
 ];
+
+export interface MapStyleDefinition {
+  id: MapStyleId;
+  label: string;
+  description: string;
+  url: string;
+  needsMapTilerKey?: boolean;
+}

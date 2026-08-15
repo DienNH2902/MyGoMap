@@ -19,6 +19,8 @@ import {
   SOVEREIGNTY_LABEL_TEXT,
   HOANG_SA_LOCATION,
   TRUONG_SA_LOCATION,
+  type MapStyleId,
+  MAP_STYLES,
 } from "@/lib/constants";
 import type { PlaceResult, RouteStop, RouteGeometry } from "@/lib/types";
 
@@ -41,6 +43,7 @@ interface MapViewProps {
   onSelectEndFromMap?: (place: PlaceResult) => void;
   customStops: PlaceResult[];
   onSelectCustomStopFromMap?: (place: PlaceResult) => void;
+  mapStyleId: MapStyleId;
 }
 
 const POI_FOCUS_ZOOM = 16;
@@ -90,6 +93,21 @@ function getThemeStyles(gender: GenderTheme) {
   };
 }
 
+function runWhenStyleReady(map: MapLibreMap, callback: () => void) {
+  if (map.isStyleLoaded()) {
+    callback();
+    return;
+  }
+
+  const handleIdle = () => {
+    if (!map.isStyleLoaded()) return;
+    map.off("idle", handleIdle);
+    callback();
+  };
+
+  map.on("idle", handleIdle);
+}
+
 export function MapView({
   start,
   end,
@@ -103,6 +121,7 @@ export function MapView({
   onSelectEndFromMap,
   customStops,
   onSelectCustomStopFromMap,
+  mapStyleId,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -131,7 +150,7 @@ export function MapView({
 
     const map = new MapLibreMap({
       container: containerRef.current,
-      style: MAP_STYLE_URL,
+      style: MAP_STYLES[mapStyleId].url,
       center: [VIETNAM_CENTER.lon, VIETNAM_CENTER.lat],
       zoom: DEFAULT_MAP_ZOOM,
       attributionControl: {},
@@ -169,6 +188,25 @@ export function MapView({
       mapRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const nextStyleUrl = MAP_STYLES[mapStyleId].url;
+
+    map.setStyle(nextStyleUrl);
+
+    const handleStyleReady = () => {
+      addSovereigntyLabels(map, sovereigntyMarkersRef);
+    };
+
+    map.once("styledata", handleStyleReady);
+
+    return () => {
+      map.off("styledata", handleStyleReady);
+    };
+  }, [mapStyleId]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -242,12 +280,8 @@ export function MapView({
       }
     };
 
-    if (map.isStyleLoaded()) {
-      applyRoute();
-    } else {
-      map.once("load", applyRoute);
-    }
-  }, [route, theme.routeColor]);
+    runWhenStyleReady(map, applyRoute);
+  }, [route, theme.routeColor, mapStyleId]);
 
   // Marker điểm A - B
   useEffect(() => {
