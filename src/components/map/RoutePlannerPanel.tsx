@@ -196,13 +196,13 @@ export function RoutePlannerPanel({
   };
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-2 px-4 pb-4">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-2 px-4 pb-4">
       {/* Nút bấm Đóng / Mở bảng điều khiển */}
       {onToggleCollapse && (
         <button
           type="button"
           onClick={onToggleCollapse}
-          className="flex items-center gap-1.5 rounded-full border border-ink/10 bg-white/95 px-4 py-1.5 text-xs font-semibold text-ink shadow-md backdrop-blur-md transition-all hover:bg-slate-50 active:scale-95"
+          className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-ink/10 bg-white/95 px-4 py-1.5 text-xs font-semibold text-ink shadow-md backdrop-blur-md transition-all hover:bg-slate-50 active:scale-95"
         >
           <span>{isCollapsed ? "Mở bảng tìm đường" : "Thu gọn bảng"}</span>
           <svg
@@ -226,7 +226,7 @@ export function RoutePlannerPanel({
       {/* Nội dung bảng điều khiển (ẩn/hiện theo state isCollapsed) */}
       {!isCollapsed && (
         <>
-          <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-ink/10 bg-white/90 px-4 py-1.5 shadow-sm backdrop-blur-md">
+          <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-2 rounded-full border border-ink/10 bg-white/90 px-4 py-1.5 shadow-sm backdrop-blur-md">
             <span className="text-xs font-medium text-slate-500">
               Chú thích:
             </span>
@@ -244,7 +244,7 @@ export function RoutePlannerPanel({
             ))}
           </div>
 
-          <div className="w-full max-w-4xl rounded-3xl border border-ink/10 bg-white/95 p-5 shadow-2xl backdrop-blur-md transition-all">
+          <div className="pointer-events-auto w-full max-w-4xl rounded-3xl border border-ink/10 bg-white/95 p-5 shadow-2xl backdrop-blur-md transition-all">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
               <PlaceAutocompleteInput
                 label="Điểm xuất phát"

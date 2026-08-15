@@ -230,7 +230,7 @@ export function MapExperience() {
       )}
 
       {planner.error && !isErrorDismissed && (
-        <div className="absolute left-1/2 top-4 z-40 flex w-[90%] max-w-lg -translate-x-1/2 overflow-hidden rounded-2xl border border-red-200 bg-red-50 shadow-2xl backdrop-blur-md m-5 p-2">
+        <div className="pointer-events-auto absolute left-1/2 top-4 z-40 flex w-[90%] max-w-lg -translate-x-1/2 overflow-hidden rounded-2xl border border-red-200 bg-red-50 shadow-2xl backdrop-blur-md m-5 p-2">
           {/* Nút đóng thông báo lỗi */}
           <button
             type="button"
@@ -281,13 +281,13 @@ export function MapExperience() {
       {/* Soft, non-blocking warning: the route succeeded but POI suggestions
           couldn't be loaded this time. Never replaces the route/stops UI. */}
       {planner.poiWarning && (
-        <div className="absolute left-1/2 top-4 z-30 max-w-md -translate-x-1/2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 shadow-lg">
+        <div className="pointer-events-auto absolute left-1/2 top-4 z-30 max-w-md -translate-x-1/2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 shadow-lg">
           {planner.poiWarning}
         </div>
       )}
 
       {planner.aiTip && (
-        <div className="absolute left-4 top-4 z-30 max-w-xs rounded-2xl border border-accent-gold/30 bg-ink/85 px-4 py-3 text-sm text-cream shadow-xl backdrop-blur-md">
+        <div className="pointer-events-auto absolute left-4 top-4 z-30 max-w-xs rounded-2xl border border-accent-gold/30 bg-ink/85 px-4 py-3 text-sm text-cream shadow-xl backdrop-blur-md">
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-accent-gold">
             Gợi ý từ AI
           </p>
