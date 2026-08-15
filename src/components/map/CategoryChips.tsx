@@ -49,7 +49,7 @@ export function CategoryChips({
   };
 
   return (
-    <div className="flex flex-1 flex-col justify-end">
+    <div className="flex flex-col justify-end">
       <div>
         {label && (
           <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink/50">
