@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { HeroRouteLine } from "./HeroRouteLine";
 import { Button } from "../ui/Button";
+import Image from "next/image";
 
 const STORAGE_KEY_NAME = "mygomap_user_name";
 const STORAGE_KEY_GENDER = "mygomap_user_gender";
@@ -74,7 +75,7 @@ export function LandingHero() {
       <HeroRouteLine /> */}
 
       {/* Background Video */}
-      <video
+      {/* <video
         autoPlay
         loop
         muted
@@ -82,15 +83,29 @@ export function LandingHero() {
         className="absolute inset-0 h-full w-full object-cover"
       >
         <source src="/assets/china-cat.mp4" type="video/mp4" />
-      </video>
+      </video> */}
+
+      <Image
+        src="/assets/bg2.png"
+        alt="MyGoMap Background"
+        fill
+        priority // Ưu tiên load ảnh ngay lập tức
+        quality={100}
+        className="object-cover object-center"
+      />
 
       {/* Overlay lớp phủ tối giúp chữ hiển thị rõ ràng */}
       <div className="absolute inset-0 bg-ink/75" />
 
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(15,23,42,0.85)_0%,_transparent_60%),_radial-gradient(ellipse_at_bottom_right,_rgba(15,23,42,0.85)_0%,_transparent_60%)] backdrop-blur-[1px]" />
+
+      {/* Overlay lớp phủ tối tỏa từ tâm quanh khu vực chữ */}
+      {/* <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(15,23,42,0.98)_0%,_rgba(15,23,42,0.85)_30%,_rgba(15,23,42,0.3)_55%,_transparent_100%)]" /> */}
+
       <div className="relative z-10 flex max-w-2xl flex-col items-center gap-6 text-center">
-        <span className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-medium uppercase tracking-[0.2em] text-accent-gold">
+        {/* <span className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-medium uppercase tracking-[0.2em] text-accent-gold">
           Lộ trình thông minh cho mọi chuyến đi
-        </span>
+        </span> */}
 
         <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-cream sm:text-6xl">
           {isHydrated && hasUserInfo ? (

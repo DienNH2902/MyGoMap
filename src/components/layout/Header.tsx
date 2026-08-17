@@ -33,7 +33,7 @@ export function Header() {
     <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-white/5 bg-ink/90 px-6 backdrop-blur-md">
       <Link href="/" className="group flex items-center gap-2">
         <Image
-          src="/assets/vietnam.png" /* Thay bằng đường dẫn ảnh trong thư mục public của bạn */
+          src="/assets/logo3.png" /* Thay bằng đường dẫn ảnh trong thư mục public của bạn */
           alt="MyGoMap Logo"
           width={100}
           height={100}
