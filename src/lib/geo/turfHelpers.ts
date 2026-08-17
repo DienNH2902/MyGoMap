@@ -102,3 +102,21 @@ export function distanceBetweenKm(
     units: "kilometers",
   });
 }
+
+export function getDistanceFromRouteStartKm(
+  coordinates: [number, number][],
+  point: { lon: number; lat: number },
+): number {
+  if (coordinates.length < 2) return 0;
+
+  const line = buildLineString(coordinates);
+  const snappedPoint = turf.nearestPointOnLine(
+    line,
+    turf.point([point.lon, point.lat]),
+    { units: "kilometers" },
+  );
+
+  const distanceFromStartKm = snappedPoint.properties.location;
+
+  return typeof distanceFromStartKm === "number" ? distanceFromStartKm : 0;
+}

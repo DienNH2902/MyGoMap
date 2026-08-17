@@ -10,6 +10,7 @@ import {
   type StopQueryPoint,
 } from "@/lib/overpass/overpassClient";
 import {
+  getDistanceFromRouteStartKm,
   getEvenlySpacedStopPoints,
   getPointsAlongRouteEveryKm,
 } from "@/lib/geo/turfHelpers";
@@ -281,7 +282,10 @@ export function useRoutePlanner() {
         ? validCustomStops.map((stop) => ({
             lon: stop.lon,
             lat: stop.lat,
-            distanceFromStartKm: 0,
+            distanceFromStartKm: getDistanceFromRouteStartKm(
+              route.coordinates,
+              stop,
+            ),
             label: stop.label,
             source: "custom" as const,
           }))
