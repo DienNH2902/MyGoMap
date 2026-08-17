@@ -214,6 +214,7 @@ export function MapExperience() {
         onSelectEndFromMap={planner.setEnd}
         onSelectCustomStopFromMap={planner.addCustomStopFromMap}
         mapStyleId={mapStyleId}
+        showTrafficLayer={planner.avoidTraffic}
       />
 
       <MapStyleToggle value={mapStyleId} onChange={setMapStyleId} />

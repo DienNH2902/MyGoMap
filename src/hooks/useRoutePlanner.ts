@@ -48,6 +48,7 @@ interface RoutePlannerState {
   activeStopId: string | null;
   /** POI (dot) currently selected — either by clicking it on the map, or via the "Vị trí" button in the sidebar. */
   activePoiId: string | null;
+  avoidTraffic: boolean;
 }
 
 const DEFAULT_STATE: RoutePlannerState = {
@@ -65,6 +66,7 @@ const DEFAULT_STATE: RoutePlannerState = {
   poiWarning: null,
   activeStopId: null,
   activePoiId: null,
+  avoidTraffic: false,
 };
 
 type StopMode = "auto" | "custom";
@@ -104,6 +106,10 @@ interface RoutePlannerState {
  */
 export function useRoutePlanner() {
   const [state, setState] = useState<RoutePlannerState>(DEFAULT_STATE);
+
+  const setAvoidTraffic = useCallback((avoidTraffic: boolean) => {
+    setState((prev) => ({ ...prev, avoidTraffic }));
+  }, []);
 
   const setStart = useCallback((place: PlaceResult | null) => {
     setState((prev) => ({ ...prev, start: place }));
@@ -215,6 +221,7 @@ export function useRoutePlanner() {
       customStops,
       selectedCategories,
       avoidHighways,
+      avoidTraffic,
     } = state;
 
     if (!start || !end) {
@@ -260,7 +267,7 @@ export function useRoutePlanner() {
       route = await fetchDrivingRoute(
         start,
         end,
-        { avoidHighways },
+        { avoidHighways, useTraffic: avoidTraffic },
         stopMode === "custom" ? validCustomStops : [],
       );
     } catch (err) {
@@ -401,6 +408,7 @@ export function useRoutePlanner() {
     setActivePoiId,
     reset,
     planTrip,
+    setAvoidTraffic,
   };
 }
 

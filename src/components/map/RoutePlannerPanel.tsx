@@ -274,6 +274,24 @@ export function RoutePlannerPanel({
                 avoidHighways={planner.avoidHighways}
                 onChange={planner.setAvoidHighways}
               />
+
+              <div className="flex min-w-[80px] flex-col gap-0.5">
+                <span className="text-xs font-medium uppercase tracking-wide text-ink/50">
+                  Giao thông
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => planner.setAvoidTraffic(!planner.avoidTraffic)}
+                  className={`rounded-xl border px-2 py-4 text-xs font-semibold transition ${
+                    planner.avoidTraffic
+                      ? getActiveStyles()
+                      : `border-ink/10 bg-white text-slate-600 ${getHoverStyles()}`
+                  }`}
+                >
+                  {planner.avoidTraffic ? "Bật" : "Tắt"}
+                </button>
+              </div>
             </div>
 
             <div className="flex min-w-[180px] flex-col gap-1.5">

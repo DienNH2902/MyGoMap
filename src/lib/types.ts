@@ -60,6 +60,8 @@ export interface RouteGeometry {
   coordinates: [number, number][];
   distanceKm: number;
   durationMinutes: number;
+  noTrafficDurationMinutes?: number;
+  trafficDelayMinutes?: number;
 }
 
 /** Aggregated result of a full trip-planning request. */

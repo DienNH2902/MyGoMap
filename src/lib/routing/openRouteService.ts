@@ -1,5 +1,10 @@
-import { ORS_DIRECTIONS_URL, MOTORBIKE_AVERAGE_SPEED_KMH, CAR_AVERAGE_SPEED_KMH } from "../constants";
+import {
+  ORS_DIRECTIONS_URL,
+  MOTORBIKE_AVERAGE_SPEED_KMH,
+  CAR_AVERAGE_SPEED_KMH,
+} from "../constants";
 import type { RouteGeometry } from "../types";
+import { fetchTomTomTrafficRoute } from "./tomTomTrafficRoute";
 
 /** Shape of the fields we actually read from an ORS GeoJSON directions response. */
 interface OrsGeoJsonResponse {
@@ -34,6 +39,7 @@ export interface RouteOptions {
    * mode, highways allowed) to preserve prior behavior when not specified.
    */
   avoidHighways?: boolean;
+  useTraffic?: boolean;
 }
 
 /**
@@ -67,6 +73,18 @@ export async function fetchDrivingRoute(
   routeOptions: RouteOptions = {},
   viaPoints: Array<{ lon: number; lat: number }> = [],
 ): Promise<RouteGeometry> {
+  if (routeOptions.useTraffic) {
+    return fetchTomTomTrafficRoute(
+      start,
+      end,
+      {
+        avoidHighways: routeOptions.avoidHighways,
+        useTraffic: true,
+      },
+      viaPoints,
+    );
+  }
+
   const apiKey = process.env.NEXT_PUBLIC_ORS_API_KEY;
   if (!apiKey) {
     throw new RoutingError(

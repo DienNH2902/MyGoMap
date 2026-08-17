@@ -42,6 +42,15 @@ export function RouteStatsBar({ route, stops }: RouteStatsBarProps) {
       label: "Thời gian ước tính",
       value: formatDuration(route.durationMinutes),
     },
+    ...(typeof route.trafficDelayMinutes === "number" &&
+    route.trafficDelayMinutes > 0
+      ? [
+          {
+            label: "Trễ do giao thông",
+            value: formatDuration(route.trafficDelayMinutes),
+          },
+        ]
+      : []),
     { label: "Điểm dừng", value: `${stops.length} điểm` },
   ];
 

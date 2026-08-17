@@ -30,6 +30,9 @@ const ROUTE_SOURCE_ID = "mygomap-route";
 const ROUTE_LAYER_ID = "mygomap-route-line";
 const STORAGE_KEY_GENDER = "mygomap_user_gender";
 
+const TRAFFIC_SOURCE_ID = "mygomap-traffic-flow";
+const TRAFFIC_LAYER_ID = "mygomap-traffic-flow-layer";
+
 type GenderTheme = "nam" | "nu" | "khac";
 
 interface MapViewProps {
@@ -46,6 +49,7 @@ interface MapViewProps {
   customStops: PlaceResult[];
   onSelectCustomStopFromMap?: (place: PlaceResult) => void;
   mapStyleId: MapStyleId;
+  showTrafficLayer?: boolean;
 }
 
 const POI_FOCUS_ZOOM = 16;
@@ -110,6 +114,35 @@ function runWhenStyleReady(map: MapLibreMap, callback: () => void) {
   map.on("idle", handleIdle);
 }
 
+function removeTrafficLayer(map: MapLibreMap) {
+  if (map.getLayer(TRAFFIC_LAYER_ID)) {
+    map.removeLayer(TRAFFIC_LAYER_ID);
+  }
+
+  if (map.getSource(TRAFFIC_SOURCE_ID)) {
+    map.removeSource(TRAFFIC_SOURCE_ID);
+  }
+}
+
+function addTrafficLayer(map: MapLibreMap) {
+  removeTrafficLayer(map);
+
+  map.addSource(TRAFFIC_SOURCE_ID, {
+    type: "raster",
+    tiles: ["/api/traffic/flow/{z}/{x}/{y}?style=relative0&tileSize=256"],
+    tileSize: 256,
+  });
+
+  map.addLayer({
+    id: TRAFFIC_LAYER_ID,
+    type: "raster",
+    source: TRAFFIC_SOURCE_ID,
+    paint: {
+      "raster-opacity": 0.99,
+    },
+  });
+}
+
 export function MapView({
   start,
   end,
@@ -124,6 +157,7 @@ export function MapView({
   customStops,
   onSelectCustomStopFromMap,
   mapStyleId,
+  showTrafficLayer = false,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -190,6 +224,24 @@ export function MapView({
       mapRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    runWhenStyleReady(map, () => {
+      if (showTrafficLayer) {
+        addTrafficLayer(map);
+      } else {
+        removeTrafficLayer(map);
+      }
+    });
+
+    return () => {
+      if (!mapRef.current) return;
+      removeTrafficLayer(mapRef.current);
+    };
+  }, [showTrafficLayer, mapStyleId]);
 
   useEffect(() => {
     const map = mapRef.current;
