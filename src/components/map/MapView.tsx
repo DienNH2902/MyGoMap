@@ -12,7 +12,7 @@ import {
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import {
-  MAP_STYLE_URL,
+  // MAP_STYLE_URL,
   VIETNAM_CENTER,
   DEFAULT_MAP_ZOOM,
   POI_CATEGORIES,
@@ -21,6 +21,8 @@ import {
   TRUONG_SA_LOCATION,
   type MapStyleId,
   MAP_STYLES,
+  BIEN_DONG_LABEL_TEXT,
+  BIEN_DONG_LOCATION,
 } from "@/lib/constants";
 import type { PlaceResult, RouteStop, RouteGeometry } from "@/lib/types";
 
@@ -605,23 +607,59 @@ export function MapView({
   return <div ref={containerRef} className="h-full w-full" />;
 }
 
+function hideSensitiveBaseMapLabels(map: MapLibreMap) {
+  const style = map.getStyle();
+  if (!style.layers) return;
+
+  const sensitiveLayerNamePatterns = [
+    "watername",
+    "water-name",
+    "water_name",
+    "marine",
+    "sea",
+    "ocean",
+    "place_label_other",
+    "place-island",
+    "island",
+  ];
+
+  style.layers.forEach((layer) => {
+    if (layer.type !== "symbol") return;
+
+    const layerId = layer.id.toLowerCase();
+    const shouldHide = sensitiveLayerNamePatterns.some((pattern) =>
+      layerId.includes(pattern),
+    );
+
+    if (!shouldHide) return;
+    if (!map.getLayer(layer.id)) return;
+
+    try {
+      map.setLayoutProperty(layer.id, "visibility", "none");
+    } catch {
+      // Một số style provider có layer readonly/khác schema, bỏ qua để map không crash.
+    }
+  });
+}
 function addSovereigntyLabels(
   map: MapLibreMap,
   markersRef: { current: Marker[] },
 ) {
+  hideSensitiveBaseMapLabels(map);
+
   markersRef.current.forEach((marker) => marker.remove());
   markersRef.current = [];
 
-  const locations = [HOANG_SA_LOCATION, TRUONG_SA_LOCATION];
+  const sovereigntyLocations = [HOANG_SA_LOCATION, TRUONG_SA_LOCATION];
 
-  locations.forEach((location) => {
+  sovereigntyLocations.forEach((location) => {
     const el = document.createElement("div");
     el.className = "flex flex-col items-center gap-1 select-none";
     el.style.pointerEvents = "none";
     el.innerHTML = `
       <span style="
         white-space: nowrap;
-        background-color: orange;
+        background-color: #f59e0b;
         color: #ffffff;
         font-weight: 700;
         font-size: 11px;
@@ -635,7 +673,7 @@ function addSovereigntyLabels(
         height: 10px;
         width: 10px;
         border-radius: 9999px;
-        background-color: orange;
+        background-color: #f59e0b;
         box-shadow: 0 1px 3px rgba(0,0,0,0.4);
       "></span>
     `;
@@ -643,8 +681,33 @@ function addSovereigntyLabels(
     const marker = new Marker({ element: el, anchor: "bottom" })
       .setLngLat([location.lon, location.lat])
       .addTo(map);
+
     markersRef.current.push(marker);
   });
+
+  const seaLabelEl = document.createElement("div");
+  seaLabelEl.className = "select-none";
+  seaLabelEl.style.pointerEvents = "none";
+  seaLabelEl.innerHTML = `
+    <span style="
+      white-space: nowrap;
+      // background-color: rgba(14, 165, 233, 0.88);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 16px;
+      line-height: 1.2;
+      letter-spacing: 0;
+      padding: 6px 12px;
+      // border-radius: 9999px;
+      // box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    ">${escapeHtml(BIEN_DONG_LABEL_TEXT)}</span>
+  `;
+
+  const seaMarker = new Marker({ element: seaLabelEl, anchor: "center" })
+    .setLngLat([BIEN_DONG_LOCATION.lon, BIEN_DONG_LOCATION.lat])
+    .addTo(map);
+
+  markersRef.current.push(seaMarker);
 }
 
 function escapeHtml(value: string): string {

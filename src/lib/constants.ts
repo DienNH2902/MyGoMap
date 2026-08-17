@@ -1,6 +1,11 @@
 import type { PoiCategoryDefinition } from "./types";
 
-export type MapStyleId = "standard" | "topo" | "outdoor" | "satellite" | "street";
+export type MapStyleId =
+  | "standard"
+  | "topo"
+  | "outdoor"
+  | "satellite"
+  | "street";
 
 /**
  * Every external service below is free and requires no backend:
@@ -97,8 +102,11 @@ export const DEFAULT_MAP_ZOOM = 5.2;
 export const SOVEREIGNTY_LABEL_TEXT =
   "Hoàng Sa và Trường Sa là của Việt Nam, Trung Quốc cút!";
 
+export const BIEN_DONG_LABEL_TEXT = "Biển Đông";
+
 export const HOANG_SA_LOCATION = { lon: 112.34, lat: 16.83 } as const; // Đảo Phú Lâm, trung tâm quần đảo Hoàng Sa
 export const TRUONG_SA_LOCATION = { lon: 111.92, lat: 8.64 } as const; // Đảo Trường Sa Lớn, trung tâm quần đảo Trường Sa
+export const BIEN_DONG_LOCATION = { lon: 113.8, lat: 12.2 } as const;
 
 /** How far around each stop point we search for matching POIs (kept within the 5–10km ask). */
 export const POI_SEARCH_RADIUS_METERS = 8000;
