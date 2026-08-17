@@ -5,7 +5,8 @@ export type MapStyleId =
   | "topo"
   | "outdoor"
   | "satellite"
-  | "street";
+  | "street"
+  | "openStreet";
 
 /**
  * Every external service below is free and requires no backend:
@@ -66,6 +67,15 @@ export const MAP_STYLES: Record<MapStyleId, MapStyleDefinition> = {
     description: "Bản đồ đường đi, giúp góc nhìn thực tế.",
     url: MAPTILER_KEY
       ? `https://api.maptiler.com/maps/streets/style.json?key=${MAPTILER_KEY}`
+      : MAP_STYLE_URL,
+    needsMapTilerKey: true,
+  },
+  openStreet: {
+    id: "openStreet",
+    label: "Đường",
+    description: "Bản đồ mở đường đi, giúp góc nhìn thực tế.",
+    url: MAPTILER_KEY
+      ? `https://api.maptiler.com/maps/openstreetmap/style.json?key=${MAPTILER_KEY}`
       : MAP_STYLE_URL,
     needsMapTilerKey: true,
   },

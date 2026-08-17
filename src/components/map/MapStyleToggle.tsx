@@ -21,7 +21,8 @@ const STYLE_IDS: MapStyleId[] = [
   "topo",
   "outdoor",
   "satellite",
-  "standard",
+  // "standard",
+  "openStreet",
 ];
 
 export function MapStyleToggle({ value, onChange }: MapStyleToggleProps) {
