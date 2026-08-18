@@ -68,6 +68,28 @@ export function LandingHero() {
     return "bạn";
   };
 
+  // Style màu sắc cho tên người dùng dựa trên giới tính
+  const getUserNameGradientClass = () => {
+    if (gender === "nu") {
+      return "from-pink-400 via-rose-300 to-pink-500";
+    }
+    if (gender === "khac") {
+      return "from-amber-300 via-rose-400 to-violet-400";
+    }
+    return "from-primary via-accent-gold to-primary";
+  };
+
+  // Style màu nền gradient cho Nút bấm dựa trên giới tính
+  const getButtonGenderClass = () => {
+    if (gender === "nu") {
+      return "bg-gradient-to-r from-pink-500 via-rose-400 to-pink-600 hover:brightness-110 text-white border-none";
+    }
+    if (gender === "khac") {
+      return "bg-gradient-to-r from-amber-400 via-rose-500 to-violet-500 hover:brightness-110 text-white border-none";
+    }
+    return ""; // Mặc định dùng style gốc của Button variant="primary"
+  };
+
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-ink px-6 py-12">
       {/* Ambient glow behind the copy, reinforcing the orange brand color. */}
@@ -111,7 +133,9 @@ export function LandingHero() {
           {isHydrated && hasUserInfo ? (
             <>
               Chào mừng{" "}
-              <span className="bg-gradient-to-r from-primary via-accent-gold to-primary bg-clip-text text-transparent">
+              <span
+                className={`bg-gradient-to-r ${getUserNameGradientClass()} bg-clip-text text-transparent`}
+              >
                 {getHonorific()} {userName.trim()}
               </span>
             </>
@@ -226,7 +250,10 @@ export function LandingHero() {
         {/* Action Button: Bị disable khi chưa điền đủ tên và giới tính */}
         {hasUserInfo ? (
           <Link href="/map">
-            <Button variant="primary" className="mt-2 px-8 py-4 text-base">
+            <Button
+              variant="primary"
+              className={`mt-2 px-8 py-4 text-base transition-all duration-300 ${getButtonGenderClass()}`}
+            >
               Bắt đầu hành trình <span aria-hidden="true">→</span>
             </Button>
           </Link>
@@ -235,7 +262,7 @@ export function LandingHero() {
             <Button
               variant="primary"
               disabled
-              className="mt-2 opacity-50 cursor-not-allowed px-8 py-4 text-base"
+              className={`mt-2 cursor-not-allowed opacity-50 px-8 py-4 text-base transition-all duration-300 ${getButtonGenderClass()}`}
             >
               Bắt đầu hành trình <span aria-hidden="true">→</span>
             </Button>
