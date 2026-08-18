@@ -75,24 +75,24 @@ export function LandingHero() {
       <HeroRouteLine /> */}
 
       {/* Background Video */}
-      {/* <video
+      <video
         autoPlay
         loop
         muted
         playsInline
         className="absolute inset-0 h-full w-full object-cover"
       >
-        <source src="/assets/china-cat.mp4" type="video/mp4" />
-      </video> */}
+        <source src="/assets/mapvideo.mp4" type="video/mp4" />
+      </video>
 
-      <Image
+      {/* <Image
         src="/assets/bg2.png"
         alt="MyGoMap Background"
         fill
         priority // Ưu tiên load ảnh ngay lập tức
         quality={100}
         className="object-cover object-center"
-      />
+      /> */}
 
       {/* Overlay lớp phủ tối giúp chữ hiển thị rõ ràng */}
       <div className="absolute inset-0 bg-ink/75" />
