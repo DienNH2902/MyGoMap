@@ -409,7 +409,11 @@ export function MapView({
       }
       abortController = new AbortController();
 
-      const loadingPopup = new Popup({ closeButton: true, closeOnClick: true })
+      const loadingPopup = new Popup({
+        closeButton: true,
+        closeOnClick: true,
+        maxWidth: "320px",
+      })
         .setLngLat([lng, lat])
         .setHTML(
           `<div style="padding: 4px; font-size: 12px; color: #666;">Đang lấy thông tin vị trí…</div>`,
@@ -441,8 +445,8 @@ export function MapView({
       };
 
       const container = document.createElement("div");
-      container.style.padding = "4px";
-      container.style.maxWidth = "220px";
+      container.style.padding = "8px 4px 4px 4px";
+      container.style.width = "100%";
 
       const titleEl = document.createElement("p");
       titleEl.style.fontSize = "12px";
