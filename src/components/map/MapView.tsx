@@ -189,6 +189,8 @@ export function MapView({
 
   const [gender, setGender] = useState<GenderTheme>("nam");
 
+  const [styleReloadKey, setStyleReloadKey] = useState(0);
+
   useEffect(() => {
     const savedGender =
       (localStorage.getItem(STORAGE_KEY_GENDER) as GenderTheme) || "nam";
@@ -269,13 +271,18 @@ export function MapView({
     map.setStyle(nextStyleUrl);
 
     const handleStyleReady = () => {
+      if (!map.isStyleLoaded()) return;
+
       addSovereigntyLabels(map, sovereigntyMarkersRef);
+      setStyleReloadKey((prev) => prev + 1);
+
+      map.off("idle", handleStyleReady);
     };
 
-    map.once("styledata", handleStyleReady);
+    map.on("idle", handleStyleReady);
 
     return () => {
-      map.off("styledata", handleStyleReady);
+      map.off("idle", handleStyleReady);
     };
   }, [mapStyleId]);
 
@@ -352,7 +359,7 @@ export function MapView({
     };
 
     runWhenStyleReady(map, applyRoute);
-  }, [route, theme.routeColor, mapStyleId]);
+  }, [route, theme.routeColor, mapStyleId, styleReloadKey]);
 
   // Marker điểm A - B
   useEffect(() => {

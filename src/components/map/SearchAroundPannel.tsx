@@ -78,7 +78,7 @@ export function AroundSearchPanel({
   };
 
   return (
-    <div className="pointer-events-auto absolute left-4 top-80 z-0 w-[22rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-ink/10 bg-white shadow-2xl">
+    <div className="pointer-events-auto absolute left-4 top-[330px] z-0 w-[22rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-ink/10 bg-white shadow-2xl">
       <div className="flex items-start justify-between gap-3 border-b border-ink/10 px-4 py-3">
         <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-wide text-primary">
