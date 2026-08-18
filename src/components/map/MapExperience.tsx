@@ -14,6 +14,8 @@ import { MapStyleId, POI_CATEGORIES } from "@/lib/constants";
 import type { TripContext } from "@/lib/ai/geminiClient";
 import { AiAssistantPanel } from "./AiAssistantPanel";
 import { MapStyleToggle } from "./MapStyleToggle";
+import { PlaceResult, PoiResult } from "@/lib/types";
+import { AroundSearchPanel } from "./SearchAroundPannel";
 
 const STORAGE_KEY_USER_GENDER = "mygomap_user_gender";
 const STORAGE_KEY_LOADER = "mygomap_user_loader";
@@ -85,6 +87,15 @@ export function MapExperience() {
   // State quản lý việc ẩn/hiện banner "Gợi ý từ AI"
   const [isAiTipDismissed, setIsAiTipDismissed] = useState(false);
 
+  const [aroundSearchCenter, setAroundSearchCenter] =
+    useState<PlaceResult | null>(null);
+  const [aroundSearchResults, setAroundSearchResults] = useState<PoiResult[]>(
+    [],
+  );
+  const [activeAroundPoiId, setActiveAroundPoiId] = useState<string | null>(
+    null,
+  );
+
   const [mapStyleId, setMapStyleId] = useState<MapStyleId>("street");
 
   useEffect(() => {
@@ -143,10 +154,19 @@ export function MapExperience() {
     return null;
   }, [planner.plan, planner.activePoiId]);
 
-  const activePoiList = useMemo(
-    () => (activePoiEntry ? [activePoiEntry.poi] : []),
-    [activePoiEntry],
+  const activeAroundPoi = useMemo(
+    () =>
+      aroundSearchResults.find((poi) => poi.id === activeAroundPoiId) ?? null,
+    [aroundSearchResults, activeAroundPoiId],
   );
+
+  const activePoiList = useMemo(() => {
+    const list: PoiResult[] = [];
+    if (activePoiEntry) list.push(activePoiEntry.poi);
+    if (activeAroundPoi) list.push(activeAroundPoi);
+    return list;
+  }, [activePoiEntry, activeAroundPoi]);
+
   const {
     getEnriched: getActivePoiEnriched,
     markImageBroken: markActivePoiImageBroken,
@@ -215,9 +235,31 @@ export function MapExperience() {
         onSelectCustomStopFromMap={planner.addCustomStopFromMap}
         mapStyleId={mapStyleId}
         showTrafficLayer={planner.avoidTraffic}
+        aroundPois={aroundSearchResults}
+        activeAroundPoiId={activeAroundPoiId}
+        onSelectAroundPoi={setActiveAroundPoiId}
+        onOpenAroundSearchFromMap={(place) => {
+          setAroundSearchCenter(place);
+          setAroundSearchResults([]);
+          setActiveAroundPoiId(null);
+        }}
       />
 
       <MapStyleToggle value={mapStyleId} onChange={setMapStyleId} />
+
+      {aroundSearchCenter && (
+        <AroundSearchPanel
+          center={aroundSearchCenter}
+          results={aroundSearchResults}
+          onResultsChange={setAroundSearchResults}
+          onSelectPoi={setActiveAroundPoiId}
+          onClose={() => {
+            setAroundSearchCenter(null);
+            setAroundSearchResults([]);
+            setActiveAroundPoiId(null);
+          }}
+        />
+      )}
 
       {/* HIỆU ỨNG MÈO LẤP LÓ & GAME BẮT MÈO */}
       {!isCaught ? (
@@ -275,13 +317,23 @@ export function MapExperience() {
         onSelectPoi={planner.setActivePoiId}
       />
 
-      {activePoiEntry && (
+      {/* {activePoiEntry && (
         <PoiDetailCard
           poi={activePoiEntry.poi}
           stopOrder={activePoiEntry.stopOrder}
           enriched={getActivePoiEnriched(activePoiEntry.poi)}
           onImageError={() => markActivePoiImageBroken(activePoiEntry.poi.id)}
           onClose={() => planner.setActivePoiId(null)}
+        />
+      )} */}
+
+      {activeAroundPoi && (
+        <PoiDetailCard
+          poi={activeAroundPoi}
+          stopOrder={0}
+          enriched={getActivePoiEnriched(activeAroundPoi)}
+          onImageError={() => markActivePoiImageBroken(activeAroundPoi.id)}
+          onClose={() => setActiveAroundPoiId(null)}
         />
       )}
 

@@ -24,7 +24,12 @@ import {
   BIEN_DONG_LABEL_TEXT,
   BIEN_DONG_LOCATION,
 } from "@/lib/constants";
-import type { PlaceResult, RouteStop, RouteGeometry } from "@/lib/types";
+import type {
+  PlaceResult,
+  RouteStop,
+  RouteGeometry,
+  PoiResult,
+} from "@/lib/types";
 
 const ROUTE_SOURCE_ID = "mygomap-route";
 const ROUTE_LAYER_ID = "mygomap-route-line";
@@ -50,6 +55,10 @@ interface MapViewProps {
   onSelectCustomStopFromMap?: (place: PlaceResult) => void;
   mapStyleId: MapStyleId;
   showTrafficLayer?: boolean;
+  aroundPois?: PoiResult[];
+  activeAroundPoiId?: string | null;
+  onSelectAroundPoi?: (poiId: string | null) => void;
+  onOpenAroundSearchFromMap?: (place: PlaceResult) => void;
 }
 
 const POI_FOCUS_ZOOM = 16;
@@ -158,6 +167,10 @@ export function MapView({
   onSelectCustomStopFromMap,
   mapStyleId,
   showTrafficLayer = false,
+  aroundPois = [],
+  activeAroundPoiId = null,
+  onSelectAroundPoi,
+  onOpenAroundSearchFromMap,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -168,6 +181,10 @@ export function MapView({
   const poiMarkersRef = useRef<
     { id: string; dotEl: HTMLDivElement; marker: Marker }[]
   >([]);
+  const aroundPoiMarkersRef = useRef<
+    { id: string; dotEl: HTMLDivElement; marker: Marker }[]
+  >([]);
+
   const sovereigntyMarkersRef = useRef<Marker[]>([]);
 
   const [gender, setGender] = useState<GenderTheme>("nam");
@@ -373,7 +390,8 @@ export function MapView({
       !map ||
       (!onSelectStartFromMap &&
         !onSelectEndFromMap &&
-        !onSelectCustomStopFromMap)
+        !onSelectCustomStopFromMap &&
+        !onOpenAroundSearchFromMap)
     )
       return;
 
@@ -503,6 +521,28 @@ export function MapView({
         btnGroup.appendChild(btnStop);
       }
 
+      if (onOpenAroundSearchFromMap) {
+        const btnAround = document.createElement("button");
+        btnAround.type = "button";
+        btnAround.textContent = "Tìm kiếm xung quanh";
+        btnAround.style.flex = "1";
+        btnAround.style.padding = "6px 8px";
+        btnAround.style.fontSize = "11px";
+        btnAround.style.fontWeight = "600";
+        btnAround.style.color = "#ffffff";
+        btnAround.style.backgroundColor = "#0ea5e9";
+        btnAround.style.border = "none";
+        btnAround.style.borderRadius = "6px";
+        btnAround.style.cursor = "pointer";
+
+        btnAround.addEventListener("click", () => {
+          onOpenAroundSearchFromMap(place);
+          loadingPopup.remove();
+        });
+
+        btnGroup.appendChild(btnAround);
+      }
+
       container.appendChild(btnGroup);
       loadingPopup.setDOMContent(container);
     };
@@ -511,7 +551,12 @@ export function MapView({
     return () => {
       map.off("contextmenu", handleClick);
     };
-  }, [onSelectStartFromMap, onSelectEndFromMap, onSelectCustomStopFromMap]);
+  }, [
+    onSelectStartFromMap,
+    onSelectEndFromMap,
+    onSelectCustomStopFromMap,
+    onOpenAroundSearchFromMap,
+  ]);
 
   // Marker các Trạm Dừng (Stop Markers)
   useEffect(() => {
@@ -603,6 +648,75 @@ export function MapView({
       }
     });
   }, [activePoiId]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    aroundPoiMarkersRef.current.forEach(({ marker }) => marker.remove());
+    aroundPoiMarkersRef.current = [];
+
+    aroundPois.forEach((poi) => {
+      const container = document.createElement("div");
+      container.className =
+        "w-7 h-7 flex items-center justify-center cursor-pointer pointer-events-auto";
+
+      const dotEl = document.createElement("div");
+      dotEl.style.backgroundColor = colorForCategory(poi.category);
+      dotEl.className =
+        "h-4 w-4 rounded-full border-2 border-white shadow-lg ring-2 ring-sky-400/40 transition-all duration-300";
+      dotEl.setAttribute("aria-label", poi.name);
+      dotEl.setAttribute("role", "button");
+
+      container.appendChild(dotEl);
+
+      container.addEventListener("click", (event) => {
+        event.stopPropagation();
+        onSelectAroundPoi?.(poi.id);
+      });
+
+      const marker = new Marker({ element: container, anchor: "center" })
+        .setLngLat([poi.lon, poi.lat])
+        .addTo(map);
+
+      aroundPoiMarkersRef.current.push({ id: poi.id, dotEl, marker });
+    });
+  }, [aroundPois, onSelectAroundPoi]);
+
+  useEffect(() => {
+    aroundPoiMarkersRef.current.forEach(({ id, dotEl }) => {
+      const isActive = id === activeAroundPoiId;
+
+      dotEl.className = isActive
+        ? "h-6 w-6 rounded-full border-2 border-white shadow-2xl ring-4 ring-sky-300/80 scale-125 transition-all duration-300"
+        : "h-4 w-4 rounded-full border-2 border-white shadow-lg ring-2 ring-sky-400/40 transition-all duration-300";
+    });
+  }, [activeAroundPoiId]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !activeAroundPoiId) return;
+
+    const poi = aroundPois.find(
+      (candidate) => candidate.id === activeAroundPoiId,
+    );
+    if (!poi) return;
+
+    const flyToPoi = () => {
+      map.flyTo({
+        center: [poi.lon, poi.lat],
+        zoom: Math.max(map.getZoom(), POI_FOCUS_ZOOM),
+        duration: 900,
+        essential: true,
+      });
+    };
+
+    if (map.isStyleLoaded()) {
+      flyToPoi();
+    } else {
+      map.once("load", flyToPoi);
+    }
+  }, [activeAroundPoiId, aroundPois]);
 
   // Zoom bản đồ vào POI được chọn
   useEffect(() => {

@@ -50,7 +50,7 @@ export function PoiDetailCard({
   const { address, isLookingUpAddress, imageUrl, isLookingUpImage } = enriched;
 
   return (
-    <div className="pointer-events-auto absolute left-4 top-1/2 z-40 w-[300px] -translate-y-1/2 overflow-hidden rounded-2xl border border-ink/10 bg-white shadow-2xl">
+    <div className="pointer-events-auto absolute left-[390px] top-1/3 z-40 w-[300px] -translate-y-1/2 overflow-hidden rounded-2xl border border-ink/10 bg-white shadow-2xl">
       <div className="relative h-36 w-full bg-surface-muted">
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element

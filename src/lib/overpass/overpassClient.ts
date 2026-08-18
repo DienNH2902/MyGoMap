@@ -1,24 +1,28 @@
-import { OVERPASS_INTERPRETER_URL, POI_SEARCH_RADIUS_METERS, MAX_POIS_PER_CATEGORY_PER_STOP } from '../constants';
-import { distanceBetweenKm } from '../geo/turfHelpers';
-import type { PoiCategoryDefinition, PoiResult } from '../types';
+import {
+  OVERPASS_INTERPRETER_URL,
+  POI_SEARCH_RADIUS_METERS,
+  MAX_POIS_PER_CATEGORY_PER_STOP,
+} from "../constants";
+import { distanceBetweenKm } from "../geo/turfHelpers";
+import type { PoiCategoryDefinition, PoiResult } from "../types";
 
 interface OverpassTags {
   name?: string;
-  'addr:housenumber'?: string;
-  'addr:street'?: string;
-  'addr:full'?: string;
-  'addr:place'?: string;
-  'addr:suburb'?: string;
-  'addr:city'?: string;
-  'addr:district'?: string;
-  'addr:province'?: string;
+  "addr:housenumber"?: string;
+  "addr:street"?: string;
+  "addr:full"?: string;
+  "addr:place"?: string;
+  "addr:suburb"?: string;
+  "addr:city"?: string;
+  "addr:district"?: string;
+  "addr:province"?: string;
   image?: string;
   wikimedia_commons?: string;
   [key: string]: string | undefined;
 }
 
 interface OverpassElement {
-  type: 'node' | 'way' | 'relation';
+  type: "node" | "way" | "relation";
   id: number;
   lat?: number;
   lon?: number;
@@ -43,16 +47,26 @@ function buildAddress(tags: OverpassTags | undefined): string | undefined {
   if (!tags) return undefined;
 
   // Some places are tagged with a single ready-made address string.
-  if (tags['addr:full']) return tags['addr:full'];
+  if (tags["addr:full"]) return tags["addr:full"];
 
-  const streetLine = [tags['addr:housenumber'], tags['addr:street']].filter(Boolean).join(' ');
-  const localityLine = [tags['addr:suburb'], tags['addr:place'], tags['addr:city'], tags['addr:district'], tags['addr:province']]
+  const streetLine = [tags["addr:housenumber"], tags["addr:street"]]
+    .filter(Boolean)
+    .join(" ");
+  const localityLine = [
+    tags["addr:suburb"],
+    tags["addr:place"],
+    tags["addr:city"],
+    tags["addr:district"],
+    tags["addr:province"],
+  ]
     .filter(Boolean)
     // De-duplicate, since some nodes repeat the same value across suburb/city/district tags.
     .filter((value, index, all) => all.indexOf(value) === index);
 
-  const parts = [streetLine, ...localityLine].filter((part) => part && part.length > 0);
-  return parts.length > 0 ? parts.join(', ') : undefined;
+  const parts = [streetLine, ...localityLine].filter(
+    (part) => part && part.length > 0,
+  );
+  return parts.length > 0 ? parts.join(", ") : undefined;
 }
 
 /**
@@ -73,8 +87,8 @@ function resolveImageUrl(tags: OverpassTags | undefined): string | undefined {
     return tags.image;
   }
 
-  if (tags.wikimedia_commons?.startsWith('File:')) {
-    const fileName = tags.wikimedia_commons.slice('File:'.length);
+  if (tags.wikimedia_commons?.startsWith("File:")) {
+    const fileName = tags.wikimedia_commons.slice("File:".length);
     return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(fileName)}?width=300`;
   }
 
@@ -188,7 +202,7 @@ async function fetchOverpassQuery(
 export async function findPoisForStops(
   points: StopQueryPoint[],
   categories: PoiCategoryDefinition[],
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<PoiSearchResult> {
   const resultsByStop = new Map<string, Record<string, PoiResult[]>>();
   for (const point of points) {
@@ -207,12 +221,12 @@ export async function findPoisForStops(
   for (const point of points) {
     for (const category of categories) {
       clauses.push(
-        `node["${category.osmKey}"="${category.osmValue}"](around:${POI_SEARCH_RADIUS_METERS},${point.lat},${point.lon});`
+        `node["${category.osmKey}"="${category.osmValue}"](around:${POI_SEARCH_RADIUS_METERS},${point.lat},${point.lon});`,
       );
     }
   }
 
-  const query = `[out:json][timeout:25];(${clauses.join('\n')});out center tags;`;
+  const query = `[out:json][timeout:25];(${clauses.join("\n")});out center tags;`;
 
   const data = await fetchOverpassQuery(query, signal);
   if (!data) {
@@ -228,7 +242,12 @@ export async function findPoisForStops(
       if (lat === undefined || lon === undefined) return null;
       return { element, lat, lon };
     })
-    .filter((entry): entry is { element: OverpassElement; lat: number; lon: number } => entry !== null);
+    .filter(
+      (
+        entry,
+      ): entry is { element: OverpassElement; lat: number; lon: number } =>
+        entry !== null,
+    );
 
   // For each stop and category, re-filter the shared result set by actual
   // distance to THAT stop (an element can appear in the union because it's
@@ -238,18 +257,25 @@ export async function findPoisForStops(
 
     for (const category of categories) {
       const matches = elementsWithCoords
-        .filter(({ element }) => element.tags?.[category.osmKey] === category.osmValue)
-        .map(({ element, lat, lon }): PoiResult => ({
-          id: `${category.id}-${element.type}-${element.id}`,
-          name: element.tags?.name ?? category.label,
-          category: category.id,
-          lon,
-          lat,
-          address: buildAddress(element.tags),
-          imageUrl: resolveImageUrl(element.tags),
-          distanceFromStopKm: distanceBetweenKm(point, { lon, lat }),
-        }))
-        .filter((poi) => poi.distanceFromStopKm * 1000 <= POI_SEARCH_RADIUS_METERS)
+        .filter(
+          ({ element }) =>
+            element.tags?.[category.osmKey] === category.osmValue,
+        )
+        .map(
+          ({ element, lat, lon }): PoiResult => ({
+            id: `${category.id}-${element.type}-${element.id}`,
+            name: element.tags?.name ?? category.label,
+            category: category.id,
+            lon,
+            lat,
+            address: buildAddress(element.tags),
+            imageUrl: resolveImageUrl(element.tags),
+            distanceFromStopKm: distanceBetweenKm(point, { lon, lat }),
+          }),
+        )
+        .filter(
+          (poi) => poi.distanceFromStopKm * 1000 <= POI_SEARCH_RADIUS_METERS,
+        )
         .sort((a, b) => a.distanceFromStopKm - b.distanceFromStopKm)
         .slice(0, MAX_POIS_PER_CATEGORY_PER_STOP);
 
@@ -260,4 +286,64 @@ export async function findPoisForStops(
   }
 
   return { resultsByStop, fetchFailed: false };
+}
+
+export interface AroundSearchInput {
+  center: {
+    lon: number;
+    lat: number;
+  };
+  radiusMeters: number;
+  category: PoiCategoryDefinition;
+  signal?: AbortSignal;
+}
+
+export async function findPoisAroundPoint({
+  center,
+  radiusMeters,
+  category,
+  signal,
+}: AroundSearchInput): Promise<{
+  pois: PoiResult[];
+  fetchFailed: boolean;
+}> {
+  const safeRadiusMeters = Math.max(50, Math.min(10000, radiusMeters));
+
+  const query = `[out:json][timeout:25];(
+node["${category.osmKey}"="${category.osmValue}"](around:${safeRadiusMeters},${center.lat},${center.lon});
+way["${category.osmKey}"="${category.osmValue}"](around:${safeRadiusMeters},${center.lat},${center.lon});
+relation["${category.osmKey}"="${category.osmValue}"](around:${safeRadiusMeters},${center.lat},${center.lon});
+);out center tags;`;
+
+  const data = await fetchOverpassQuery(query, signal);
+
+  if (!data) {
+    return { pois: [], fetchFailed: true };
+  }
+
+  const pois = data.elements
+    .map((element): PoiResult | null => {
+      const lat = element.lat ?? element.center?.lat;
+      const lon = element.lon ?? element.center?.lon;
+
+      if (lat === undefined || lon === undefined) return null;
+      if (element.tags?.[category.osmKey] !== category.osmValue) return null;
+
+      return {
+        id: `around-${category.id}-${element.type}-${element.id}`,
+        name: element.tags?.name ?? category.label,
+        category: category.id,
+        lon,
+        lat,
+        address: buildAddress(element.tags),
+        imageUrl: resolveImageUrl(element.tags),
+        distanceFromStopKm: distanceBetweenKm(center, { lon, lat }),
+      };
+    })
+    .filter((poi): poi is PoiResult => poi !== null)
+    .filter((poi) => poi.distanceFromStopKm * 1000 <= safeRadiusMeters)
+    .sort((a, b) => a.distanceFromStopKm - b.distanceFromStopKm)
+    .slice(0, 30);
+
+  return { pois, fetchFailed: false };
 }
