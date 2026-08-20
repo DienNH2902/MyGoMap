@@ -120,7 +120,7 @@ export async function fetchDrivingRoute(
         options: {
           avoid_borders: "all",
           ...(routeOptions.avoidHighways
-            ? { avoid_features: ["highways"] }
+            ? { avoid_features: ["highways", "tollways"] }
             : {}),
         },
       }),

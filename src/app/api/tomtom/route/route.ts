@@ -72,6 +72,7 @@ export async function POST(request: Request) {
 
   if (body.avoidHighways) {
     url.searchParams.append("avoid", "motorways");
+    url.searchParams.append("avoid", "tollRoads");
   }
 
   const response = await fetch(url.toString(), {
