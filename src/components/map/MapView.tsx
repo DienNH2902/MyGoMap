@@ -178,6 +178,7 @@ export function MapView({
   const endpointMarkersRef = useRef<Marker[]>([]);
   const stopMarkersRef = useRef<Marker[]>([]);
   const customStopMarkersRef = useRef<Marker[]>([]);
+  const searchAroundMarkerRef = useRef<Marker | null>(null);
   const poiMarkersRef = useRef<
     { id: string; dotEl: HTMLDivElement; marker: Marker }[]
   >([]);
@@ -547,6 +548,16 @@ export function MapView({
         btnAround.style.cursor = "pointer";
 
         btnAround.addEventListener("click", () => {
+          // 1. Xóa marker tìm kiếm xung quanh cũ nếu đã tồn tại
+          if (searchAroundMarkerRef.current) {
+            searchAroundMarkerRef.current.remove();
+          }
+
+          // 2. Tạo marker mới và lưu vào Ref
+          searchAroundMarkerRef.current = new Marker({ anchor: "center" })
+            .setLngLat([place.lon, place.lat])
+            .addTo(map);
+
           onOpenAroundSearchFromMap(place);
           loadingPopup.remove();
         });
