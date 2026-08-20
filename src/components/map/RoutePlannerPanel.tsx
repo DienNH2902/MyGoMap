@@ -85,7 +85,7 @@ export const POI_CATEGORIES: PoiCategoryDefinition[] = [
     color: "#EC4899",
   },
   {
-    id: "pharmacy",
+    id: "pharmacy | medicine",
     label: "Nhà thuốc",
     icon: "💊",
     osmKey: "amenity",

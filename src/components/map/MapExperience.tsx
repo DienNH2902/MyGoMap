@@ -317,7 +317,7 @@ export function MapExperience() {
         onSelectPoi={planner.setActivePoiId}
       />
 
-      {/* {activePoiEntry && (
+      {activePoiEntry && (
         <PoiDetailCard
           poi={activePoiEntry.poi}
           stopOrder={activePoiEntry.stopOrder}
@@ -325,7 +325,7 @@ export function MapExperience() {
           onImageError={() => markActivePoiImageBroken(activePoiEntry.poi.id)}
           onClose={() => planner.setActivePoiId(null)}
         />
-      )} */}
+      )}
 
       {activeAroundPoi && (
         <PoiDetailCard

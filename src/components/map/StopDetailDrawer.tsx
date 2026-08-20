@@ -162,7 +162,16 @@ export function StopDetailDrawer({
           const isLookingUpImage = !poi.imageUrl && imageLookup === undefined;
 
           return (
-            <div key={poi.id} className="flex gap-3 px-5 py-4">
+            <button
+              key={poi.id}
+              type="button"
+              onClick={() => onSelectPoi?.(poi.id)}
+              className={`flex w-full gap-3 px-5 py-4 text-left transition-colors ${
+                activePoiId === poi.id
+                  ? "bg-primary/10 ring-2 ring-primary/30"
+                  : "hover:bg-surface-muted/50"
+              }`}
+            >
               {imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -216,7 +225,7 @@ export function StopDetailDrawer({
                   Cách điểm dừng ~{poi.distanceFromStopKm.toFixed(1)} km
                 </p>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
