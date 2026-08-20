@@ -20,7 +20,8 @@ export type PoiCategoryId =
   | "cafe"
   | "hotel"
   | "atm"
-  | "convenience";
+  | "convenience"
+  | "pharmacy";
 
 /** Static definition of a POI category: label, icon, and the OSM tag used to query Overpass. */
 export interface PoiCategoryDefinition {

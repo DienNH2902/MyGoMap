@@ -84,6 +84,14 @@ export const POI_CATEGORIES: PoiCategoryDefinition[] = [
     osmValue: "convenience",
     color: "#EC4899",
   },
+  {
+    id: "pharmacy",
+    label: "Nhà thuốc",
+    icon: "💊",
+    osmKey: "amenity",
+    osmValue: "pharmacy",
+    color: "#C2410C",
+  },
 ];
 
 export function RoutePlannerPanel({
