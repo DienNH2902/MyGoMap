@@ -8,7 +8,7 @@ import {
 } from "@/lib/overpass/overpassClient";
 import type { PlaceResult, PoiCategoryId, PoiResult } from "@/lib/types";
 import { Button } from "../ui/Button";
-import { LoadingSpinner } from "../ui/LoadingSpinner";
+import { CircleLoadingSpinner } from "../ui/CircleLoadingSpinner";
 
 type GenderTheme = "nam" | "nu" | "khac";
 const STORAGE_KEY_GENDER = "mygomap_user_gender";
@@ -177,7 +177,7 @@ export function AroundSearchPanel({
 
         <div className="flex items-center justify-between gap-3">
           {isLoading ? (
-            <LoadingSpinner label="Đang tìm…" />
+            <CircleLoadingSpinner label="Đang tìm xung quanh…" />
           ) : (
             <p className="text-xs text-ink/45">
               {results.length > 0 ? `${results.length} kết quả` : "Chưa tìm"}
