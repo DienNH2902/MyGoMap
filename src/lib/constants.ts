@@ -196,8 +196,24 @@ export const POI_CATEGORIES: PoiCategoryDefinition[] = [
     icon: "💊",
     osmKey: "amenity",
     osmValue: "pharmacy",
-    color: "#C2410C",
+    color: "#06B6D4",
   },
+  // {
+  //   id: "doctors",
+  //   label: "Phòng khám",
+  //   icon: "🏥",
+  //   osmKey: "amenity",
+  //   osmValue: "doctors",
+  //   color: "#EF4444",
+  // },
+  // {
+  //   id: "clinic",
+  //   label: "Trạm y tế",
+  //   icon: "⚕️",
+  //   osmKey: "amenity",
+  //   osmValue: "clinic",
+  //   color: "#DC2626",
+  // },
 ];
 
 export interface MapStyleDefinition {
