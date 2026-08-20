@@ -91,34 +91,39 @@ export function PlaceAutocompleteInput({
 
       {isOpen && query.length >= 2 && (
         <div
-          className={`absolute z-50 max-h-64 w-full overflow-y-auto rounded-xl border border-ink/10 bg-white shadow-xl ${
+          className={`absolute z-50 w-full overflow-visible rounded-xl border border-ink/10 bg-white shadow-xl ${
             dropdownPlacement === "bottom"
               ? "top-full mt-2"
               : "bottom-full mb-2"
           }`}
         >
-          {isSearching && (
-            <p className="px-4 py-3 text-xs text-ink/40">Đang tìm kiếm…</p>
-          )}
-          {!isSearching && results.length === 0 && (
-            <p className="px-4 py-3 text-xs text-ink/40">
-              Không tìm thấy địa điểm phù hợp.
-            </p>
-          )}
-          {results.map((place) => (
-            <button
-              key={place.id}
-              type="button"
-              onClick={() => {
-                onSelect(place);
-                setQuery(place.label);
-                setIsOpen(false);
-              }}
-              className="block w-full truncate px-4 py-2.5 text-left text-sm text-ink/80 transition hover:bg-primary/5 hover:text-primary"
-            >
-              {place.label}
-            </button>
-          ))}
+          <div className="max-h-64 overflow-y-auto">
+            {isSearching && (
+              <p className="px-4 py-3 text-xs text-ink/40">Đang tìm kiếm…</p>
+            )}
+            {!isSearching && results.length === 0 && (
+              <p className="px-4 py-3 text-xs text-ink/40">
+                Không tìm thấy địa điểm phù hợp.
+              </p>
+            )}
+            {results.map((place) => (
+              <button
+                key={place.id}
+                type="button"
+                onClick={() => {
+                  onSelect(place);
+                  setQuery(place.label);
+                  setIsOpen(false);
+                }}
+                title={place.label}
+                className="group relative block w-full px-4 py-2.5 text-left text-sm text-ink/80 transition hover:bg-primary/5 hover:text-primary hover:z-10"
+              >
+                <span className="line-clamp-2 group-hover:line-clamp-none group-hover:whitespace-normal">
+                  {place.label}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
