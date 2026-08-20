@@ -150,6 +150,11 @@ function addTrafficLayer(map: MapLibreMap) {
       "raster-opacity": 0.99,
     },
   });
+  
+  // Ensure route layer stays on top of traffic layer
+  if (map.getLayer(ROUTE_LAYER_ID)) {
+    map.moveLayer(ROUTE_LAYER_ID);
+  }
 }
 
 export function MapView({
@@ -330,6 +335,12 @@ export function MapView({
         (existingSource as GeoJSONSource).setData(geojson);
       } else {
         map.addSource(ROUTE_SOURCE_ID, { type: "geojson", data: geojson });
+        
+        // Remove existing route layer if any (to re-add with correct order)
+        if (map.getLayer(ROUTE_LAYER_ID)) {
+          map.removeLayer(ROUTE_LAYER_ID);
+        }
+        
         map.addLayer({
           id: ROUTE_LAYER_ID,
           type: "line",
@@ -341,6 +352,11 @@ export function MapView({
             "line-opacity": 0.9,
           },
         });
+      }
+      
+      // Ensure route layer is always above traffic layer
+      if (map.getLayer(ROUTE_LAYER_ID) && map.getLayer(TRAFFIC_LAYER_ID)) {
+        map.moveLayer(ROUTE_LAYER_ID);
       }
 
       if (map.getLayer(ROUTE_LAYER_ID)) {
