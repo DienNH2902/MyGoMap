@@ -283,7 +283,7 @@ export function RoutePlannerPanel({
                 <button
                   type="button"
                   onClick={() => planner.setAvoidTraffic(!planner.avoidTraffic)}
-                  className={`rounded-xl border px-2 py-4 text-xs font-semibold transition ${
+                  className={`rounded-xl border h-[44px] mt-1 text-xs font-semibold transition ${
                     planner.avoidTraffic
                       ? getActiveStyles()
                       : `border-ink/10 bg-white text-slate-600 ${getHoverStyles()}`

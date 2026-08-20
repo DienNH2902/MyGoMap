@@ -50,7 +50,7 @@ export function NumberStepper({
       <span className="text-xs font-medium uppercase tracking-wide text-ink/50">
         {label}
       </span>
-      <div className="flex items-center gap-3 rounded-full border border-ink/10 bg-white px-2 py-1.5 shadow-sm">
+      <div className="flex items-center gap-3 rounded-full border border-ink/10 bg-white px-2 py-1 shadow-sm">
         <button
           type="button"
           onClick={() => onChange(Math.max(min, value - 1))}

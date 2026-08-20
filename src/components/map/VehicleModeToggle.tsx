@@ -51,7 +51,7 @@ export function VehicleModeToggle({
           {label}
         </span>
       )}
-      <div className="flex h-[42px] items-center gap-1 rounded-xl border border-ink/10 bg-white p-1 shadow-sm">
+      <div className="flex h-[43px] items-center gap-1 rounded-xl border border-ink/10 bg-white p-1 shadow-sm">
         <button
           type="button"
           onClick={() => onChange(false)}
@@ -63,7 +63,7 @@ export function VehicleModeToggle({
               : clsx("text-ink/60", getHoverStyles()),
           )}
         >
-          🚗 Ô tô
+          Ô tô
         </button>
 
         <button
@@ -77,7 +77,7 @@ export function VehicleModeToggle({
               : clsx("text-ink/60", getHoverStyles()),
           )}
         >
-          🏍️ Xe máy
+          Xe máy
         </button>
       </div>
     </div>
