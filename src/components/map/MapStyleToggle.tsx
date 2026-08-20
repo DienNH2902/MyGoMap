@@ -47,7 +47,7 @@ export function MapStyleToggle({ value, onChange }: MapStyleToggleProps) {
   const getHoverStyles = () => {
     if (gender === "nu") return "hover:bg-pink-50 hover:text-pink-500";
     if (gender === "khac") return "hover:bg-purple-50 hover:text-purple-500";
-    return "hover:bg-slate-100 text-slate-600";
+    return "hover:bg-slate-100 hover:text-slate-900";
   };
 
   return (
@@ -74,7 +74,7 @@ export function MapStyleToggle({ value, onChange }: MapStyleToggleProps) {
               }
               onClick={() => onChange(style.id)}
               className={clsx(
-                "rounded-xl px-3 py-2 text-xs font-semibold transition text-cream/50",
+                "rounded-xl px-3 py-2 text-xs font-semibold transition text-cream/70",
                 isActive
                   ? getActiveStyles()
                   : clsx("bg-transparent", getHoverStyles()),
