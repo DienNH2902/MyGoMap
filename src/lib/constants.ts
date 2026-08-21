@@ -39,7 +39,7 @@ export const MAP_STYLES: Record<MapStyleId, MapStyleDefinition> = {
     label: "Địa hình",
     description: "Bản đồ địa hình/topographic có đường đồng mức.",
     url: MAPTILER_KEY
-      ? `https://api.maptiler.com/maps/topo-v2/style.json?key=${MAPTILER_KEY}`
+      ? `https://api.maptiler.com/maps/01a023c1-2c97-7964-b39a-bb8767f2e6e4/style.json?key=${MAPTILER_KEY}`
       : MAP_STYLE_URL,
     needsMapTilerKey: true,
   },
@@ -48,7 +48,7 @@ export const MAP_STYLES: Record<MapStyleId, MapStyleDefinition> = {
     label: "Outdoor",
     description: "Bản đồ ngoài trời, phù hợp xem núi/đèo/đường xa.",
     url: MAPTILER_KEY
-      ? `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${MAPTILER_KEY}`
+      ? `https://api.maptiler.com/maps/01a023c2-444f-7a09-bce3-899cff448cc0/style.json?key=${MAPTILER_KEY}`
       : MAP_STYLE_URL,
     needsMapTilerKey: true,
   },
@@ -57,7 +57,7 @@ export const MAP_STYLES: Record<MapStyleId, MapStyleDefinition> = {
     label: "Vệ tinh",
     description: "Bản đồ vệ tinh, giúp góc nhìn thực tế.",
     url: MAPTILER_KEY
-      ? `https://api.maptiler.com/maps/hybrid/style.json?key=${MAPTILER_KEY}`
+      ? `https://api.maptiler.com/maps/01a023b7-c674-7b59-b79a-b9d9b045fd56/style.json?key=${MAPTILER_KEY}`
       : MAP_STYLE_URL,
     needsMapTilerKey: true,
   },
@@ -66,7 +66,7 @@ export const MAP_STYLES: Record<MapStyleId, MapStyleDefinition> = {
     label: "Bản đồ",
     description: "Bản đồ đường đi, giúp góc nhìn thực tế.",
     url: MAPTILER_KEY
-      ? `https://api.maptiler.com/maps/streets/style.json?key=${MAPTILER_KEY}`
+      ? `https://api.maptiler.com/maps/01a023bd-e26a-71e3-95b4-3335b9e4b6aa/style.json?key=${MAPTILER_KEY}`
       : MAP_STYLE_URL,
     needsMapTilerKey: true,
   },
@@ -75,7 +75,7 @@ export const MAP_STYLES: Record<MapStyleId, MapStyleDefinition> = {
     label: "Đường",
     description: "Bản đồ mở đường đi, giúp góc nhìn thực tế.",
     url: MAPTILER_KEY
-      ? `https://api.maptiler.com/maps/openstreetmap/style.json?key=${MAPTILER_KEY}`
+      ? `https://api.maptiler.com/maps/01a023c3-a272-7ff4-8a15-75dcca316c05/style.json?key=${MAPTILER_KEY}`
       : MAP_STYLE_URL,
     needsMapTilerKey: true,
   },
