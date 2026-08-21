@@ -7,7 +7,7 @@ export interface StopPoint {
 }
 
 /** Builds a GeoJSON LineString feature from an ordered array of [lon, lat] coordinates. */
-function buildLineString(
+export function buildLineString(
   coordinates: [number, number][],
 ): GeoJSON.Feature<GeoJSON.LineString> {
   return turf.lineString(coordinates);
@@ -119,4 +119,30 @@ export function getDistanceFromRouteStartKm(
   const distanceFromStartKm = snappedPoint.properties.location;
 
   return typeof distanceFromStartKm === "number" ? distanceFromStartKm : 0;
+}
+
+/**
+ * Cắt ra 1 cửa sổ ±windowKm quanh 1 mốc khoảng cách trên tuyến đường, rồi trả
+ * về bbox của đoạn đó theo đúng thứ tự tham số bbox của Overpass QL —
+ * (south,west,north,east) — KHÁC với thứ tự [west,south,east,north] mà
+ * turf.bbox() trả về mặc định. Dùng để tìm trạm dừng chân/lối ra cao tốc gần
+ * 1 mốc dừng tự động, xem snapAutoStopsToHighwayExits trong overpassClient.ts.
+ */
+export function getRouteWindowOverpassBbox(
+  coordinates: [number, number][],
+  targetDistanceKm: number,
+  windowKm: number,
+): { south: number; west: number; north: number; east: number } | null {
+  if (coordinates.length < 2) return null;
+
+  const line = buildLineString(coordinates);
+  const totalKm = turf.length(line, { units: "kilometers" });
+  const from = Math.max(0, targetDistanceKm - windowKm);
+  const to = Math.min(totalKm, targetDistanceKm + windowKm);
+  if (to <= from) return null;
+
+  const slice = turf.lineSliceAlong(line, from, to, { units: "kilometers" });
+  const [west, south, east, north] = turf.bbox(slice);
+
+  return { south, west, north, east };
 }

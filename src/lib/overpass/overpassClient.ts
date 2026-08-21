@@ -3,7 +3,11 @@ import {
   POI_SEARCH_RADIUS_METERS,
   MAX_POIS_PER_CATEGORY_PER_STOP,
 } from "../constants";
-import { distanceBetweenKm } from "../geo/turfHelpers";
+import {
+  distanceBetweenKm,
+  getDistanceFromRouteStartKm,
+  getRouteWindowOverpassBbox,
+} from "../geo/turfHelpers";
 import type { PoiCategoryDefinition, PoiResult } from "../types";
 
 interface OverpassTags {
@@ -346,4 +350,135 @@ relation["${category.osmKey}"="${category.osmValue}"](around:${safeRadiusMeters}
     .slice(0, 30);
 
   return { pois, fetchFailed: false };
+}
+
+export interface HighwaySnapCandidate {
+  lon: number;
+  lat: number;
+  distanceFromStartKm: number;
+}
+
+export interface HighwaySnapResult extends HighwaySnapCandidate {
+  /** false = giữ nguyên điểm gốc (không gần cao tốc, hoặc không tìm thấy gì phù hợp trong bán kính cho phép). */
+  snappedToHighwayFeature: boolean;
+  highwayFeatureType?: "rest_area" | "services" | "motorway_junction";
+  highwayFeatureName?: string;
+}
+
+/** Cửa sổ tìm kiếm quanh mỗi mốc chia đều lý tưởng dọc tuyến. */
+const HIGHWAY_SNAP_WINDOW_KM = 20;
+/** Không chấp nhận trạm/lối ra cách mốc lý tưởng quá xa — thà giữ nguyên mốc gốc còn hơn kéo lệch cả chục km khỏi vị trí "chia đều" ban đầu. */
+const HIGHWAY_SNAP_MAX_OFFSET_KM = 25;
+
+/**
+ * Với mỗi mốc dừng chia đều tự động, kiểm tra xem nó có đang rơi gần một
+ * đoạn cao tốc hay không — nếu có, thay bằng vị trí THẬT mà ô tô có thể dừng:
+ * ưu tiên trạm dừng chân/trạm nghỉ (`highway=services`/`rest_area`) nếu có
+ * gần đó, không thì lấy lối ra gần nhất (`highway=motorway_junction`) để sau
+ * đó tìm POI quanh lối ra đó trên đường thường. Những mốc không gần cao tốc
+ * (đường thường) được trả về NGUYÊN VẸN, không đổi gì — đây là lý do hàm này
+ * an toàn để luôn gọi mà không cần biết trước tuyến có đi cao tốc hay không.
+ *
+ * Không throw: mọi lỗi Overpass cho từng mốc chỉ khiến mốc đó giữ nguyên vị
+ * trí gốc (giống hành vi cũ), không bao giờ làm hỏng cả chuyến đi.
+ */
+export async function snapAutoStopsToHighwayExits(
+  candidates: HighwaySnapCandidate[],
+  routeCoordinates: [number, number][],
+  signal?: AbortSignal,
+): Promise<HighwaySnapResult[]> {
+  if (candidates.length === 0) return [];
+
+  return Promise.all(
+    candidates.map((candidate) =>
+      snapOneStopToHighwayExit(candidate, routeCoordinates, signal),
+    ),
+  );
+}
+
+async function snapOneStopToHighwayExit(
+  candidate: HighwaySnapCandidate,
+  routeCoordinates: [number, number][],
+  signal?: AbortSignal,
+): Promise<HighwaySnapResult> {
+  const bbox = getRouteWindowOverpassBbox(
+    routeCoordinates,
+    candidate.distanceFromStartKm,
+    HIGHWAY_SNAP_WINDOW_KM,
+  );
+  if (!bbox) return { ...candidate, snappedToHighwayFeature: false };
+
+  const bboxStr = `${bbox.south},${bbox.west},${bbox.north},${bbox.east}`;
+  const query = `[out:json][timeout:25];(
+node["highway"="services"](${bboxStr});
+way["highway"="services"](${bboxStr});
+node["highway"="rest_area"](${bboxStr});
+way["highway"="rest_area"](${bboxStr});
+node["highway"="motorway_junction"](${bboxStr});
+);out center tags;`;
+
+  const data = await fetchOverpassQuery(query, signal);
+  if (!data || data.elements.length === 0) {
+    return { ...candidate, snappedToHighwayFeature: false };
+  }
+
+  type RankedFeature = {
+    lon: number;
+    lat: number;
+    type: "rest_area" | "services" | "motorway_junction";
+    name?: string;
+    offsetKm: number;
+    priority: number;
+  };
+
+  const ranked = data.elements
+    .map((element): RankedFeature | null => {
+      const lat = element.lat ?? element.center?.lat;
+      const lon = element.lon ?? element.center?.lon;
+      const highwayTag = element.tags?.highway;
+      if (lat === undefined || lon === undefined) return null;
+      if (
+        highwayTag !== "services" &&
+        highwayTag !== "rest_area" &&
+        highwayTag !== "motorway_junction"
+      ) {
+        return null;
+      }
+
+      const distanceAlongRouteKm = getDistanceFromRouteStartKm(
+        routeCoordinates,
+        { lon, lat },
+      );
+      const offsetKm = Math.abs(
+        distanceAlongRouteKm - candidate.distanceFromStartKm,
+      );
+
+      // Ưu tiên trạm dừng chân/trạm nghỉ THẬT (ăn uống/đổ xăng ngay tại chỗ)
+      // hơn lối ra đơn thuần (chỉ vừa thoát khỏi cao tốc, chưa chắc gần gì).
+      const priority = highwayTag === "motorway_junction" ? 1 : 0;
+
+      return {
+        lon,
+        lat,
+        type: highwayTag,
+        name: element.tags?.name,
+        offsetKm,
+        priority,
+      };
+    })
+    .filter((entry): entry is RankedFeature => entry !== null)
+    .filter((entry) => entry.offsetKm <= HIGHWAY_SNAP_MAX_OFFSET_KM)
+    .sort((a, b) => a.priority - b.priority || a.offsetKm - b.offsetKm);
+
+  const best = ranked[0];
+  if (!best) return { ...candidate, snappedToHighwayFeature: false };
+
+  return {
+    lon: best.lon,
+    lat: best.lat,
+    distanceFromStartKm: candidate.distanceFromStartKm,
+    snappedToHighwayFeature: true,
+    highwayFeatureType: best.type,
+    highwayFeatureName: best.name,
+  };
 }

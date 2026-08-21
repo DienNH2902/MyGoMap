@@ -7,6 +7,7 @@ import {
 } from "@/lib/routing/openRouteService";
 import {
   findPoisForStops,
+  snapAutoStopsToHighwayExits,
   type StopQueryPoint,
 } from "@/lib/overpass/overpassClient";
 import {
@@ -297,12 +298,41 @@ export function useRoutePlanner() {
             source: "custom" as const,
           }))
         : stopCount > 0
-          ? getEvenlySpacedStopPoints(route.coordinates, stopCount).map(
-              (point) => ({
-                ...point,
+          ? await (async () => {
+              const evenPoints = getEvenlySpacedStopPoints(
+                route.coordinates,
+                stopCount,
+              );
+
+              // Ô tô ĐƯỢC đi cao tốc (avoidHighways=false) → mốc chia đều có
+              // thể rơi ngay giữa dải phân cách cao tốc, nơi ô tô KHÔNG THỂ
+              // dừng hay thoát ra. Xe máy thì không cần bước này vì
+              // avoidHighways=true đã khiến ORS né cao tốc hoàn toàn ngay từ
+              // lúc tính đường rồi — tuyến của xe máy vốn không đi qua cao
+              // tốc để mà phải né mốc dừng trên đó nữa.
+              const snapped = avoidHighways
+                ? evenPoints.map((point) => ({
+                    ...point,
+                    snappedToHighwayFeature: false as const,
+                  }))
+                : await snapAutoStopsToHighwayExits(
+                    evenPoints,
+                    route.coordinates,
+                  );
+
+              return snapped.map((point) => ({
+                lon: point.lon,
+                lat: point.lat,
+                distanceFromStartKm: point.distanceFromStartKm,
+                label: point.snappedToHighwayFeature
+                  ? (point.highwayFeatureName ??
+                    (point.highwayFeatureType === "motorway_junction"
+                      ? "Lối ra cao tốc"
+                      : "Trạm dừng chân"))
+                  : undefined,
                 source: "auto" as const,
-              }),
-            )
+              }));
+            })()
           : // Không chọn số điểm dừng cụ thể nhưng CÓ chọn danh mục (ví dụ
             // "Cây xăng") → không có mốc nào để tìm quanh cả, nên thay vào đó
             // rải điểm tìm kiếm đều đặn mỗi AUTO_SEARCH_INTERVAL_KM (~50km)
