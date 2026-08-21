@@ -30,7 +30,7 @@ export interface PoiCategoryDefinition {
 
 export function RoutePlannerPanel({
   planner,
-  isCollapsed = false,
+  isCollapsed = true,
   onToggleCollapse,
 }: RoutePlannerPanelProps) {
   const [isLocatingStart, setIsLocatingStart] = useState(false);

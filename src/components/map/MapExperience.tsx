@@ -79,7 +79,7 @@ export function MapExperience() {
   const [isCaught, setIsCaught] = useState(false);
 
   // State đóng/mở thanh RoutePlannerPanel
-  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);
 
   // State quản lý việc ẩn/hiện thông báo lỗi
   const [isErrorDismissed, setIsErrorDismissed] = useState(false);
