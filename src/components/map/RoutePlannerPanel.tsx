@@ -8,6 +8,7 @@ import { Button } from "../ui/Button";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
 import type { UseRoutePlannerReturn } from "@/hooks/useRoutePlanner";
 import { useEffect, useState } from "react";
+import { POI_CATEGORIES } from "@/lib/constants";
 
 type GenderTheme = "nam" | "nu" | "khac";
 const STORAGE_KEY_GENDER = "mygomap_user_gender";
@@ -26,73 +27,6 @@ export interface PoiCategoryDefinition {
   osmValue: string;
   color: string;
 }
-
-export const POI_CATEGORIES: PoiCategoryDefinition[] = [
-  {
-    id: "fuel",
-    label: "Trạm xăng",
-    icon: "⛽",
-    osmKey: "amenity",
-    osmValue: "fuel",
-    color: "#EF4444",
-  },
-  {
-    id: "rest_area",
-    label: "Trạm dừng chân",
-    icon: "🛣️",
-    osmKey: "highway",
-    osmValue: "rest_area",
-    color: "#8B5CF6",
-  },
-  {
-    id: "restaurant",
-    label: "Quán ăn",
-    icon: "🍜",
-    osmKey: "amenity",
-    osmValue: "restaurant",
-    color: "#F59E0B",
-  },
-  {
-    id: "cafe",
-    label: "Cà phê",
-    icon: "☕",
-    osmKey: "amenity",
-    osmValue: "cafe",
-    color: "#78350F",
-  },
-  {
-    id: "hotel",
-    label: "Khách sạn",
-    icon: "🛏️",
-    osmKey: "tourism",
-    osmValue: "hotel",
-    color: "#0EA5E9",
-  },
-  {
-    id: "atm",
-    label: "ATM",
-    icon: "🏧",
-    osmKey: "amenity",
-    osmValue: "atm",
-    color: "#10B981",
-  },
-  {
-    id: "convenience",
-    label: "Cửa hàng tiện lợi",
-    icon: "🏪",
-    osmKey: "shop",
-    osmValue: "convenience",
-    color: "#EC4899",
-  },
-  {
-    id: "pharmacy",
-    label: "Nhà thuốc",
-    icon: "💊",
-    osmKey: "amenity",
-    osmValue: "pharmacy",
-    color: "#C2410C",
-  },
-];
 
 export function RoutePlannerPanel({
   planner,
