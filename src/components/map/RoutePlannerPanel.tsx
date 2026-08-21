@@ -59,6 +59,13 @@ export function RoutePlannerPanel({
     return "hover:bg-slate-100 hover:text-slate-900";
   };
 
+  // Kiểm tra trùng vị trí (bằng id hoặc tọa độ lat, lon)
+  const isSameLocation =
+    Boolean(planner.start && planner.end) &&
+    (planner.start?.id === planner.end?.id ||
+      (planner.start?.lat === planner.end?.lat &&
+        planner.start?.lon === planner.end?.lon));
+
   const isCustomStopsValid =
     planner.stopMode !== "custom" ||
     planner.customStops.every(
@@ -71,6 +78,7 @@ export function RoutePlannerPanel({
 
   const canPlan =
     Boolean(planner.start && planner.end) &&
+    !isSameLocation &&
     isCustomStopsValid &&
     !planner.isLoading;
 
@@ -241,6 +249,29 @@ export function RoutePlannerPanel({
                 </button>
               </div>
             </div>
+
+            {/* Thông báo lỗi khi điểm đi và điểm đến bị trùng nhau */}
+            {isSameLocation && (
+              <div className="mt-3 flex justify-center items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-300">
+                <svg
+                  className="h-4 w-4 shrink-0 text-rose-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                <span>
+                  Điểm xuất phát và điểm kết thúc trùng nhau. Vậy kiếm đường chi
+                  má!
+                </span>
+              </div>
+            )}
 
             <div className="flex min-w-[180px] flex-col gap-1.5">
               <span className="pt-5 text-[10px] font-bold uppercase tracking-wide text-cream/50">
