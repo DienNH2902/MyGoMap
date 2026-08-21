@@ -85,7 +85,7 @@ export const POI_CATEGORIES: PoiCategoryDefinition[] = [
     color: "#EC4899",
   },
   {
-    id: "pharmacy | medicine",
+    id: "pharmacy",
     label: "Nhà thuốc",
     icon: "💊",
     osmKey: "amenity",
@@ -111,18 +111,18 @@ export function RoutePlannerPanel({
 
   const getActiveStyles = () => {
     if (gender === "nu") {
-      return "bg-pink-500 text-white shadow-sm";
+      return "bg-pink-500 text-white shadow";
     }
     if (gender === "khac") {
-      return "bg-gradient-to-r from-amber-400 via-rose-500 to-violet-500 text-white shadow-sm";
+      return "bg-gradient-to-r from-amber-400 via-rose-500 to-violet-500 text-white shadow";
     }
-    return "bg-primary text-white shadow-sm";
+    return "bg-primary text-white shadow";
   };
 
   const getHoverStyles = () => {
-    if (gender === "nu") return "hover:text-pink-500";
-    if (gender === "khac") return "hover:text-purple-500";
-    return "hover:text-primary";
+    if (gender === "nu") return "hover:bg-pink-50 hover:text-pink-500";
+    if (gender === "khac") return "hover:bg-purple-50 hover:text-purple-500";
+    return "hover:bg-slate-100 hover:text-slate-900";
   };
 
   const isCustomStopsValid =
@@ -196,9 +196,9 @@ export function RoutePlannerPanel({
         alert(msg);
       },
       {
-        enableHighAccuracy: false, // Tắt độ chính xác cao để ưu tiên phản hồi tức thì
-        timeout: 10000, // Giới hạn 10s chờ
-        maximumAge: 300000, // Sử dụng cache trong vòng 5 phút
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 300000,
       },
     );
   };
@@ -210,7 +210,7 @@ export function RoutePlannerPanel({
         <button
           type="button"
           onClick={onToggleCollapse}
-          className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-ink/10 bg-white/95 px-4 py-1.5 text-xs font-semibold text-ink shadow-md backdrop-blur-md transition-all hover:bg-slate-50 active:scale-95"
+          className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-ink/10 bg-ink/85 px-4 py-1.5 text-xs font-semibold text-cream shadow-md backdrop-blur-md transition-all hover:bg-ink/95 active:scale-95"
         >
           <span>{isCollapsed ? "Mở bảng tìm đường" : "Thu gọn bảng"}</span>
           <svg
@@ -231,11 +231,12 @@ export function RoutePlannerPanel({
         </button>
       )}
 
-      {/* Nội dung bảng điều khiển (ẩn/hiện theo state isCollapsed) */}
+      {/* Nội dung bảng điều khiển */}
       {!isCollapsed && (
         <>
-          <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-2 rounded-full border border-ink/10 bg-white/90 px-4 py-1.5 shadow-sm backdrop-blur-md">
-            <span className="text-xs font-medium text-slate-500">
+          {/* Thanh chú thích */}
+          <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-ink/10 bg-ink/85 px-4 py-1.5 shadow-xl backdrop-blur-md">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-cream/50">
               Chú thích:
             </span>
             {POI_CATEGORIES.map((category) => (
@@ -244,15 +245,18 @@ export function RoutePlannerPanel({
                 className="flex items-center gap-1.5 px-1.5 py-0.5"
               >
                 <span
-                  className="h-2.5 w-2.5 rounded-full"
+                  className="h-2.5 w-2.5 rounded-full shadow-sm"
                   style={{ backgroundColor: category.color }}
                 />
-                <span className="text-xs text-slate-700">{category.label}</span>
+                <span className="text-xs font-medium text-cream/90">
+                  {category.label}
+                </span>
               </div>
             ))}
           </div>
 
-          <div className="pointer-events-auto w-full max-w-4xl rounded-3xl border border-ink/10 bg-white/95 p-5 shadow-2xl backdrop-blur-md transition-all">
+          {/* Bảng tìm đường chính */}
+          <div className="pointer-events-auto w-full max-w-4xl rounded-3xl border border-ink/10 bg-ink/85 p-5 shadow-xl backdrop-blur-md transition-all">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
               <PlaceAutocompleteInput
                 label="Điểm xuất phát"
@@ -284,17 +288,17 @@ export function RoutePlannerPanel({
               />
 
               <div className="flex min-w-[80px] flex-col gap-0.5">
-                <span className="text-xs font-medium uppercase tracking-wide text-ink/50">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-cream/50">
                   Giao thông
                 </span>
 
                 <button
                   type="button"
                   onClick={() => planner.setAvoidTraffic(!planner.avoidTraffic)}
-                  className={`rounded-xl border h-[44px] mt-1 text-xs font-semibold transition ${
+                  className={`mt-1 h-[44px] rounded-xl text-xs font-semibold transition ${
                     planner.avoidTraffic
                       ? getActiveStyles()
-                      : `border-ink/10 bg-white text-slate-600 ${getHoverStyles()}`
+                      : `bg-transparent text-cream/90 ${getHoverStyles()}`
                   }`}
                 >
                   {planner.avoidTraffic ? "Bật" : "Tắt"}
@@ -303,17 +307,17 @@ export function RoutePlannerPanel({
             </div>
 
             <div className="flex min-w-[180px] flex-col gap-1.5">
-              <span className="text-xs font-medium uppercase tracking-wide text-ink/50 pt-5">
+              <span className="pt-5 text-[10px] font-bold uppercase tracking-wide text-cream/50">
                 Kiểu điểm dừng
               </span>
-              <div className="flex rounded-xl border border-ink/10 bg-white p-1">
+              <div className="flex rounded-2xl border border-ink/10 bg-black/20 p-1 gap-2">
                 <button
                   type="button"
                   onClick={() => planner.setStopMode("auto")}
-                  className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold ${
+                  className={`flex-1 rounded-xl px-3 py-2 text-xs font-semibold transition ${
                     planner.stopMode === "auto"
                       ? getActiveStyles()
-                      : `text-slate-600 ${getHoverStyles()}`
+                      : `bg-transparent text-cream/90 ${getHoverStyles()}`
                   }`}
                 >
                   Tự chia đều
@@ -321,10 +325,10 @@ export function RoutePlannerPanel({
                 <button
                   type="button"
                   onClick={() => planner.setStopMode("custom")}
-                  className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold ${
+                  className={`flex-1 rounded-xl px-3 py-2 text-xs font-semibold transition ${
                     planner.stopMode === "custom"
                       ? getActiveStyles()
-                      : `text-slate-600 ${getHoverStyles()}`
+                      : `bg-transparent text-cream/90 ${getHoverStyles()}`
                   }`}
                 >
                   Tự chọn
@@ -340,22 +344,22 @@ export function RoutePlannerPanel({
               />
 
               {planner.stopMode === "custom" && (
-                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-3">
+                <div className="mt-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3">
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-amber-400">
                       Điểm dừng tùy chỉnh
                     </span>
                     <Button
                       variant="ghost"
                       type="button"
                       onClick={() => planner.addCustomStop()}
-                      className="border border-amber-300 bg-white"
+                      className="border border-amber-500/30 bg-black/20 text-amber-300 hover:bg-amber-500/20"
                     >
                       Thêm điểm dừng
                     </Button>
                   </div>
 
-                  <div className="relative z-40 flex flex-col gap-3 max-h-40 overflow-y-auto pb-6">
+                  <div className="relative z-40 flex max-h-40 flex-col gap-3 overflow-y-auto pb-6">
                     {planner.customStops.map((stop, index) => (
                       <div
                         key={`${stop.id}-${index}`}
@@ -374,7 +378,7 @@ export function RoutePlannerPanel({
                           variant="ghost"
                           type="button"
                           onClick={() => planner.removeCustomStop(index)}
-                          className="mb-0 border border-red-200 text-red-600"
+                          className="mb-0 border border-red-500/30 bg-black/20 text-red-400 hover:bg-red-500/20"
                         >
                           Xóa
                         </Button>
@@ -382,7 +386,7 @@ export function RoutePlannerPanel({
                     ))}
 
                     {planner.customStops.length === 0 && (
-                      <p className="text-xs text-amber-700">
+                      <p className="text-xs text-amber-300/80">
                         Bạn có thể thêm bằng ô tìm kiếm ở đây hoặc chuột phải
                         trên bản đồ rồi chọn “Thêm điểm dừng”.
                       </p>
@@ -399,7 +403,7 @@ export function RoutePlannerPanel({
                   variant="ghost"
                   type="button"
                   onClick={planner.reset}
-                  className="border border-ink/10"
+                  className="border border-ink/10 text-cream/90 hover:bg-white/10"
                 >
                   Đặt lại
                 </Button>

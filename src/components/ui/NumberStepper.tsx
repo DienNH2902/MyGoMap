@@ -18,13 +18,13 @@ const STORAGE_KEY_GENDER = "mygomap_user_gender";
 /** Trả về class kiểu dáng nút bấm theo giới tính */
 function getStepperButtonClasses(gender: GenderTheme): string {
   if (gender === "nu") {
-    return "text-pink-500 hover:bg-pink-500/10";
+    return "text-pink-400 hover:bg-pink-500/20";
   }
   if (gender === "khac") {
-    return "text-purple-500 hover:bg-purple-500/10";
+    return "text-purple-400 hover:bg-purple-500/20";
   }
   // Nam (Default)
-  return "text-primary hover:bg-primary/10";
+  return "text-primary hover:bg-primary/20";
 }
 
 /** A labeled +/- control, styled dynamically based on user gender theme. */
@@ -47,16 +47,16 @@ export function NumberStepper({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium uppercase tracking-wide text-ink/50">
+      <span className="text-[10px] font-bold uppercase tracking-wide text-cream/50">
         {label}
       </span>
-      <div className="flex items-center gap-3 rounded-full border border-ink/10 bg-white px-2 py-1 shadow-sm">
+      <div className="flex h-[44px] items-center gap-2 rounded-2xl border border-ink/10 bg-black/20 px-2.5">
         <button
           type="button"
           onClick={() => onChange(Math.max(min, value - 1))}
           disabled={value <= min}
           className={clsx(
-            "flex h-8 w-8 items-center justify-center rounded-full bg-surface-muted text-lg font-bold transition disabled:opacity-30",
+            "flex h-7 w-7 items-center justify-center rounded-xl bg-white/5 text-lg font-bold transition active:scale-95 disabled:opacity-30 disabled:pointer-events-none",
             buttonThemeClass,
           )}
           aria-label="Giảm số điểm dừng"
@@ -64,7 +64,7 @@ export function NumberStepper({
           −
         </button>
 
-        <span className="w-6 text-center font-mono text-base font-semibold text-ink">
+        <span className="w-6 text-center font-mono text-sm font-bold text-cream">
           {value}
         </span>
 
@@ -73,7 +73,7 @@ export function NumberStepper({
           onClick={() => onChange(Math.min(max, value + 1))}
           disabled={value >= max}
           className={clsx(
-            "flex h-8 w-8 items-center justify-center rounded-full bg-surface-muted text-lg font-bold transition disabled:opacity-30",
+            "flex h-7 w-7 items-center justify-center rounded-xl bg-white/5 text-lg font-bold transition active:scale-95 disabled:opacity-30 disabled:pointer-events-none",
             buttonThemeClass,
           )}
           aria-label="Tăng số điểm dừng"

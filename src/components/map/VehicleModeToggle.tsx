@@ -30,37 +30,37 @@ export function VehicleModeToggle({
 
   const getActiveStyles = () => {
     if (gender === "nu") {
-      return "bg-pink-500 text-white shadow-sm";
+      return "bg-pink-500 text-white shadow";
     }
     if (gender === "khac") {
-      return "bg-gradient-to-r from-amber-400 via-rose-500 to-violet-500 text-white shadow-sm";
+      return "bg-gradient-to-r from-amber-400 via-rose-500 to-violet-500 text-white shadow";
     }
-    return "bg-primary text-white shadow-sm";
+    return "bg-primary text-white shadow";
   };
 
   const getHoverStyles = () => {
-    if (gender === "nu") return "hover:text-pink-500";
-    if (gender === "khac") return "hover:text-purple-500";
-    return "hover:text-primary";
+    if (gender === "nu") return "hover:bg-pink-50 hover:text-pink-500";
+    if (gender === "khac") return "hover:bg-purple-50 hover:text-purple-500";
+    return "hover:bg-slate-100 hover:text-slate-900";
   };
 
   return (
-    <div className="flex flex-1 flex-col justify-end">
+    <div className="flex flex-1 flex-col justify-end min-w-[140px]">
       {label && (
-        <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink/50">
+        <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-cream/50">
           {label}
         </span>
       )}
-      <div className="flex h-[43px] items-center gap-1 rounded-xl border border-ink/10 bg-white p-1 shadow-sm">
+      <div className="flex h-[44px] items-center gap-1 rounded-2xl border border-ink/10 bg-black/20 p-1">
         <button
           type="button"
           onClick={() => onChange(false)}
           aria-pressed={!avoidHighways}
           className={clsx(
-            "flex h-full flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition",
+            "flex h-full flex-1 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition",
             !avoidHighways
               ? getActiveStyles()
-              : clsx("text-ink/60", getHoverStyles()),
+              : clsx("bg-transparent text-cream/90", getHoverStyles()),
           )}
         >
           Ô tô
@@ -71,10 +71,10 @@ export function VehicleModeToggle({
           onClick={() => onChange(true)}
           aria-pressed={avoidHighways}
           className={clsx(
-            "flex h-full flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition",
+            "flex h-full flex-1 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition",
             avoidHighways
               ? getActiveStyles()
-              : clsx("text-ink/60", getHoverStyles()),
+              : clsx("bg-transparent text-cream/90", getHoverStyles()),
           )}
         >
           Xe máy

@@ -101,11 +101,12 @@ export function LandingHero() {
         autoPlay
         loop
         muted
+        preload="auto"
         playsInline
         className="absolute inset-0 h-full w-full object-cover"
       >
-        {/* <source src="/assets/mapvideo.mp4" type="video/mp4" /> */}
-        <source src="/assets/china-cat.mp4" type="video/mp4" />
+        <source src="/assets/mapvideo.mp4" type="video/mp4" />
+        {/* <source src="/assets/china-cat.mp4" type="video/mp4" /> */}
       </video>
 
       {/* <Image
@@ -118,9 +119,9 @@ export function LandingHero() {
       /> */}
 
       {/* Overlay lớp phủ tối giúp chữ hiển thị rõ ràng */}
-      <div className="absolute inset-0 bg-ink/75" />
+      {/* <div className="absolute inset-0 bg-ink/75" /> */}
 
-      {/* <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(15,23,42,0.85)_0%,_transparent_60%),_radial-gradient(ellipse_at_bottom_right,_rgba(15,23,42,0.85)_0%,_transparent_60%)] backdrop-blur-[1px]" /> */}
+      <div className="pointer-events-none absolute inset-0 bg-ink/40 bg-[radial-gradient(ellipse_at_top_left,_rgba(15,23,42,0.85)_0%,_transparent_60%),_radial-gradient(ellipse_at_bottom_right,_rgba(15,23,42,0.85)_0%,_transparent_60%)] backdrop-blur-[5px]" />
 
       {/* Overlay lớp phủ tối tỏa từ tâm quanh khu vực chữ */}
       {/* <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(15,23,42,0.98)_0%,_rgba(15,23,42,0.85)_30%,_rgba(15,23,42,0.3)_55%,_transparent_100%)]" /> */}

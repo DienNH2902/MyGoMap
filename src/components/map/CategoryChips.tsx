@@ -16,7 +16,7 @@ interface CategoryChipsProps {
 
 /** Multi-select toggle chips styled dynamically based on user gender theme. */
 export function CategoryChips({
-  label = "Loại xe",
+  label = "Danh mục",
   selected,
   onToggle,
 }: CategoryChipsProps) {
@@ -30,29 +30,29 @@ export function CategoryChips({
 
   const getActiveStyles = () => {
     if (gender === "nu") {
-      return "border-pink-500 bg-pink-500 text-white shadow-sm";
+      return "border-pink-500 bg-pink-500 text-white shadow";
     }
     if (gender === "khac") {
-      return "border-purple-300 bg-gradient-to-r from-amber-400 via-rose-500 to-violet-500 text-white shadow-sm";
+      return "border-purple-300 bg-gradient-to-r from-amber-400 via-rose-500 to-violet-500 text-white shadow";
     }
-    return "border-primary bg-primary text-white shadow-sm";
+    return "border-primary bg-primary text-white shadow";
   };
 
   const getHoverStyles = () => {
     if (gender === "nu") {
-      return "hover:border-pink-500/40 hover:text-pink-500";
+      return "hover:bg-pink-50 hover:text-pink-500";
     }
     if (gender === "khac") {
-      return "hover:border-purple-500/40 hover:text-purple-400";
+      return "hover:bg-purple-50 hover:text-purple-500";
     }
-    return "hover:border-primary/40 hover:text-primary";
+    return "hover:bg-slate-100 hover:text-slate-900";
   };
 
   return (
     <div className="flex flex-col justify-end">
       <div>
         {label && (
-          <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink/50">
+          <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-cream/50">
             {label}
           </span>
         )}
@@ -66,11 +66,11 @@ export function CategoryChips({
               type="button"
               onClick={() => onToggle(category.id)}
               className={clsx(
-                "flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition",
+                "flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition",
                 isActive
                   ? getActiveStyles()
                   : clsx(
-                      "border-ink/10 bg-white text-ink/60",
+                      "border-ink/10 bg-black/20 text-cream/90",
                       getHoverStyles(),
                     ),
               )}

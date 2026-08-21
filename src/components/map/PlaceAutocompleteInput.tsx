@@ -11,7 +11,7 @@ interface PlaceAutocompleteInputProps {
   value: PlaceResult | null;
   onSelect: (place: PlaceResult | null) => void;
   onUseCurrentLocation?: () => void;
-  isLocating?: boolean; // State hiển thị đang lấy GPS
+  isLocating?: boolean;
   dropdownPlacement?: "top" | "bottom";
 }
 
@@ -52,7 +52,7 @@ export function PlaceAutocompleteInput({
   return (
     <div className="relative min-w-[200px] flex-1">
       <div className="mb-1.5 flex items-center justify-between">
-        <label className="block text-xs font-medium uppercase tracking-wide text-ink/50">
+        <label className="block text-[10px] font-bold uppercase tracking-wide text-cream/50">
           {label}
         </label>
         {onUseCurrentLocation && (
@@ -60,7 +60,7 @@ export function PlaceAutocompleteInput({
             type="button"
             onClick={onUseCurrentLocation}
             disabled={isLocating}
-            className="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline disabled:opacity-50"
+            className="flex items-center gap-1 text-[11px] font-semibold text-primary transition hover:text-primary/80 hover:underline disabled:opacity-50"
           >
             {isLocating ? (
               <>
@@ -86,12 +86,12 @@ export function PlaceAutocompleteInput({
         }}
         onFocus={() => setIsOpen(true)}
         onBlur={() => setTimeout(() => setIsOpen(false), 150)}
-        className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink placeholder:text-ink/30 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:bg-slate-50"
+        className="w-full rounded-xl border border-ink/10 bg-black/30 px-4 py-2.5 text-sm text-cream placeholder:text-cream/30 transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-black/10 disabled:text-cream/40"
       />
 
       {isOpen && query.length >= 2 && (
         <div
-          className={`absolute z-50 w-full overflow-visible rounded-xl border border-ink/10 bg-white shadow-xl ${
+          className={`absolute z-50 w-full overflow-hidden rounded-xl border border-ink/10 bg-ink/95 shadow-2xl backdrop-blur-md ${
             dropdownPlacement === "bottom"
               ? "top-full mt-2"
               : "bottom-full mb-2"
@@ -99,10 +99,10 @@ export function PlaceAutocompleteInput({
         >
           <div className="max-h-64 overflow-y-auto">
             {isSearching && (
-              <p className="px-4 py-3 text-xs text-ink/40">Đang tìm kiếm…</p>
+              <p className="px-4 py-3 text-xs text-cream/50">Đang tìm kiếm…</p>
             )}
             {!isSearching && results.length === 0 && (
-              <p className="px-4 py-3 text-xs text-ink/40">
+              <p className="px-4 py-3 text-xs text-cream/50">
                 Không tìm thấy địa điểm phù hợp.
               </p>
             )}
@@ -116,7 +116,7 @@ export function PlaceAutocompleteInput({
                   setIsOpen(false);
                 }}
                 title={place.label}
-                className="group relative block w-full px-4 py-2.5 text-left text-sm text-ink/80 transition hover:bg-primary/5 hover:text-primary hover:z-10"
+                className="group relative block w-full border-b border-white/5 px-4 py-2.5 text-left text-sm text-cream/80 transition hover:bg-white/10 hover:text-white last:border-none"
               >
                 <span className="line-clamp-2 group-hover:line-clamp-none group-hover:whitespace-normal">
                   {place.label}

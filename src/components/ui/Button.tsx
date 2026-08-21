@@ -41,7 +41,13 @@ function getVariantClasses(
   }
 
   // Ghost variant
-  return "text-ink/70 hover:text-ink hover:bg-ink/5";
+  if (gender === "nu") {
+    return "text-cream/90 hover:bg-pink-500/15 hover:text-pink-300";
+  }
+  if (gender === "khac") {
+    return "text-cream/90 hover:bg-purple-500/15 hover:text-purple-300";
+  }
+  return "text-cream/90 hover:bg-primary/20 hover:text-white";
 }
 
 /** Shared button used across MyGoMap, styled based on user gender theme. */
@@ -62,7 +68,7 @@ export function Button({
   return (
     <button
       className={clsx(
-        "inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100",
         getVariantClasses(variant, gender),
         className,
       )}

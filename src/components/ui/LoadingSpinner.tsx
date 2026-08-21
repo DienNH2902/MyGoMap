@@ -7,7 +7,7 @@ interface LoadingSpinnerProps {
 /** Minimal inline spinner with an optional label, used while data is being fetched. */
 export function LoadingSpinner({ label }: LoadingSpinnerProps) {
   return (
-    <div className="flex items-center gap-2 text-sm text-ink/60">
+    <div className="flex items-center gap-2 text-sm text-cream/90">
       <div
         aria-label="Orange and tan hamster running in a metal wheel"
         role="img"
