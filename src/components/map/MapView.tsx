@@ -89,7 +89,7 @@ function getThemeStyles(gender: GenderTheme) {
       startBg: "bg-gradient-to-r from-red-500 via-yellow-500 to-green-500",
       startRing: "ring-purple-500/30",
       endBg: "bg-gradient-to-r from-blue-500 via-indigo-500 to-pink-500",
-      endRing: "ring-pink-500/30",
+      endRing: "ring-pink-600/30",
       stopBg:
         "bg-gradient-to-r from-amber-400 via-rose-400 to-violet-500 text-white",
       stopActiveBg:
@@ -106,6 +106,43 @@ function getThemeStyles(gender: GenderTheme) {
     stopBg: "bg-primary",
     stopActiveBg: "bg-accent-gold",
   };
+}
+
+function getSegmentColorsByGender(gender: GenderTheme): string[] {
+  if (gender === "nam") {
+    return [
+      "#FF6A1A", // Cam chủ đạo
+      "#EF4444", // Đỏ tươi
+      "#F59E0B", // Hổ phách / Vàng cam
+      "#EA580C", // Cam đậm
+      "#DC2626", // Đỏ đậm
+      "#D97706", // Vàng đậm
+      "#B91C1C", // Đỏ thẫm
+    ];
+  }
+
+  if (gender === "nu") {
+    return [
+      "#EC4899", // Hồng tươi
+      "#8B5CF6", // Tím tím
+      "#F43F5E", // Đỏ hồng
+      "#D946EF", // Tím hồng
+      "#A855F7", // Tím đậm
+      "#FB7185", // Hồng san hô
+      "#C084FC", // Tím nhạt
+    ];
+  }
+
+  // "khac"
+  return [
+    "#8B5CF6", // Tím
+    "#06B6D4", // Xanh ngọc
+    "#10B981", // Xanh lá
+    "#F59E0B", // Vàng cam
+    "#EC4899", // Hồng
+    "#3B82F6", // Xanh dương
+    "#F97316", // Cam
+  ];
 }
 
 function runWhenStyleReady(map: MapLibreMap, callback: () => void) {
@@ -196,6 +233,8 @@ export function MapView({
   const [gender, setGender] = useState<GenderTheme>("nam");
 
   const [styleReloadKey, setStyleReloadKey] = useState(0);
+
+  const activeSegmentLayersRef = useRef<string[]>([]);
 
   useEffect(() => {
     const savedGender =
@@ -323,20 +362,61 @@ export function MapView({
     const map = mapRef.current;
     if (!map) return;
 
+    const clearSegmentLayers = () => {
+      activeSegmentLayersRef.current.forEach((layerId) => {
+        if (map.getLayer(layerId)) {
+          map.removeLayer(layerId);
+        }
+        const sourceId = layerId.replace("-layer", "-source");
+        if (map.getSource(sourceId)) {
+          map.removeSource(sourceId);
+        }
+      });
+      activeSegmentLayersRef.current = [];
+    };
+
     const applyRoute = () => {
-      const geojson: GeoJSON.Feature<GeoJSON.LineString> = {
+      clearSegmentLayers();
+
+      const coords = route?.coordinates ?? [];
+
+      // Thu thập tất cả điểm dừng theo thứ tự tuyến đường
+      const breakPoints: [number, number][] = [];
+      if (start && Number.isFinite(start.lon) && Number.isFinite(start.lat)) {
+        breakPoints.push([start.lon, start.lat]);
+      }
+
+      stops
+        .filter((stop) => stop.source !== "interval")
+        .forEach((stop) => {
+          if (Number.isFinite(stop.lon) && Number.isFinite(stop.lat)) {
+            breakPoints.push([stop.lon, stop.lat]);
+          }
+        });
+
+      customStops.forEach((stop) => {
+        if (Number.isFinite(stop.lon) && Number.isFinite(stop.lat)) {
+          breakPoints.push([stop.lon, stop.lat]);
+        }
+      });
+
+      if (end && Number.isFinite(end.lon) && Number.isFinite(end.lat)) {
+        breakPoints.push([end.lon, end.lat]);
+      }
+
+      // Đảo bảo hoặc hạ cờ đường chính cơ bản
+      const mainGeojson: GeoJSON.Feature<GeoJSON.LineString> = {
         type: "Feature",
         properties: {},
-        geometry: { type: "LineString", coordinates: route?.coordinates ?? [] },
+        geometry: { type: "LineString", coordinates: coords },
       };
 
       const existingSource = map.getSource(ROUTE_SOURCE_ID);
       if (existingSource && "setData" in existingSource) {
-        (existingSource as GeoJSONSource).setData(geojson);
+        (existingSource as GeoJSONSource).setData(mainGeojson);
       } else {
-        map.addSource(ROUTE_SOURCE_ID, { type: "geojson", data: geojson });
+        map.addSource(ROUTE_SOURCE_ID, { type: "geojson", data: mainGeojson });
 
-        // Remove existing route layer if any (to re-add with correct order)
         if (map.getLayer(ROUTE_LAYER_ID)) {
           map.removeLayer(ROUTE_LAYER_ID);
         }
@@ -354,13 +434,102 @@ export function MapView({
         });
       }
 
+      // Xử lý chia màu từng chặng nếu có các điểm dừng trên đường
+      if (coords.length > 0 && breakPoints.length > 2) {
+        const findClosestIndex = (pt: [number, number]): number => {
+          let minDistanceSq = Infinity;
+          let closestIndex = 0;
+
+          for (let i = 0; i < coords.length; i++) {
+            const coord = coords[i];
+            if (!coord) continue; // Bỏ qua nếu phần tử không tồn tại
+
+            const dx = coord[0] - pt[0];
+            const dy = coord[1] - pt[1];
+            const distSq = dx * dx + dy * dy;
+
+            if (distSq < minDistanceSq) {
+              minDistanceSq = distSq;
+              closestIndex = i;
+            }
+          }
+
+          return closestIndex;
+        };
+
+        const breakIndices = breakPoints
+          .map(findClosestIndex)
+          .sort((a, b) => a - b);
+
+        const uniqueIndices = Array.from(new Set(breakIndices));
+
+        if (uniqueIndices.length > 1) {
+          // Bất hiển thị tuyến đường đơn sắc chính để thay bằng đa sắc
+          if (map.getLayer(ROUTE_LAYER_ID)) {
+            map.setPaintProperty(ROUTE_LAYER_ID, "line-opacity", 0);
+          }
+
+          const palette = getSegmentColorsByGender(gender);
+
+          for (let i = 0; i < uniqueIndices.length - 1; i++) {
+            const startIdx = uniqueIndices[i];
+            const endIdx = uniqueIndices[i + 1];
+
+            // Bỏ qua nếu 1 trong 2 chỉ số bị undefined
+            if (startIdx === undefined || endIdx === undefined) continue;
+            
+            const segmentCoords = coords.slice(startIdx, endIdx + 1);
+
+            if (segmentCoords.length < 2) continue;
+
+            const segmentSourceId = `mygomap-route-seg-source-${i}`;
+            const segmentLayerId = `mygomap-route-seg-layer-${i}`;
+            const color = palette[i % palette.length];
+
+            const segGeojson: GeoJSON.Feature<GeoJSON.LineString> = {
+              type: "Feature",
+              properties: {},
+              geometry: {
+                type: "LineString",
+                coordinates: segmentCoords,
+              },
+            };
+
+            map.addSource(segmentSourceId, {
+              type: "geojson",
+              data: segGeojson,
+            });
+
+            map.addLayer({
+              id: segmentLayerId,
+              type: "line",
+              source: segmentSourceId,
+              layout: { "line-cap": "round", "line-join": "round" },
+              paint: {
+                "line-color": color,
+                "line-width": 4,
+                "line-opacity": 0.9,
+              },
+            });
+
+            activeSegmentLayersRef.current.push(segmentLayerId);
+
+            if (map.getLayer(TRAFFIC_LAYER_ID)) {
+              map.moveLayer(segmentLayerId);
+            }
+          }
+        } else if (map.getLayer(ROUTE_LAYER_ID)) {
+          map.setPaintProperty(ROUTE_LAYER_ID, "line-opacity", 0.9);
+          map.setPaintProperty(ROUTE_LAYER_ID, "line-color", theme.routeColor);
+        }
+      } else if (map.getLayer(ROUTE_LAYER_ID)) {
+        map.setPaintProperty(ROUTE_LAYER_ID, "line-opacity", 0.9);
+        map.setPaintProperty(ROUTE_LAYER_ID, "line-color", theme.routeColor);
+      }
+
       // Ensure route layer is always above traffic layer
       if (map.getLayer(ROUTE_LAYER_ID) && map.getLayer(TRAFFIC_LAYER_ID)) {
         map.moveLayer(ROUTE_LAYER_ID);
-      }
-
-      if (map.getLayer(ROUTE_LAYER_ID)) {
-        map.setPaintProperty(ROUTE_LAYER_ID, "line-color", theme.routeColor);
       }
 
       if (route && route.coordinates.length > 0) {
@@ -376,7 +545,17 @@ export function MapView({
     };
 
     runWhenStyleReady(map, applyRoute);
-  }, [route, theme.routeColor, mapStyleId, styleReloadKey]);
+  }, [
+    route,
+    theme.routeColor,
+    mapStyleId,
+    styleReloadKey,
+    start,
+    end,
+    stops,
+    customStops,
+    gender,
+  ]);
 
   // Marker điểm A - B
   useEffect(() => {
@@ -883,6 +1062,7 @@ function hideSensitiveBaseMapLabels(map: MapLibreMap) {
     }
   });
 }
+
 function addSovereigntyLabels(
   map: MapLibreMap,
   markersRef: { current: Marker[] },
