@@ -477,7 +477,7 @@ export function MapView({
 
             // Bỏ qua nếu 1 trong 2 chỉ số bị undefined
             if (startIdx === undefined || endIdx === undefined) continue;
-            
+
             const segmentCoords = coords.slice(startIdx, endIdx + 1);
 
             if (segmentCoords.length < 2) continue;
@@ -548,7 +548,7 @@ export function MapView({
   }, [
     route,
     theme.routeColor,
-    mapStyleId,
+    // mapStyleId,
     styleReloadKey,
     start,
     end,
