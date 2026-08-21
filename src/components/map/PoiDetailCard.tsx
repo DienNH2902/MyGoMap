@@ -1,8 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { EnrichedPoiInfo } from "@/hooks/usePoiEnrichment";
 import { POI_CATEGORIES } from "@/lib/constants";
 import type { PoiResult } from "@/lib/types";
+
+type GenderTheme = "nam" | "nu" | "khac";
+const STORAGE_KEY_GENDER = "mygomap_user_gender";
 
 function categoryLabel(categoryId: string): string {
   return (
@@ -48,10 +52,23 @@ export function PoiDetailCard({
   onClose,
 }: PoiDetailCardProps) {
   const { address, isLookingUpAddress, imageUrl, isLookingUpImage } = enriched;
+  const [gender, setGender] = useState<GenderTheme>("nam");
+
+  useEffect(() => {
+    const savedGender =
+      (localStorage.getItem(STORAGE_KEY_GENDER) as GenderTheme) || "nam";
+    setGender(savedGender);
+  }, []);
+
+  const getDistanceColor = () => {
+    if (gender === "nu") return "text-pink-400";
+    if (gender === "khac") return "text-purple-400";
+    return "text-primary";
+  };
 
   return (
-    <div className="pointer-events-auto absolute left-[390px] top-1/3 z-40 w-[300px] -translate-y-1/2 overflow-hidden rounded-2xl border border-ink/10 bg-white shadow-2xl">
-      <div className="relative h-36 w-full bg-surface-muted">
+    <div className="pointer-events-auto absolute left-[390px] top-[240px] z-40 w-[300px] -translate-y-1/2 overflow-hidden rounded-3xl border border-ink/10 bg-ink/85 shadow-2xl backdrop-blur-md transition-all">
+      <div className="relative h-40 w-full bg-black/40">
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -61,13 +78,13 @@ export function PoiDetailCard({
             onError={onImageError}
           />
         ) : isLookingUpImage ? (
-          <div className="flex h-full w-full animate-pulse items-center justify-center bg-surface-muted text-xs text-ink/30">
+          <div className="flex h-full w-full animate-pulse items-center justify-center bg-black/30 text-xs text-cream/40">
             Đang tìm ảnh…
           </div>
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-surface-muted text-4xl">
+          <div className="flex h-40 w-full flex-col items-center justify-center gap-1 bg-black/30 text-4xl">
             {categoryIcon(poi.category)}
-            <span className="text-[11px] italic text-ink/30">
+            <span className="text-[11px] italic text-cream/40">
               Chưa có ảnh cho địa điểm này
             </span>
           </div>
@@ -76,14 +93,14 @@ export function PoiDetailCard({
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-ink/60 shadow-md transition hover:bg-white hover:text-ink"
+          className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-black/60 text-cream/80 shadow-md backdrop-blur-sm transition hover:bg-black/80 hover:text-white active:scale-95"
           aria-label="Đóng"
         >
           ✕
         </button>
 
         <span
-          className="absolute left-2 top-2 flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold text-white shadow-md"
+          className="absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold text-white shadow-md backdrop-blur-sm"
           style={{ backgroundColor: categoryColor(poi.category) }}
         >
           <span>{categoryIcon(poi.category)}</span>
@@ -91,27 +108,31 @@ export function PoiDetailCard({
         </span>
       </div>
 
-      <div className="px-4 py-3">
+      <div className="p-4">
         {typeof stopOrder === "number" && (
-          <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-ink/40">
+          <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wide text-cream/50">
             Gần điểm dừng {stopOrder}
           </p>
         )}
-        <p className="text-sm font-semibold leading-snug text-ink">
+        <p className="text-sm font-semibold leading-snug text-cream">
           {poi.name}
         </p>
 
         {address ? (
-          <p className="mt-1.5 text-xs leading-relaxed text-ink/60">
+          <p className="mt-1.5 text-xs leading-relaxed text-cream/70">
             {address}
           </p>
         ) : isLookingUpAddress ? (
-          <p className="mt-1.5 text-xs italic text-ink/30">Đang tìm địa chỉ…</p>
+          <p className="mt-1.5 text-xs italic text-cream/40">
+            Đang tìm địa chỉ…
+          </p>
         ) : (
-          <p className="mt-1.5 text-xs italic text-ink/30">Chưa rõ địa chỉ</p>
+          <p className="mt-1.5 text-xs italic text-cream/40">Chưa rõ địa chỉ</p>
         )}
 
-        <p className="mt-2 font-mono text-xs font-medium text-primary">
+        <p
+          className={`mt-2 font-mono text-xs font-semibold ${getDistanceColor()}`}
+        >
           Cách điểm dừng ~{poi.distanceFromStopKm.toFixed(1)} km
         </p>
       </div>
