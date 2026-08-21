@@ -23,6 +23,7 @@ import {
   MAP_STYLES,
   BIEN_DONG_LABEL_TEXT,
   BIEN_DONG_LOCATION,
+  MAX_CUSTOM_STOPS,
 } from "@/lib/constants";
 import type {
   PlaceResult,
@@ -710,9 +711,14 @@ export function MapView({
       }
 
       if (onSelectCustomStopFromMap) {
+        const isMaxStopsReached = customStops.length >= MAX_CUSTOM_STOPS;
+
         const btnStop = document.createElement("button");
         btnStop.type = "button";
-        btnStop.textContent = "Thêm điểm dừng";
+        btnStop.textContent = isMaxStopsReached
+          ? `Đã đạt tối đa ${MAX_CUSTOM_STOPS} điểm dừng`
+          : "Thêm điểm dừng";
+        btnStop.disabled = isMaxStopsReached;
         btnStop.style.flex = "1";
         btnStop.style.padding = "12px 14px";
         btnStop.style.fontSize = "13px";
@@ -811,6 +817,7 @@ export function MapView({
     onSelectEndFromMap,
     onSelectCustomStopFromMap,
     onOpenAroundSearchFromMap,
+    customStops,
   ]);
 
   // Marker các Trạm Dừng (Stop Markers)

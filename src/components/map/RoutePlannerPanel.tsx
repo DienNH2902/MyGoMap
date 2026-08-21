@@ -8,7 +8,7 @@ import { Button } from "../ui/Button";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
 import type { UseRoutePlannerReturn } from "@/hooks/useRoutePlanner";
 import { useEffect, useState } from "react";
-import { POI_CATEGORIES } from "@/lib/constants";
+import { MAX_CUSTOM_STOPS, POI_CATEGORIES } from "@/lib/constants";
 
 type GenderTheme = "nam" | "nu" | "khac";
 const STORAGE_KEY_GENDER = "mygomap_user_gender";
@@ -68,19 +68,25 @@ export function RoutePlannerPanel({
 
   const isCustomStopsValid =
     planner.stopMode !== "custom" ||
-    planner.customStops.every(
-      (stop) =>
-        stop &&
-        typeof stop.lat === "number" &&
-        typeof stop.lon === "number" &&
-        Boolean(stop.label),
-    );
+    (planner.customStops.length <= MAX_CUSTOM_STOPS &&
+      planner.customStops.every(
+        (stop) =>
+          stop &&
+          typeof stop.lat === "number" &&
+          typeof stop.lon === "number" &&
+          Boolean(stop.label),
+      ));
 
   const canPlan =
     Boolean(planner.start && planner.end) &&
     !isSameLocation &&
     isCustomStopsValid &&
     !planner.isLoading;
+
+  const handleAddCustomStop = () => {
+    if (planner.customStops.length >= MAX_CUSTOM_STOPS) return;
+    planner.addCustomStop();
+  };
 
   const fetchCurrentLocation = (target: "start" | "end") => {
     if (!navigator.geolocation) {
@@ -252,7 +258,7 @@ export function RoutePlannerPanel({
 
             {/* Thông báo lỗi khi điểm đi và điểm đến bị trùng nhau */}
             {isSameLocation && (
-              <div className="mt-3 flex justify-center items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-300">
+              <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-300">
                 <svg
                   className="h-4 w-4 shrink-0 text-rose-400"
                   fill="none"
@@ -314,17 +320,26 @@ export function RoutePlannerPanel({
                 <div className="mt-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3">
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <span className="text-[10px] font-bold uppercase tracking-wide text-amber-400">
-                      Điểm dừng tùy chỉnh
+                      Điểm dừng tùy chỉnh ({planner.customStops.length}/
+                      {MAX_CUSTOM_STOPS})
                     </span>
                     <Button
                       variant="ghost"
                       type="button"
-                      onClick={() => planner.addCustomStop()}
-                      className="border border-amber-500/30 bg-black/20 text-amber-300 hover:bg-amber-500/20"
+                      disabled={planner.customStops.length >= MAX_CUSTOM_STOPS}
+                      onClick={handleAddCustomStop}
+                      className="border border-amber-500/30 bg-black/20 text-amber-300 hover:bg-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Thêm điểm dừng
                     </Button>
                   </div>
+
+                  {planner.customStops.length >= MAX_CUSTOM_STOPS && (
+                    <p className="mb-2 text-xs text-amber-400 font-medium">
+                      Đã đạt giới hạn tối đa {MAX_CUSTOM_STOPS} điểm dừng tùy
+                      chỉnh.
+                    </p>
+                  )}
 
                   <div className="relative z-40 flex max-h-40 flex-col gap-3 overflow-y-auto overflow-x-hidden pb-6">
                     {planner.customStops.map((stop, index) => (

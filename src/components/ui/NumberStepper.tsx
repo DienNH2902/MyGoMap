@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { clsx } from "clsx";
+import { MAX_CUSTOM_STOPS } from "@/lib/constants";
 
 type GenderTheme = "nam" | "nu" | "khac";
 
@@ -32,7 +33,7 @@ export function NumberStepper({
   label,
   value,
   min = 0,
-  max = 10,
+  max = MAX_CUSTOM_STOPS,
   onChange,
 }: NumberStepperProps) {
   const [gender, setGender] = useState<GenderTheme>("nam");
