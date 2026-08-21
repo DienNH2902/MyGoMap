@@ -190,23 +190,25 @@ export function RoutePlannerPanel({
           </div>
 
           {/* Bảng tìm đường chính */}
-          <div className="pointer-events-auto w-full max-w-4xl rounded-3xl border border-ink/10 bg-ink/85 p-5 shadow-xl backdrop-blur-md transition-all">
+          <div className="pointer-events-auto max-h-[70vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-ink/10 bg-ink/85 p-4 shadow-xl backdrop-blur-md transition-all scrollbar-none sm:max-h-none sm:p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
               <PlaceAutocompleteInput
                 label="Điểm xuất phát"
-                placeholder="Nhập địa điểm bắt đầu…"
+                placeholder="Điểm bắt đầu"
                 value={planner.start}
                 onSelect={planner.setStart}
                 onUseCurrentLocation={() => fetchCurrentLocation("start")}
                 isLocating={isLocatingStart}
+                dropdownPlacement="bottom"
               />
               <PlaceAutocompleteInput
                 label="Điểm kết thúc"
-                placeholder="Tìm nơi cần đến…"
+                placeholder="Điểm kết thúc"
                 value={planner.end}
                 onSelect={planner.setEnd}
                 onUseCurrentLocation={() => fetchCurrentLocation("end")}
                 isLocating={isLocatingEnd}
+                dropdownPlacement="bottom"
               />
               {planner.stopMode === "auto" && (
                 <NumberStepper
@@ -232,7 +234,7 @@ export function RoutePlannerPanel({
                   className={`mt-1 h-[44px] rounded-xl text-xs font-semibold transition ${
                     planner.avoidTraffic
                       ? getActiveStyles()
-                      : `bg-transparent text-cream/90 ${getHoverStyles()}`
+                      : `bg-black/20 text-cream/90 ${getHoverStyles()}`
                   }`}
                 >
                   {planner.avoidTraffic ? "Bật" : "Tắt"}
@@ -293,7 +295,7 @@ export function RoutePlannerPanel({
                     </Button>
                   </div>
 
-                  <div className="relative z-40 flex max-h-40 flex-col gap-3 overflow-y-auto pb-6">
+                  <div className="relative z-40 flex max-h-40 flex-col gap-3 overflow-y-auto overflow-x-hidden pb-6">
                     {planner.customStops.map((stop, index) => (
                       <div
                         key={`${stop.id}-${index}`}
@@ -329,7 +331,7 @@ export function RoutePlannerPanel({
                 </div>
               )}
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-end gap-2 pt-2 lg:pt-0">
                 {planner.isLoading && (
                   <LoadingSpinner label="Đang tính lộ trình…" />
                 )}
@@ -337,7 +339,7 @@ export function RoutePlannerPanel({
                   variant="ghost"
                   type="button"
                   onClick={planner.reset}
-                  className="border border-ink/10 text-cream/90 hover:bg-white/10"
+                  className="border border-ink/10 bg-black/20 text-cream/90 hover:bg-white/10 flex-1 sm:flex-initial"
                 >
                   Đặt lại
                 </Button>
@@ -346,6 +348,7 @@ export function RoutePlannerPanel({
                   type="button"
                   disabled={!canPlan}
                   onClick={() => void planner.planTrip()}
+                  className="flex-1 sm:flex-initial "
                 >
                   Bắt đầu
                 </Button>

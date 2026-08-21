@@ -67,8 +67,13 @@ export function PoiDetailCard({
   };
 
   return (
-    <div className="pointer-events-auto absolute left-[390px] top-[240px] z-40 w-[300px] -translate-y-1/2 overflow-hidden rounded-3xl border border-ink/10 bg-ink/85 shadow-2xl backdrop-blur-md transition-all">
-      <div className="relative h-40 w-full bg-black/40">
+    <div className="pointer-events-auto absolute inset-x-4 bottom-4 z-40 mx-auto max-h-[80vh] w-[calc(100%-2rem)] max-w-sm overflow-hidden rounded-3xl border border-ink/10 bg-ink/85 shadow-2xl backdrop-blur-md transition-all sm:left-[390px] sm:top-24 sm:bottom-auto sm:right-auto sm:mx-0 sm:w-[320px] sm:max-w-none sm:translate-y-0">
+      {/* Thanh kéo tay nắm (Drag Indicator) cho thiết bị Mobile */}
+      {/* <div className="flex justify-center pt-2 pb-1 sm:hidden">
+        <div className="h-1.5 w-12 rounded-full bg-white/20" />
+      </div> */}
+
+      <div className="relative h-36 w-full bg-black/40 sm:h-40">
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -82,7 +87,7 @@ export function PoiDetailCard({
             Đang tìm ảnh…
           </div>
         ) : (
-          <div className="flex h-40 w-full flex-col items-center justify-center gap-1 bg-black/30 text-4xl">
+          <div className="flex h-36 w-full flex-col items-center justify-center gap-1 bg-black/30 text-4xl sm:h-40">
             {categoryIcon(poi.category)}
             <span className="text-[11px] italic text-cream/40">
               Chưa có ảnh cho địa điểm này

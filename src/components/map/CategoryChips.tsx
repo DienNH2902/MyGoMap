@@ -49,7 +49,7 @@ export function CategoryChips({
   };
 
   return (
-    <div className="flex flex-col justify-end">
+    <div className="flex w-full flex-col justify-end">
       <div>
         {label && (
           <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-cream/50">
@@ -57,7 +57,7 @@ export function CategoryChips({
           </span>
         )}
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex w-full overflow-x-auto pb-2 pt-2 scrollbar-none sm:flex-wrap sm:overflow-x-visible sm:pb-0 gap-2">
         {POI_CATEGORIES.map((category) => {
           const isActive = selected.includes(category.id);
           return (
@@ -66,7 +66,7 @@ export function CategoryChips({
               type="button"
               onClick={() => onToggle(category.id)}
               className={clsx(
-                "flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition",
+                "flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition touch-manipulation active:scale-95",
                 isActive
                   ? getActiveStyles()
                   : clsx(

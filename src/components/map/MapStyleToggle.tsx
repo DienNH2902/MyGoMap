@@ -51,12 +51,12 @@ export function MapStyleToggle({ value, onChange }: MapStyleToggleProps) {
   };
 
   return (
-    <div className="pointer-events-auto absolute left-4 top-4 z-30 rounded-2xl border border-ink/10 bg-ink/85 p-2 shadow-xl backdrop-blur-md">
+    <div className="pointer-events-auto relative md:absolute md:left-4 md:top-4 z-30 rounded-2xl border border-ink/10 bg-ink/85 p-2 shadow-xl backdrop-blur-md max-w-full">
       <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wide text-cream/50">
         Kiểu bản đồ
       </p>
 
-      <div className="flex gap-1">
+      <div className="flex flex-col md:flex-row gap-1">
         {STYLE_IDS.map((styleId) => {
           const style = MAP_STYLES[styleId];
           const isActive = value === styleId;
@@ -74,7 +74,7 @@ export function MapStyleToggle({ value, onChange }: MapStyleToggleProps) {
               }
               onClick={() => onChange(style.id)}
               className={clsx(
-                "rounded-xl px-3 py-2 text-xs font-semibold transition text-cream/70",
+                "rounded-xl px-3 py-2 text-xs font-semibold transition text-cream/70 text-left md:text-center whitespace-nowrap",
                 isActive
                   ? getActiveStyles()
                   : clsx("bg-transparent", getHoverStyles()),

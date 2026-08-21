@@ -55,16 +55,18 @@ export function RouteStatsBar({ route, stops }: RouteStatsBarProps) {
   ];
 
   return (
-    <div className="pointer-events-none absolute right-4 top-4 z-30 flex flex-col gap-2 sm:flex-row">
+    <div className="pointer-events-none absolute left-2 right-2 top-2 z-30 flex flex-wrap justify-end gap-1.5 sm:left-auto sm:right-4 sm:top-4 sm:flex-nowrap sm:gap-2 max-w-[calc(100vw-1rem)] sm:max-w-none">
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="pointer-events-auto rounded-2xl border border-white/10 bg-ink/85 px-4 py-2.5 shadow-xl backdrop-blur-md"
+          className="pointer-events-auto flex-1 min-w-[100px] sm:flex-none rounded-xl sm:rounded-2xl border border-white/10 bg-ink/85 px-2.5 py-1.5 sm:px-4 sm:py-2.5 shadow-xl backdrop-blur-md transition-all"
         >
-          <p className="text-[10px] font-medium uppercase tracking-wide text-cream/50">
+          <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wide text-cream/50 whitespace-nowrap">
             {stat.label}
           </p>
-          <p className={`font-mono text-lg font-bold ${getValueColorClass()}`}>
+          <p
+            className={`font-mono text-sm sm:text-lg font-bold ${getValueColorClass()} whitespace-nowrap`}
+          >
             {stat.value}
           </p>
         </div>

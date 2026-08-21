@@ -80,9 +80,9 @@ export function AroundSearchPanel({
 
   // Style hover cho từng item trong danh sách kết quả
   const getItemHoverClass = () => {
-    if (gender === "nu") return "hover:bg-pink-50";
-    if (gender === "khac") return "hover:bg-violet-50";
-    return "hover:bg-primary/5";
+    if (gender === "nu") return "hover:bg-pink-500/20 text-pink-300";
+    if (gender === "khac") return "hover:bg-purple-500/20 text-purple-300";
+    return "hover:bg-white/10 text-cream";
   };
 
   const handleSearch = async () => {
@@ -115,21 +115,28 @@ export function AroundSearchPanel({
   };
 
   return (
-    <div className="pointer-events-auto absolute left-4 top-[330px] z-0 w-[22rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-ink/10 bg-white shadow-2xl">
-      <div className="flex items-start justify-between gap-3 border-b border-ink/10 px-4 py-3">
+    <div className="pointer-events-auto absolute inset-x-4 bottom-4 z-40 mx-auto max-h-[85vh] w-[calc(100%-2rem)] max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-ink/85 p-2 shadow-xl backdrop-blur-md transition-all sm:left-4 sm:top-[330px] sm:bottom-auto sm:right-auto sm:mx-0 sm:w-[22rem] sm:max-w-none">
+      {/* Thanh kéo tay nắm (Drag Indicator) cho thiết bị Mobile */}
+      {/* <div className="flex justify-center pt-2 pb-1 sm:hidden">
+        <div className="h-1.5 w-12 rounded-full bg-ink/20" />
+      </div> */}
+
+      <div className="flex items-start justify-between gap-3 border-b border-white/10 px-3 py-2">
         <div className="min-w-0">
           <p
-            className={`text-xs font-bold uppercase tracking-wide ${getTitleColorClass()}`}
+            className={`text-[10px] font-bold uppercase tracking-wide ${getTitleColorClass()}`}
           >
             Tìm kiếm xung quanh
           </p>
-          <p className="mt-1 truncate text-xs text-ink/55">{center.label}</p>
+          <p className="mt-0.5 truncate text-xs text-cream/70">
+            {center.label}
+          </p>
         </div>
 
         <button
           type="button"
           onClick={onClose}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-ink/45 transition hover:bg-ink/5 hover:text-ink"
+          className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 text-cream/60 transition hover:bg-white/10 hover:text-cream active:scale-95"
           aria-label="Đóng tìm kiếm xung quanh"
         >
           ✕
@@ -139,13 +146,13 @@ export function AroundSearchPanel({
       <div className="space-y-3 p-4">
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium uppercase tracking-wide text-ink/45">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-cream/50">
               Phạm vi
             </span>
             <select
               value={radiusMeters}
               onChange={(event) => setRadiusMeters(Number(event.target.value))}
-              className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-cream focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 [&>option]:bg-ink [&>option]:text-cream"
             >
               {RADIUS_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -156,7 +163,7 @@ export function AroundSearchPanel({
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium uppercase tracking-wide text-ink/45">
+            <span className="text-xs font-medium uppercase tracking-wide text-cream/50">
               Danh mục
             </span>
             <select
@@ -164,7 +171,7 @@ export function AroundSearchPanel({
               onChange={(event) =>
                 setCategoryId(event.target.value as PoiCategoryId)
               }
-              className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-cream focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 [&>option]:bg-ink [&>option]:text-cream"
             >
               {POI_CATEGORIES.map((category) => (
                 <option key={category.id} value={category.id}>
@@ -179,7 +186,7 @@ export function AroundSearchPanel({
           {isLoading ? (
             <CircleLoadingSpinner label="Đang tìm xung quanh…" />
           ) : (
-            <p className="text-xs text-ink/45">
+            <p className="text-xs text-cream/50">
               {results.length > 0 ? `${results.length} kết quả` : "Chưa tìm"}
             </p>
           )}
@@ -202,22 +209,22 @@ export function AroundSearchPanel({
         )}
 
         {results.length > 0 && (
-          <div className="max-h-52 divide-y divide-ink/5 overflow-y-auto rounded-xl border border-ink/10">
+          <div className="max-h-48 overflow-y-auto divide-y divide-white/10 rounded-xl border border-white/10 sm:max-h-52">
             {results.map((poi) => (
               <button
                 key={poi.id}
                 type="button"
                 onClick={() => onSelectPoi(poi.id)}
-                className={`block w-full px-3 py-2.5 text-left transition ${getItemHoverClass()}`}
+                className={`block w-full px-3 py-2.5 text-left transition touch-manipulation active:bg-white/10 ${getItemHoverClass()}`}
               >
-                <p className="truncate text-sm font-semibold text-ink">
+                <p className="truncate text-sm font-semibold text-cream">
                   {poi.name}
                 </p>
-                <p className="mt-0.5 text-xs text-ink/50">
+                <p className="mt-0.5 text-xs text-cream/60">
                   Cách điểm chọn ~{poi.distanceFromStopKm.toFixed(1)} km
                 </p>
                 {poi.address && (
-                  <p className="mt-1 line-clamp-2 text-xs text-ink/45">
+                  <p className="mt-1 line-clamp-2 text-xs text-cream/50">
                     {poi.address}
                   </p>
                 )}

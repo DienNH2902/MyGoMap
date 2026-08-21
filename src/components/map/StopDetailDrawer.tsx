@@ -129,8 +129,13 @@ export function StopDetailDrawer({
   if (!stop) return null;
 
   return (
-    <div className="absolute inset-y-0 right-0 z-40 w-full max-w-sm overflow-y-auto border-l border-white/10 bg-ink/90 shadow-2xl backdrop-blur-xl">
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-ink/80 px-5 py-4 backdrop-blur-md">
+    <div className="absolute inset-x-0 bottom-0 top-auto z-40 max-h-[70vh] sm:max-h-none w-full overflow-y-auto border-t sm:border-t-0 sm:border-l border-white/10 bg-ink/90 shadow-2xl backdrop-blur-xl transition-all sm:inset-y-0 sm:right-0 sm:left-auto sm:max-w-sm rounded-t-3xl sm:rounded-t-none">
+      {/* Thanh kéo tay nắm (Drag Indicator) cho thiết bị Mobile */}
+      {/* <div className="flex justify-center pt-2 pb-1 sm:hidden">
+        <div className="h-1.5 w-12 rounded-full bg-white/20" />
+      </div> */}
+
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-ink/80 px-4 py-3 sm:px-5 sm:py-4 backdrop-blur-md">
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-cream/50">
             Điểm dừng {stop.order}
@@ -178,7 +183,7 @@ export function StopDetailDrawer({
               key={poi.id}
               type="button"
               onClick={() => onSelectPoi?.(poi.id)}
-              className={`flex w-full gap-3 px-5 py-4 text-left transition-all ${
+              className={`flex w-full gap-3 px-4 py-3.5 sm:px-5 sm:py-4 text-left transition-all ${
                 isActive ? getActiveStyles() : "hover:bg-white/5"
               }`}
             >
@@ -187,18 +192,18 @@ export function StopDetailDrawer({
                 <img
                   src={imageUrl}
                   alt={poi.name}
-                  className="h-16 w-16 flex-shrink-0 rounded-xl border border-white/10 object-cover shadow-sm"
+                  className="h-14 w-14 sm:h-16 sm:w-16 flex-shrink-0 rounded-xl border border-white/10 object-cover shadow-sm"
                   onError={() => {
                     setBrokenImageIds((prev) => new Set(prev).add(poi.id));
                   }}
                 />
               ) : isLookingUpImage ? (
                 <div
-                  className="h-16 w-16 flex-shrink-0 animate-pulse rounded-xl border border-white/10 bg-black/30"
+                  className="h-14 w-14 sm:h-16 sm:w-16 flex-shrink-0 animate-pulse rounded-xl border border-white/10 bg-black/30"
                   aria-label="Đang tìm ảnh…"
                 />
               ) : (
-                <div className="flex h-16 w-16 flex-shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl border border-white/10 bg-black/30 text-2xl text-cream/60">
+                <div className="flex h-14 w-14 sm:h-16 sm:w-16 flex-shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl border border-white/10 bg-black/30 text-xl sm:text-2xl text-cream/60">
                   {categoryIcon(poi.category)}
                 </div>
               )}

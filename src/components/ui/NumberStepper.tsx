@@ -46,17 +46,17 @@ export function NumberStepper({
   const buttonThemeClass = getStepperButtonClasses(gender);
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex w-full flex-col gap-1.5 sm:w-auto">
       <span className="text-[10px] font-bold uppercase tracking-wide text-cream/50">
         {label}
       </span>
-      <div className="flex h-[44px] items-center gap-2 rounded-2xl border border-ink/10 bg-black/20 px-2.5">
+      <div className="flex h-[44px] w-full items-center justify-between gap-2 rounded-2xl border border-ink/10 bg-black/20 px-2.5 sm:w-auto sm:justify-start">
         <button
           type="button"
           onClick={() => onChange(Math.max(min, value - 1))}
           disabled={value <= min}
           className={clsx(
-            "flex h-7 w-7 items-center justify-center rounded-xl bg-white/5 text-lg font-bold transition active:scale-95 disabled:opacity-30 disabled:pointer-events-none",
+            "flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 text-lg font-bold transition active:scale-95 disabled:pointer-events-none disabled:opacity-30 touch-manipulation sm:h-7 sm:w-7",
             buttonThemeClass,
           )}
           aria-label="Giảm số điểm dừng"
@@ -64,7 +64,7 @@ export function NumberStepper({
           −
         </button>
 
-        <span className="w-6 text-center font-mono text-sm font-bold text-cream">
+        <span className="flex-1 text-center font-mono text-sm font-bold text-cream sm:w-6 sm:flex-initial">
           {value}
         </span>
 
@@ -73,7 +73,7 @@ export function NumberStepper({
           onClick={() => onChange(Math.min(max, value + 1))}
           disabled={value >= max}
           className={clsx(
-            "flex h-7 w-7 items-center justify-center rounded-xl bg-white/5 text-lg font-bold transition active:scale-95 disabled:opacity-30 disabled:pointer-events-none",
+            "flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 text-lg font-bold transition active:scale-95 disabled:pointer-events-none disabled:opacity-30 touch-manipulation sm:h-7 sm:w-7",
             buttonThemeClass,
           )}
           aria-label="Tăng số điểm dừng"

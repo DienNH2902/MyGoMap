@@ -98,6 +98,9 @@ export function MapExperience() {
 
   const [mapStyleId, setMapStyleId] = useState<MapStyleId>("street");
 
+  // State kéo/mở Map Style Panel trên Mobile
+  const [isMobileStyleOpen, setIsMobileStyleOpen] = useState(false);
+
   useEffect(() => {
     // Nếu có lỗi mới thì reset lại trạng thái để hiển thị thông báo
     if (planner.error) {
@@ -219,7 +222,7 @@ export function MapExperience() {
   }
 
   return (
-    <div className="absolute inset-0 top-16">
+    <div className="absolute inset-0 top-16 overflow-hidden">
       <MapView
         start={planner.start}
         end={planner.end}
@@ -245,7 +248,46 @@ export function MapExperience() {
         }}
       />
 
-      <MapStyleToggle value={mapStyleId} onChange={setMapStyleId} />
+      {/* MAP STYLE TOGGLE - DESKTOP CHUẨN */}
+      <div className="hidden md:block">
+        <MapStyleToggle value={mapStyleId} onChange={setMapStyleId} />
+      </div>
+
+      {/* MAP STYLE TOGGLE - MOBILE PANEL KÉO RA KÉO VÀO */}
+      <div
+        className={`fixed top-20 right-0 z-40 transition-transform duration-300 md:hidden ${
+          isMobileStyleOpen
+            ? "translate-x-0"
+            : "translate-x-[calc(100%-2.75rem)]"
+        }`}
+      >
+        <div className="flex items-start">
+          <button
+            type="button"
+            onClick={() => setIsMobileStyleOpen((prev) => !prev)}
+            className="flex h-11 w-11 items-center justify-center rounded-l-2xl border-y border-l border-white/20 bg-ink/90 text-accent-gold shadow-2xl backdrop-blur-md"
+            aria-label="Đổi kiểu bản đồ"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+              />
+            </svg>
+          </button>
+          <div className="rounded-l-none rounded-r-2xl border border-white/20 bg-ink/90 p-2 shadow-2xl backdrop-blur-md">
+            <MapStyleToggle value={mapStyleId} onChange={setMapStyleId} />
+          </div>
+        </div>
+      </div>
 
       {aroundSearchCenter && (
         <AroundSearchPanel
@@ -261,11 +303,11 @@ export function MapExperience() {
         />
       )}
 
-      {/* HIỆU ỨNG MÈO LẤP LÓ & GAME BẮT MÈO */}
+      {/* HIỆU ỨNG MÈO LẤP LÓ & GAME BẮT MÈO (BỎ HOÀN TOÀN TRÊN MOBILE, GIỮ NGUYÊN TRÊN DESKTOP) */}
       {!isCaught ? (
         <div
           onAnimationIteration={() => setPeekCount((prev) => prev + 1)}
-          className="pointer-events-none absolute right-0 top-1/3 z-40 flex items-center gap-0 animate-peek-cat"
+          className="pointer-events-none absolute right-0 top-1/3 z-40 hidden md:flex items-center gap-0 animate-peek-cat"
         >
           {/* Nút Bắt mèo xuất hiện từ lần lú ra thứ 3 trở đi */}
           {peekCount >= 3 && (
@@ -289,8 +331,8 @@ export function MapExperience() {
           </div>
         </div>
       ) : (
-        /* Mèo đã bị bắt - Cố định góc dưới bên phải */
-        <div className="fixed bottom-6 right-12 z-40 flex flex-col items-center gap-1.5 rounded-2xl border border-amber-200/60 bg-white/90 p-8 shadow-2xl backdrop-blur-md">
+        /* Mèo đã bị bắt - Cố định góc dưới bên phải (chỉ hiện desktop) */
+        <div className="fixed bottom-6 right-12 z-40 hidden md:flex flex-col items-center gap-1.5 rounded-2xl border border-amber-200/60 bg-white/90 p-8 shadow-2xl backdrop-blur-md">
           <div className="h-full w-full">
             <Image
               src={caughtCatImageSrc}
@@ -395,7 +437,7 @@ export function MapExperience() {
       )}
 
       {planner.aiTip && !isAiTipDismissed && (
-        <div className="pointer-events-auto absolute left-4 top-[120px] z-3000 max-w-xs rounded-2xl border border-accent-gold/30 bg-ink/85 p-4 text-sm text-cream shadow-xl backdrop-blur-md">
+        <div className="pointer-events-auto absolute left-4 top-[120px] z-3000 hidden max-w-xs rounded-2xl border border-accent-gold/30 bg-ink/85 p-4 text-sm text-cream shadow-xl backdrop-blur-md md:block">
           <div className="flex items-center justify-between mb-1">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-accent-gold">
               Gợi ý từ MeoMeo AI
@@ -426,13 +468,26 @@ export function MapExperience() {
         </div>
       )}
 
-      {tripContext && <AiAssistantPanel tripContext={tripContext} />}
+      {tripContext && (
+        <div className="hidden md:block">
+          <AiAssistantPanel tripContext={tripContext} />
+        </div>
+      )}
 
-      <RoutePlannerPanel
-        planner={planner}
-        isCollapsed={isPanelCollapsed}
-        onToggleCollapse={() => setIsPanelCollapsed((prev) => !prev)}
-      />
+      {/* ROUTE PLANNER PANEL - DESKTOP HOẶC BOTTOM DRAWER SLIDE TRÊN MOBILE */}
+      <div
+        className={`fixed inset-x-0 bottom-0 z-30 transition-transform duration-300 md:static ${
+          isPanelCollapsed
+            ? "translate-y-[calc(100%-3rem)] md:translate-y-0"
+            : "translate-y-0"
+        }`}
+      >
+        <RoutePlannerPanel
+          planner={planner}
+          isCollapsed={isPanelCollapsed}
+          onToggleCollapse={() => setIsPanelCollapsed((prev) => !prev)}
+        />
+      </div>
     </div>
   );
 }
