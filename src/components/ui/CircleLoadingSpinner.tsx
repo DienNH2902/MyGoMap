@@ -4,7 +4,7 @@ interface LoadingSpinnerProps {
 
 export function CircleLoadingSpinner({ label }: LoadingSpinnerProps) {
   return (
-    <div className="flex items-center gap-2 text-sm text-ink/60">
+    <div className="flex items-center gap-2 text-xs text-cream/90">
       <div className="relative flex h-5 w-5 items-center justify-center">
         <div className="loader"></div>
       </div>

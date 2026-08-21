@@ -144,7 +144,7 @@ export const POI_CATEGORIES: PoiCategoryDefinition[] = [
   },
   {
     id: "rest_area",
-    label: "Trạm dừng chân",
+    label: "Dừng chân",
     icon: "🛣️",
     osmKey: "highway",
     osmValue: "rest_area",
@@ -184,7 +184,7 @@ export const POI_CATEGORIES: PoiCategoryDefinition[] = [
   },
   {
     id: "convenience",
-    label: "Cửa hàng tiện lợi",
+    label: "Tiện lợi",
     icon: "🏪",
     osmKey: "shop",
     osmValue: "convenience",

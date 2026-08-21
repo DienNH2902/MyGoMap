@@ -150,7 +150,7 @@ function addTrafficLayer(map: MapLibreMap) {
       "raster-opacity": 0.99,
     },
   });
-  
+
   // Ensure route layer stays on top of traffic layer
   if (map.getLayer(ROUTE_LAYER_ID)) {
     map.moveLayer(ROUTE_LAYER_ID);
@@ -335,12 +335,12 @@ export function MapView({
         (existingSource as GeoJSONSource).setData(geojson);
       } else {
         map.addSource(ROUTE_SOURCE_ID, { type: "geojson", data: geojson });
-        
+
         // Remove existing route layer if any (to re-add with correct order)
         if (map.getLayer(ROUTE_LAYER_ID)) {
           map.removeLayer(ROUTE_LAYER_ID);
         }
-        
+
         map.addLayer({
           id: ROUTE_LAYER_ID,
           type: "line",
@@ -353,7 +353,7 @@ export function MapView({
           },
         });
       }
-      
+
       // Ensure route layer is always above traffic layer
       if (map.getLayer(ROUTE_LAYER_ID) && map.getLayer(TRAFFIC_LAYER_ID)) {
         map.moveLayer(ROUTE_LAYER_ID);
@@ -408,6 +408,7 @@ export function MapView({
   }, [start, end, theme]);
 
   // Event Contextmenu chọn điểm trên bản đồ
+  // Event Contextmenu / Long-press chọn điểm trên bản đồ
   useEffect(() => {
     const map = mapRef.current;
     if (
@@ -420,10 +421,10 @@ export function MapView({
       return;
 
     let abortController: AbortController | null = null;
+    let longPressTimer: NodeJS.Timeout | null = null;
+    let startTouchPos: { x: number; y: number } | null = null;
 
-    const handleClick = async (e: maplibregl.MapMouseEvent) => {
-      const { lng, lat } = e.lngLat;
-
+    const handleLocationSelect = async (lng: number, lat: number) => {
       if (clickPopupRef.current) {
         clickPopupRef.current.remove();
       }
@@ -437,6 +438,7 @@ export function MapView({
         closeButton: true,
         closeOnClick: true,
         maxWidth: "320px",
+        className: "custom-map-popup",
       })
         .setLngLat([lng, lat])
         .setHTML(
@@ -483,6 +485,7 @@ export function MapView({
 
       const btnGroup = document.createElement("div");
       btnGroup.style.display = "flex";
+      btnGroup.style.flexDirection = "column";
       btnGroup.style.gap = "6px";
 
       if (onSelectStartFromMap) {
@@ -490,8 +493,8 @@ export function MapView({
         btnStart.type = "button";
         btnStart.textContent = "Chọn làm Điểm Bắt Đầu";
         btnStart.style.flex = "1";
-        btnStart.style.padding = "6px 8px";
-        btnStart.style.fontSize = "11px";
+        btnStart.style.padding = "12px 14px";
+        btnStart.style.fontSize = "13px";
         btnStart.style.fontWeight = "600";
         btnStart.style.color = "#ffffff";
         btnStart.style.backgroundColor = "#10b981";
@@ -511,8 +514,8 @@ export function MapView({
         btnEnd.type = "button";
         btnEnd.textContent = "Chọn làm Điểm Kết Thúc";
         btnEnd.style.flex = "1";
-        btnEnd.style.padding = "6px 8px";
-        btnEnd.style.fontSize = "11px";
+        btnEnd.style.padding = "12px 14px";
+        btnEnd.style.fontSize = "13px";
         btnEnd.style.fontWeight = "600";
         btnEnd.style.color = "#ffffff";
         btnEnd.style.backgroundColor = "#f43f5e";
@@ -532,8 +535,8 @@ export function MapView({
         btnStop.type = "button";
         btnStop.textContent = "Thêm điểm dừng";
         btnStop.style.flex = "1";
-        btnStop.style.padding = "6px 8px";
-        btnStop.style.fontSize = "11px";
+        btnStop.style.padding = "12px 14px";
+        btnStop.style.fontSize = "13px";
         btnStop.style.fontWeight = "600";
         btnStop.style.color = "#ffffff";
         btnStop.style.backgroundColor = "#f59e0b";
@@ -554,8 +557,8 @@ export function MapView({
         btnAround.type = "button";
         btnAround.textContent = "Tìm kiếm xung quanh";
         btnAround.style.flex = "1";
-        btnAround.style.padding = "6px 8px";
-        btnAround.style.fontSize = "11px";
+        btnAround.style.padding = "12px 14px";
+        btnAround.style.fontSize = "13px";
         btnAround.style.fontWeight = "600";
         btnAround.style.color = "#ffffff";
         btnAround.style.backgroundColor = "#0ea5e9";
@@ -564,12 +567,10 @@ export function MapView({
         btnAround.style.cursor = "pointer";
 
         btnAround.addEventListener("click", () => {
-          // 1. Xóa marker tìm kiếm xung quanh cũ nếu đã tồn tại
           if (searchAroundMarkerRef.current) {
             searchAroundMarkerRef.current.remove();
           }
 
-          // 2. Tạo marker mới và lưu vào Ref
           searchAroundMarkerRef.current = new Marker({ anchor: "center" })
             .setLngLat([place.lon, place.lat])
             .addTo(map);
@@ -585,9 +586,46 @@ export function MapView({
       loadingPopup.setDOMContent(container);
     };
 
+    const handleClick = (e: maplibregl.MapMouseEvent) => {
+      const { lng, lat } = e.lngLat;
+      handleLocationSelect(lng, lat);
+    };
+
+    const handleTouchStart = (e: maplibregl.MapTouchEvent) => {
+      if (e.points.length !== 1) return;
+      startTouchPos = { x: e.point.x, y: e.point.y };
+
+      const { lng, lat } = e.lngLat;
+      longPressTimer = setTimeout(() => {
+        handleLocationSelect(lng, lat);
+      }, 500); // Giữ 500ms để kích hoạt
+    };
+
+    const handleTouchMove = (e: maplibregl.MapTouchEvent) => {
+      if (!startTouchPos) return;
+      const dx = Math.abs(e.point.x - startTouchPos.x);
+      const dy = Math.abs(e.point.y - startTouchPos.y);
+      // Hủy nhấn giữ nếu di chuyển tay quá 10px (vuốt bản đồ)
+      if (dx > 10 || dy > 10) {
+        if (longPressTimer) clearTimeout(longPressTimer);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (longPressTimer) clearTimeout(longPressTimer);
+    };
+
     map.on("contextmenu", handleClick);
+    map.on("touchstart", handleTouchStart);
+    map.on("touchmove", handleTouchMove);
+    map.on("touchend", handleTouchEnd);
+
     return () => {
       map.off("contextmenu", handleClick);
+      map.off("touchstart", handleTouchStart);
+      map.off("touchmove", handleTouchMove);
+      map.off("touchend", handleTouchEnd);
+      if (longPressTimer) clearTimeout(longPressTimer);
     };
   }, [
     onSelectStartFromMap,
