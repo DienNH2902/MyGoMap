@@ -113,7 +113,7 @@ export function LandingHero() {
       </video>
 
       {/* Lớp phủ dải màu tối giúp tương phản chữ tốt hơn */}
-      <div className="pointer-events-none absolute inset-0 bg-ink/40 bg-[radial-gradient(ellipse_at_top_left,_rgba(15,23,42,0.85)_0%,_transparent_60%),_radial-gradient(ellipse_at_bottom_right,_rgba(15,23,42,0.85)_0%,_transparent_60%)] backdrop-blur-[5px]" />
+      <div className="pointer-events-none absolute inset-0 bg-ink/50 bg-[radial-gradient(ellipse_at_top_left,_rgba(15,23,42,0.85)_0%,_transparent_60%),_radial-gradient(ellipse_at_bottom_right,_rgba(15,23,42,0.85)_0%,_transparent_60%)] backdrop-blur-[5px]" />
 
       {/* Overlay lớp phủ tối tỏa từ tâm quanh khu vực chữ */}
       {/* <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(15,23,42,0.98)_0%,_rgba(15,23,42,0.85)_30%,_rgba(15,23,42,0.3)_55%,_transparent_100%)]" /> */}
@@ -157,11 +157,14 @@ export function LandingHero() {
 
         <p className="max-w-xl text-balance text-base leading-relaxed text-cream/70 sm:text-lg">
           <span className="font-extrabold bg-gradient-to-r from-amber-300 via-rose-400 to-violet-400 bg-clip-text text-transparent drop-shadow-sm">
-            Mỳ Gõ Map
+            Phượt thủ à!
           </span>{" "}
-          - giúp bạn lên kế hoạch cho mọi hành trình trên khắp Việt Nam: tìm
-          đường đi nhanh nhất, tự động gợi ý trạm xăng, trạm dừng chân, quán ăn
-          hay quán cà phê ngay trên tuyến đường của bạn — hoàn toàn miễn phí.
+          - chúng tôi giúp bạn lên kế hoạch cho mọi hành trình trên khắp Việt
+          Nam: tìm đường đi nhanh nhất, tự động gợi ý trạm xăng, trạm dừng chân,
+          quán ăn hay quán cà phê ngay trên tuyến đường của bạn —{" "}
+          <span className="font-extrabold bg-gradient-to-r from-amber-300 via-rose-400 to-violet-400 bg-clip-text text-transparent drop-shadow-sm">
+            hoàn toàn miễn phí.
+          </span>
         </p>
 
         {/* Khối nhập thông tin người dùng */}
@@ -275,7 +278,7 @@ export function LandingHero() {
             >
               Bắt đầu hành trình <span aria-hidden="true">→</span>
             </Button>
-            <span className="text-xs text-cream/40">
+            <span className="text-md text-cream/40">
               Vui lòng nhập tên và chọn giới tính để bắt đầu
             </span>
           </div>

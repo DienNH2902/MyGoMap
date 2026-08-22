@@ -118,9 +118,9 @@ export function Header() {
               onClick={(e) => {
                 if (isMapLink && !hasUserInfo) {
                   e.preventDefault();
-                  alert(
-                    "Vui lòng nhập tên và chọn giới tính trước khi vào bản đồ!",
-                  );
+                  // alert(
+                  //   "Vui lòng nhập tên và chọn giới tính trước khi vào bản đồ!",
+                  // );
                 }
               }}
               className={`rounded-lg px-3 py-1.5 transition-colors ${
