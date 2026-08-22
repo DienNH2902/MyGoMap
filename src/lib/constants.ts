@@ -16,6 +16,19 @@ export type MapStyleId =
  * - CARTO basemap style: free vector tiles, no key needed, safe for light production use
  *   (unlike the raw tile.openstreetmap.org server, which explicitly disallows app usage).
  */
+/**
+ * ORS chỉ dùng "driving-car" — cho CẢ ô tô lẫn xe máy. (Trước đây có thử
+ * dùng profile "cycling-regular" để ép né cao tốc cho xe máy, nhưng đó là
+ * SAI: cycling-regular là đồ thị đường DÀNH CHO XE ĐẠP — tốc độ, luật đi
+ * đường, và các đoạn đường được phép đi đều không đúng cho xe máy có động
+ * cơ. Đã bỏ hướng đó. Giờ ORS chỉ đóng vai trò:
+ * 1) Định tuyến chính cho Ô TÔ (ưu tiên cao tốc tự nhiên qua preference
+ *    "fastest" mặc định, không cần cấu hình thêm).
+ * 2) Phương án DỰ PHÒNG cho XE MÁY khi TomTom lỗi/thiếu key — xem
+ *    fetchDrivingRoute trong openRouteService.ts. Phương án chính cho xe máy
+ *    là TomTom (travelMode=motorcycle), vì đó là API DUY NHẤT trong dự án có
+ *    đúng profile xe 2 bánh có động cơ thật.
+ */
 export const ORS_DIRECTIONS_URL =
   "https://api.openrouteservice.org/v2/directions/driving-car/geojson";
 export const NOMINATIM_SEARCH_URL =

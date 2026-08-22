@@ -4,7 +4,7 @@ import {
   CAR_AVERAGE_SPEED_KMH,
 } from "../constants";
 import type { RouteGeometry } from "../types";
-import { fetchTomTomTrafficRoute } from "./tomTomTrafficRoute";
+import { fetchTomTomRoute } from "./tomTomTrafficRoute";
 
 /** Shape of the fields we actually read from an ORS GeoJSON directions response. */
 interface OrsGeoJsonResponse {
@@ -73,18 +73,46 @@ export async function fetchDrivingRoute(
   routeOptions: RouteOptions = {},
   viaPoints: Array<{ lon: number; lat: number }> = [],
 ): Promise<RouteGeometry> {
-  if (routeOptions.useTraffic) {
-    return fetchTomTomTrafficRoute(
+  // XE MÁY: luôn ưu tiên TomTom (travelMode=motorcycle) trước — GỌI BẤT KỂ
+  // useTraffic đang true hay false (đây là điểm hay bị hiểu lầm do tên hàm
+  // cũ). useTraffic ở đây chỉ ảnh hưởng việc TomTom có tính traffic thời
+  // gian thực vào ETA hay không — KHÔNG quyết định có gọi TomTom hay không.
+  // Đây là API DUY NHẤT trong dự án có đúng profile xe 2 bánh có động cơ
+  // thật, không phải "mượn tạm" đồ thị xe đạp (sai tốc độ/luật đường) hay chỉ
+  // dựa vào avoid_features (chỉ là gợi ý mềm, ORS driving-car vẫn có thể lỡ
+  // đi vào cao tốc nếu đường thay thế bị đánh giá là quá tệ — đây chính là lý
+  // do tuyến HCM–Cần Thơ trước đây vẫn bị đẩy vào CT01 dù đã bật avoid_features).
+  if (routeOptions.avoidHighways) {
+    try {
+      return await fetchTomTomRoute(
+        start,
+        end,
+        { avoidHighways: true, useTraffic: routeOptions.useTraffic ?? false },
+        viaPoints,
+      );
+    } catch (err) {
+      // TomTom lỗi hoặc thiếu TOMTOM_API_KEY → âm thầm rơi về ORS (driving-car
+      // + avoid_features: ["highways"]) làm phương án dự phòng, KHÔNG hiển
+      // thị lỗi ngược lại cho người dùng. Đây là best-effort: hiếm khi ORS
+      // vẫn có thể đi một đoạn cao tốc ngắn nếu tuyệt đối không có đường
+      // thay thế nào khác, nhưng vẫn tốt hơn nhiều so với báo lỗi trắng.
+      console.warn(
+        "TomTom routing (xe máy) thất bại, dùng ORS làm phương án dự phòng — kém chính xác hơn khi né cao tốc:",
+        err instanceof Error ? err.message : err,
+      );
+    }
+  } else if (routeOptions.useTraffic) {
+    return fetchTomTomRoute(
       start,
       end,
-      {
-        avoidHighways: routeOptions.avoidHighways,
-        useTraffic: true,
-      },
+      { avoidHighways: false, useTraffic: true },
       viaPoints,
     );
   }
 
+  // ORS driving-car: dùng làm định tuyến CHÍNH cho ô tô (ưu tiên cao tốc tự
+  // nhiên qua preference "fastest" mặc định, không cần cấu hình gì thêm), và
+  // làm phương án DỰ PHÒNG cho xe máy khi nhánh TomTom phía trên gặp lỗi.
   const apiKey = process.env.NEXT_PUBLIC_ORS_API_KEY;
   if (!apiKey) {
     throw new RoutingError(
@@ -119,8 +147,11 @@ export async function fetchDrivingRoute(
         radiuses,
         options: {
           avoid_borders: "all",
+          // CHỈ né "highways" (cao tốc). KHÔNG bao giờ thêm "tollways" —
+          // trạm thu phí BOT trên quốc lộ thường vẫn hợp lệ và cần thiết
+          // cho xe máy, "tollways" sẽ né nhầm cả những trạm đó.
           ...(routeOptions.avoidHighways
-            ? { avoid_features: ["highways", "tollways"] }
+            ? { avoid_features: ["highways"] }
             : {}),
         },
       }),

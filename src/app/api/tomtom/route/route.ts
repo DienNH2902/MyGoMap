@@ -65,14 +65,20 @@ export async function POST(request: Request) {
   url.searchParams.set("key", apiKey);
   url.searchParams.set("routeType", "fastest");
   url.searchParams.set("traffic", body.useTraffic === false ? "false" : "true");
-  url.searchParams.set("travelMode", "car");
+  // Xe máy dùng đúng travelMode "motorcycle" — profile xe 2 bánh có động cơ
+  // thật của TomTom (tốc độ, luật đường đúng cho xe máy, khác hẳn "car" lẫn
+  // "bicycle"). Ô tô vẫn dùng "car" như cũ, ưu tiên cao tốc tự nhiên qua
+  // routeType=fastest, không cần cấu hình avoid gì thêm.
+  url.searchParams.set("travelMode", body.avoidHighways ? "motorcycle" : "car");
   url.searchParams.set("routeRepresentation", "polyline");
   url.searchParams.set("computeTravelTimeFor", "all");
   url.searchParams.set("sectionType", "traffic");
 
   if (body.avoidHighways) {
+    // CHỈ né cao tốc. KHÔNG né "tollRoads" nữa — trạm thu phí BOT trên quốc
+    // lộ thường (không phải cao tốc) vẫn hợp lệ và cần thiết cho xe máy đi
+    // qua bình thường; né tollRoads sẽ chặn nhầm cả những trạm đó.
     url.searchParams.append("avoid", "motorways");
-    url.searchParams.append("avoid", "tollRoads");
   }
 
   const response = await fetch(url.toString(), {
@@ -93,7 +99,7 @@ export async function POST(request: Request) {
       },
       { status: response.status },
     );
-  } 
+  }
 
   const route = data.routes?.[0];
 
