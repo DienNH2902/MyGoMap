@@ -8,12 +8,53 @@ type GenderTheme = "nam" | "nu" | "khac";
 const STORAGE_KEY_NAME = "mygomap_user_name";
 const STORAGE_KEY_GENDER = "mygomap_user_gender";
 
+// Danh sách các trang điều hướng
+const NAV_ITEMS = [
+  { label: "Bản đồ", href: "/map" },
+  { label: "Mục đích", href: "/purpose" },
+  { label: "Thành viên", href: "/members" },
+  { label: "Công nghệ", href: "/tech-stack" },
+  { label: "Cấu trúc", href: "/structure" },
+  { label: "Cập nhật", href: "/changelog" },
+];
+
 /** Fixed top header shown on every page, carrying the MyGoMap brand mark front and center. */
 export function Header() {
   const [userInfo, setUserInfo] = useState<{
     name: string;
     gender: GenderTheme;
   } | null>(null);
+
+  const [hasUserInfo, setHasUserInfo] = useState<boolean>(false);
+
+  useEffect(() => {
+    const checkUserInfo = () => {
+      const name = (localStorage.getItem(STORAGE_KEY_NAME) ?? "").trim();
+      const gender =
+        (localStorage.getItem(STORAGE_KEY_GENDER) as GenderTheme) || "nam";
+      const rawGender = localStorage.getItem(STORAGE_KEY_GENDER);
+
+      if (name) {
+        setUserInfo({ name, gender });
+      } else {
+        setUserInfo(null);
+      }
+
+      // Mở khóa nếu đã có đầy đủ Tên và Giới tính
+      setHasUserInfo(Boolean(name && rawGender));
+    };
+
+    checkUserInfo();
+
+    // Lắng nghe thay đổi khi mở nhiều tab hoặc bắn Custom Event trong cùng tab
+    window.addEventListener("storage", checkUserInfo);
+    window.addEventListener("user-info-updated", checkUserInfo);
+
+    return () => {
+      window.removeEventListener("storage", checkUserInfo);
+      window.removeEventListener("user-info-updated", checkUserInfo);
+    };
+  }, []);
 
   useEffect(() => {
     const name = localStorage.getItem(STORAGE_KEY_NAME) ?? "";
@@ -50,7 +91,7 @@ export function Header() {
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-white/5 bg-ink/90 px-6 backdrop-blur-md">
+    <header className="fixed inset-x-0 top-0 z-40 grid grid-cols-3 h-16 items-center border-b border-white/5 bg-ink/90 px-6 backdrop-blur-md">
       <Link href="/" className="group flex items-center gap-2">
         {/* <Image
           src="/assets/mygomapthumbnail.png"
@@ -61,11 +102,40 @@ export function Header() {
           className="h-10 w-10 object-cover transition-transform group-hover:scale-105"
         /> */}
         <span className="bg-gradient-to-r from-primary via-accent-gold to-primary bg-[length:200%_auto] bg-clip-text text-xl font-extrabold tracking-tight text-transparent transition-[background-position] duration-700 group-hover:bg-right">
-          MyGoMap
+          Mỳ Gõ Map
         </span>
       </Link>
 
-      <nav className="hidden items-center gap-6 text-sm font-medium text-cream/70 sm:flex">
+      {/* Navigation Links (Desktop) */}
+      <nav className="hidden items-center justify-center gap-1 lg:flex md:gap-2 text-sm font-medium text-cream/70">
+        {NAV_ITEMS.map((item) => {
+          const isMapLink = item.href === "/map"; // Nếu có link /map trong menu
+
+          return (
+            <Link
+              key={item.href}
+              href={isMapLink && !hasUserInfo ? "#" : item.href}
+              onClick={(e) => {
+                if (isMapLink && !hasUserInfo) {
+                  e.preventDefault();
+                  alert(
+                    "Vui lòng nhập tên và chọn giới tính trước khi vào bản đồ!",
+                  );
+                }
+              }}
+              className={`rounded-lg px-3 py-1.5 transition-colors ${
+                isMapLink && !hasUserInfo
+                  ? "cursor-not-allowed opacity-40 hover:bg-transparent hover:text-cream/70"
+                  : "hover:bg-white/5 hover:text-cream"
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <nav className="hidden items-center justify-end gap-6 text-sm font-medium text-cream/70 sm:flex">
         {userInfo ? (
           <span
             className={`rounded-md border px-3.5 py-1 text-md font-semibold ${getGreetingBadgeClass()}`}

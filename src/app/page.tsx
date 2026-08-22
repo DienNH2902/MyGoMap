@@ -7,7 +7,7 @@ export default function HomePage() {
   return (
     <>
       <LocationRequest />
-      <Header />
+      {/* <Header /> */}
       <LandingHero />
       <LatestUpdatedBadge />
     </>

@@ -37,6 +37,7 @@ export function LandingHero() {
     } else {
       localStorage.removeItem(STORAGE_KEY_NAME);
     }
+    window.dispatchEvent(new Event("user-info-updated"));
   };
 
   // Cập nhật giới tính vào localStorage
@@ -48,6 +49,7 @@ export function LandingHero() {
     } else {
       localStorage.removeItem(STORAGE_KEY_GENDER);
     }
+    window.dispatchEvent(new Event("user-info-updated"));
   };
 
   // Xóa toàn bộ thông tin người dùng
@@ -57,6 +59,7 @@ export function LandingHero() {
     localStorage.removeItem(STORAGE_KEY_NAME);
     localStorage.removeItem(STORAGE_KEY_GENDER);
     localStorage.removeItem(STORAGE_KEY_LOADER);
+    window.dispatchEvent(new Event("user-info-updated"));
   };
 
   const hasUserInfo = Boolean(userName.trim() && gender);
@@ -123,11 +126,11 @@ export function LandingHero() {
           <Image
             src="/assets/mygomapthumbnail.png"
             alt="MyGoMap Logo"
-            width={200}
-            height={200}
+            width={400}
+            height={400}
             priority
             unoptimized
-            className="relative h-20 w-20 object-contain transition-transform duration-300 sm:h-40 sm:w-40 drop-shadow-[0_0_12px_rgba(255,255,255,0.5)]"
+            className="relative h-28 w-28 object-contain transition-transform duration-300 sm:h-52 sm:w-52 drop-shadow-[0_0_12px_rgba(255,255,255,0.5)]"
           />
         </div>
 
@@ -143,9 +146,10 @@ export function LandingHero() {
             </>
           ) : (
             <>
-              Chào mừng đến với{" "}
+              Chào mừng đến với
+              <br />
               <span className="bg-gradient-to-r from-primary via-accent-gold to-primary bg-clip-text text-transparent">
-                MyGoMap
+                Mỳ Gõ Map
               </span>
             </>
           )}

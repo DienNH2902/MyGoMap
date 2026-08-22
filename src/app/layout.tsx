@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Be_Vietnam_Pro, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { Header } from "@/components/layout/Header";
 
 // Be Vietnam Pro: full Vietnamese diacritic support, used for both headings and body text.
 const beVietnamPro = Be_Vietnam_Pro({
@@ -19,12 +20,12 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MyGoMap — Lập lộ trình thông minh khắp Việt Nam",
+  title: "Mỳ Gõ Map — Lập lộ trình thông minh khắp Việt Nam",
   icons: {
     icon: "/assets/mygomaplogo.png", // Đường dẫn tính từ thư mục public
   },
   description:
-    "MyGoMap giúp bạn tìm đường, gợi ý trạm xăng, trạm dừng chân, quán ăn và cà phê dọc tuyến đường — hoàn toàn miễn phí.",
+    "Mỳ Gõ Map giúp bạn tìm đường, gợi ý trạm xăng, trạm dừng chân, quán ăn và cà phê dọc tuyến đường — hoàn toàn miễn phí.",
 };
 
 export default function RootLayout({
@@ -38,6 +39,7 @@ export default function RootLayout({
       className={`${beVietnamPro.variable} ${jetBrainsMono.variable}`}
     >
       <body className="bg-surface font-display text-ink antialiased">
+        <Header />
         {children}
       </body>
     </html>
