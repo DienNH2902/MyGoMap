@@ -16,6 +16,7 @@ export default function NotFound() {
             fill
             sizes="1200"
             priority
+            unoptimized
             className="object-cover bg-surface-muted"
           />
         </div>

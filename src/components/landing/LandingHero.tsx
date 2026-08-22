@@ -87,7 +87,7 @@ export function LandingHero() {
     if (gender === "khac") {
       return "bg-gradient-to-r from-amber-400 via-rose-500 to-violet-500 hover:brightness-110 text-white border-none";
     }
-    return ""; // Mặc định dùng style gốc của Button variant="primary"
+    return "bg-gradient-to-r from-primary to-accent-gold text-ink shadow-glow hover:brightness-110 active:brightness-95"; // Mặc định dùng style gốc của Button variant="primary"
   };
 
   return (
@@ -109,27 +109,27 @@ export function LandingHero() {
         {/* <source src="/assets/china-cat.mp4" type="video/mp4" /> */}
       </video>
 
-      {/* <Image
-        src="/assets/bg2.png"
-        alt="MyGoMap Background"
-        fill
-        priority // Ưu tiên load ảnh ngay lập tức
-        quality={100}
-        className="object-cover object-center"
-      /> */}
-
-      {/* Overlay lớp phủ tối giúp chữ hiển thị rõ ràng */}
-      {/* <div className="absolute inset-0 bg-ink/75" /> */}
-
+      {/* Lớp phủ dải màu tối giúp tương phản chữ tốt hơn */}
       <div className="pointer-events-none absolute inset-0 bg-ink/40 bg-[radial-gradient(ellipse_at_top_left,_rgba(15,23,42,0.85)_0%,_transparent_60%),_radial-gradient(ellipse_at_bottom_right,_rgba(15,23,42,0.85)_0%,_transparent_60%)] backdrop-blur-[5px]" />
 
       {/* Overlay lớp phủ tối tỏa từ tâm quanh khu vực chữ */}
       {/* <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(15,23,42,0.98)_0%,_rgba(15,23,42,0.85)_30%,_rgba(15,23,42,0.3)_55%,_transparent_100%)]" /> */}
 
       <div className="relative z-10 flex max-w-2xl flex-col items-center gap-6 text-center">
-        {/* <span className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-medium uppercase tracking-[0.2em] text-accent-gold">
-          Lộ trình thông minh cho mọi chuyến đi
-        </span> */}
+        {/* Logo MyGoMap */}
+        <div className="relative flex items-center justify-center">
+          {/* Hiệu ứng hào quang/glow phía sau logo */}
+          {/* <div className="absolute h-24 w-24 rounded-full bg-primary/30 blur-2xl" /> */}
+          <Image
+            src="/assets/mygomapthumbnail.png"
+            alt="MyGoMap Logo"
+            width={200}
+            height={200}
+            priority
+            unoptimized
+            className="relative h-20 w-20 object-cover transition-transform duration-300 sm:h-40 sm:w-40 drop-shadow-[0_0_12px_rgba(255,255,255,0.5)]"
+          />
+        </div>
 
         <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-cream sm:text-6xl">
           {isHydrated && hasUserInfo ? (
@@ -152,9 +152,12 @@ export function LandingHero() {
         </h1>
 
         <p className="max-w-xl text-balance text-base leading-relaxed text-cream/70 sm:text-lg">
-          MyGoMap giúp bạn lên kế hoạch cho mọi hành trình trên khắp Việt Nam:
-          tìm đường đi nhanh nhất, tự động gợi ý trạm xăng, trạm dừng chân, quán
-          ăn hay quán cà phê ngay trên tuyến đường của bạn — hoàn toàn miễn phí.
+          <span className="font-extrabold bg-gradient-to-r from-amber-300 via-rose-400 to-violet-400 bg-clip-text text-transparent drop-shadow-sm">
+            Mỳ Gõ Map
+          </span>{" "}
+          - giúp bạn lên kế hoạch cho mọi hành trình trên khắp Việt Nam: tìm
+          đường đi nhanh nhất, tự động gợi ý trạm xăng, trạm dừng chân, quán ăn
+          hay quán cà phê ngay trên tuyến đường của bạn — hoàn toàn miễn phí.
         </p>
 
         {/* Khối nhập thông tin người dùng */}
@@ -241,7 +244,7 @@ export function LandingHero() {
               <button
                 type="button"
                 onClick={handleResetUser}
-                className="text-s font-medium text-cream/40 transition hover:text-rose-400"
+                className="text-xs font-medium text-cream/40 transition hover:text-rose-400"
               >
                 Xóa thông tin
               </button>

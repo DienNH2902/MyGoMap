@@ -326,6 +326,7 @@ export function MapExperience() {
               alt="Mèo tò mò"
               fill
               sizes="160px"
+              unoptimized
               className="object-contain drop-shadow-xl"
             />
           </div>
@@ -339,6 +340,7 @@ export function MapExperience() {
               alt="Mèo đã bị bắt"
               fill
               sizes="100px"
+              unoptimized
               className="object-contain"
             />
           </div>
@@ -413,6 +415,7 @@ export function MapExperience() {
               alt="Lỗi tính lộ trình"
               fill
               sizes="1200px"
+              unoptimized
               className="object-cover rounded-xl"
             />
           </div>
