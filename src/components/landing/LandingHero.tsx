@@ -127,7 +127,7 @@ export function LandingHero() {
             height={200}
             priority
             unoptimized
-            className="relative h-20 w-20 object-cover transition-transform duration-300 sm:h-40 sm:w-40 drop-shadow-[0_0_12px_rgba(255,255,255,0.5)]"
+            className="relative h-20 w-20 object-contain transition-transform duration-300 sm:h-40 sm:w-40 drop-shadow-[0_0_12px_rgba(255,255,255,0.5)]"
           />
         </div>
 
