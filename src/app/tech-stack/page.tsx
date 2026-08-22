@@ -231,7 +231,7 @@ const POI_CATEGORIES = [
     desc: "Cây rút tiền tự động của các ngân hàng",
   },
   {
-    name: "Cửa hàng tiện lợi",
+    name: "Tiện lợi",
     icon: "🏪",
     tag: "shop=convenience",
     desc: "Cửa hàng bách hóa, tiệm tiện lợi 24/7 để mua nhu yếu phẩm",

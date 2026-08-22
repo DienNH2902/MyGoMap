@@ -101,7 +101,7 @@ export function Header() {
           unoptimized
           className="h-10 w-10 object-cover transition-transform group-hover:scale-105"
         /> */}
-        <span className="bg-gradient-to-r from-primary via-accent-gold to-primary bg-[length:200%_auto] bg-clip-text text-xl font-extrabold tracking-tight text-transparent transition-[background-position] duration-700 group-hover:bg-right">
+        <span className="bg-gradient-to-r from-primary via-accent-gold to-primary bg-[length:200%_auto] bg-clip-text text-2xl font-extrabold tracking-tight text-transparent transition-[background-position] duration-700 group-hover:bg-right">
           Mỳ Gõ Map
         </span>
       </Link>

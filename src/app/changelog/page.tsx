@@ -126,7 +126,7 @@ export default function ChangelogPage() {
             <section className="rounded-2xl border border-cream/10 bg-white/5 p-6 backdrop-blur-md sm:p-8">
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-primary flex items-center gap-2 sm:text-2xl">
-                  Danh sách Commits mới nhất
+                  Danh sách Cập nhật mới nhất
                 </h2>
                 {/* <a
                   href="https://github.com/DienNH2902/MyGoMap/commits"
@@ -156,7 +156,7 @@ export default function ChangelogPage() {
                             scope="col"
                             className="pb-3 pr-4 font-semibold w-24"
                           >
-                            Commit
+                            Cập nhật
                           </th>
                           <th scope="col" className="pb-3 px-4 font-semibold">
                             Nội dung thay đổi (Message)
