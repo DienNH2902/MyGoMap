@@ -21,7 +21,7 @@ const jetBrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "MyGoMap — Lập lộ trình thông minh khắp Việt Nam",
   icons: {
-    icon: "/assets/logo3.png", // Đường dẫn tính từ thư mục public
+    icon: "/assets/mygomap-logo.png", // Đường dẫn tính từ thư mục public
   },
   description:
     "MyGoMap giúp bạn tìm đường, gợi ý trạm xăng, trạm dừng chân, quán ăn và cà phê dọc tuyến đường — hoàn toàn miễn phí.",

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { HeroRouteLine } from "./HeroRouteLine";
+// import { HeroRouteLine } from "./HeroRouteLine";
 import { Button } from "../ui/Button";
 import Image from "next/image";
 
