@@ -4,67 +4,67 @@ import Image from "next/image";
 const TEAM_MEMBERS = [
   {
     name: "Nguyễn Hoàng Điền",
-    role: "Lead Developer & System Architect",
-    avatar: "/assets/DienAVA.jpg", // Bạn có thể thay bằng đường dẫn ảnh cá nhân (ví dụ: /assets/dien.jpg)
+    role: "Trưởng nhóm & Kiến trúc sư Hệ thống",
+    avatar: "/assets/DienAVA.jpg",
     description:
       "Phụ trách thiết kế hệ thống, kiến trúc ứng dụng và phát triển các tính năng cốt lõi cho Mỳ Gõ Map.",
     isHuman: true,
   },
   {
     name: "Claude",
-    role: "AI Co-pilot & UI Design Assistant",
+    role: "Đối tác Lập trình & Viết Mã Nguồn AI",
     avatar: "/assets/claude.png",
     description:
-      "Hỗ trợ viết mã nguồn, tối ưu hóa giao diện người dùng và tinh chỉnh cấu trúc trải nghiệm UX/UI.",
+      "Chịu trách nhiệm viết mã nguồn, tối ưu hóa giao diện người dùng và tinh chỉnh cấu trúc UX/UI. Rất năng nổ nhưng dễ mệt và ngủ giữa chừng.",
     isHuman: false,
   },
   {
     name: "Codex",
-    role: "AI Code Generation Partner",
+    role: "Đối tác Lập trình & Tối ưu Logic AI",
     avatar: "/assets/codex.png",
     description:
-      "Trợ lý viết code tự động, hỗ trợ tái cấu trúc logic và tối ưu hóa hiệu năng các thuật toán định vị.",
+      "Hỗ trợ tái cấu trúc logic và tối ưu hóa thuật toán định vị khi Claude đã ngủ. Đưa ra các phương án hiệu quả nhưng ngủ nhiều hơn Claude.",
     isHuman: false,
   },
   {
     name: "Gemini",
-    role: "AI Reasoning & Content Assistant",
+    role: "Trợ lý Suy luận & Biên tập Nội dung AI",
     avatar: "/assets/gemini.png",
     description:
-      "Hỗ trợ phân tích dữ liệu địa lý, biên tập nội dung bài viết và tư vấn giải pháp xử lý dữ liệu.",
+      "Giải đáp thắc mắc, biên tập và tư vấn giải pháp. Hay vất vả sửa lỗi do Codex và Claude gây ra, thường xuyên mất ngủ nên bị lợi dụng nhiều.",
     isHuman: false,
   },
   {
     name: "ChatGPT",
-    role: "AI Technical Advisor",
+    role: "Cố vấn Kỹ thuật & Sửa lỗi AI",
     avatar: "/assets/chatgpt.png",
     description:
-      "Tư vấn giải pháp công nghệ, hỗ trợ sửa lỗi (debug) và đề xuất phương án tối ưu hóa hệ thống.",
+      "Hỗ trợ sửa lỗi (debug) và đề xuất phương án tối ưu hóa hệ thống. Hay đề xuất giải pháp sáng tạo nhưng luôn đề xuất sai.",
     isHuman: false,
   },
   {
     name: "Kiro IDE",
-    role: "AI-Powered Development Environment",
+    role: "Môi trường Phát triển Tích hợp AI",
     avatar: "/assets/kiro.png",
     description:
-      "Môi trường lập trình tích hợp AI thông minh, giúp tăng tốc độ triển khai và quản lý dự án.",
+      "Môi trường lập trình tích hợp AI thông minh, giúp tăng tốc độ triển khai và quản lý dự án mỗi khi các thành viên khác ngủ.",
     isHuman: false,
   },
 ];
 
 export default function MembersPage() {
   return (
-    <div className="relative h-screen overflow-hidden bg-ink text-cream">
+    <div className="relative min-h-screen overflow-x-hidden bg-ink text-cream">
       {/* Background Ảnh nền định vị cố định bên phải, làm mờ nhẹ */}
       <div className="fixed inset-0 z-0 pointer-events-none flex justify-end">
-        <div className="relative h-full w-full lg:w-3/4 opacity-25 blur-[1px]">
+        <div className="relative h-full w-full lg:w-3/4 opacity-20 blur-[1px]">
           <Image
             src="/assets/vnbg.png"
             alt="MyGoMap Vietnam Background"
             fill
             priority
             unoptimized
-            className="object-cover object-center"
+            className="object-contain object-center"
           />
         </div>
       </div>
@@ -72,11 +72,11 @@ export default function MembersPage() {
       {/* Lớp phủ Gradient tối giúp tăng độ tương phản đọc chữ */}
       <div className="fixed inset-0 z-0 bg-gradient-to-r from-ink via-ink/90 to-transparent pointer-events-none" />
 
-      {/* Nội dung chính lệch sang bên trái */}
+      {/* Nội dung chính */}
       <main className="relative z-10 mx-auto max-w-7xl px-6 pt-28 pb-20">
         <div className="max-w-full">
           {/* Tiêu đề trang */}
-          <div className="mb-10 text-left max-w-2xl lg:max-w-3xl">
+          <div className="mb-12 text-left max-w-2xl lg:max-w-3xl">
             <span className="text-xs font-semibold uppercase tracking-widest text-accent-gold">
               Đội ngũ dự án
             </span>
@@ -93,52 +93,81 @@ export default function MembersPage() {
             </p>
           </div>
 
-          {/* Danh sách thành viên hiển thị dạng Grid 3 cột */}
+          {/* Grid danh sách thành viên */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {TEAM_MEMBERS.map((member) => (
               <section
                 key={member.name}
-                className={`flex flex-col rounded-2xl border p-6 backdrop-blur-md transition-all duration-300 hover:border-cream/20 sm:p-7 ${
+                className={`group relative flex flex-col justify-between rounded-2xl border p-6 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 ${
                   member.isHuman
-                    ? "border-primary/30 bg-primary/10 shadow-lg shadow-primary/5"
-                    : "border-cream/10 bg-white/5"
+                    ? "border-primary/40 bg-gradient-to-b from-primary/15 via-primary/5 to-transparent shadow-lg shadow-primary/10 hover:border-primary/70 hover:shadow-primary/20"
+                    : "border-cream/10 bg-white/[0.03] hover:border-cream/25 hover:bg-white/[0.06]"
                 }`}
               >
-                <div className="flex flex-col items-center text-center gap-4">
-                  {/* Avatar */}
-                  <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-orange-100 p-1">
-                    <Image
-                      src={member.avatar}
-                      alt={member.name}
-                      fill
-                      unoptimized
-                      className="object-cover rounded-xl"
-                    />
+                {/* Viền sáng trên đỉnh Card khi hover */}
+                <div
+                  className={`absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r transition-opacity duration-300 ${
+                    member.isHuman
+                      ? "from-transparent via-primary/60 to-transparent opacity-100"
+                      : "from-transparent via-accent-gold/40 to-transparent opacity-0 group-hover:opacity-100"
+                  }`}
+                />
+
+                <div className="flex flex-col gap-5">
+                  {/* Header trong Card: Avatar + Tên & Role */}
+                  <div className="flex items-start gap-4">
+                    {/* Avatar */}
+                    <div
+                      className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border p-1 transition-transform duration-300 group-hover:scale-105 ${
+                        member.isHuman
+                          ? "border-primary/50 bg-primary/20 shadow-md shadow-primary/20"
+                          : "border-white/10 bg-orange-100"
+                      }`}
+                    >
+                      <Image
+                        src={member.avatar}
+                        alt={member.name}
+                        fill
+                        unoptimized
+                        className="object-cover rounded-xl"
+                      />
+                    </div>
+
+                    {/* Tên & Tác vụ */}
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h2 className="text-lg font-bold text-cream truncate">
+                          {member.name}
+                        </h2>
+                        {member.isHuman ? (
+                          <span className="inline-flex items-center rounded-full bg-primary/20 border border-primary/40 px-2 py-0.5 text-[10px] font-bold text-accent-gold uppercase tracking-wider">
+                            Leader
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-white/10 border border-white/10 px-2 py-0.5 text-[10px] font-medium text-cream/60 uppercase tracking-wider">
+                            Thành viên
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-xs font-semibold leading-snug text-accent-gold/90">
+                        {member.role}
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Thông tin */}
-                  <div className="space-y-1.5 w-full">
-                    <div className="flex items-center justify-center gap-2.5">
-                      <h2 className="text-xl font-bold text-cream">
-                        {member.name}
-                      </h2>
-                      {member.isHuman ? (
-                        <span className="rounded-full bg-primary/20 border border-primary/30 px-2.5 py-0.5 text-xs font-semibold text-accent-gold">
-                          Human
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-white/10 border border-white/10 px-2.5 py-0.5 text-xs font-medium text-cream/60">
-                          AI Partner
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs font-semibold tracking-wide text-primary sm:text-sm">
-                      {member.role}
-                    </p>
-                    <p className="mt-2 text-sm leading-relaxed text-cream/75">
-                      {member.description}
-                    </p>
-                  </div>
+                  {/* Mô tả chi tiết */}
+                  <p className="text-xs leading-relaxed text-cream/75 sm:text-sm">
+                    {member.description}
+                  </p>
+                </div>
+
+                {/* Footer điểm nhấn nhẹ dưới Card */}
+                <div className="mt-6 border-t border-white/5 pt-3 flex justify-between items-center text-[11px] font-mono text-cream/40">
+                  <span>{member.isHuman ? "Nhà phát triển" : "Khách mời"}</span>
+                  <span className="group-hover:text-accent-gold transition-colors">
+                    #MyGoMapTeam
+                  </span>
                 </div>
               </section>
             ))}
