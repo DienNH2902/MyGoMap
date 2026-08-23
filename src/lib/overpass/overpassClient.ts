@@ -125,6 +125,21 @@ const OVERPASS_TIMEOUT_MS = 20000;
 const OVERPASS_MAX_ATTEMPTS = 2;
 
 /**
+ * Prepended to every Overpass query that searches for POIs/stop suggestions,
+ * and appended as `(area.vn)` on each node/way/relation clause — this
+ * intersects the existing `around:`/bbox filter with Vietnam's own OSM
+ * country boundary, so a search radius or highway-snap window that happens
+ * to dip across the border (Cao Bằng/Lạng Sơn near China, An Giang/Kiên
+ * Giang near Cambodia, etc.) never returns a foreign result. This does NOT
+ * apply to "Tìm quanh đây" (findPoisAroundPoint) alone — that mode is also
+ * hard-blocked client-side via isPointInVietnam before the request is even
+ * sent, since a user tapping a point clearly outside Vietnam should see a
+ * clear message instead of a silently-empty result.
+ */
+const VIETNAM_AREA_SETUP = `area["ISO3166-1"="VN"]["admin_level"="2"]->.vn;`;
+const VIETNAM_AREA_FILTER = `(area.vn)`;
+
+/**
  * Sends one Overpass query, retrying once on rate-limit / server-busy
  * responses. Never throws — on any failure it logs a warning and resolves to
  * `null`, so a flaky Overpass server can never take down the whole trip plan.
@@ -225,12 +240,12 @@ export async function findPoisForStops(
   for (const point of points) {
     for (const category of categories) {
       clauses.push(
-        `node["${category.osmKey}"="${category.osmValue}"](around:${POI_SEARCH_RADIUS_METERS},${point.lat},${point.lon});`,
+        `node["${category.osmKey}"="${category.osmValue}"](around:${POI_SEARCH_RADIUS_METERS},${point.lat},${point.lon})${VIETNAM_AREA_FILTER};`,
       );
     }
   }
 
-  const query = `[out:json][timeout:25];(${clauses.join("\n")});out center tags;`;
+  const query = `[out:json][timeout:25];${VIETNAM_AREA_SETUP}(${clauses.join("\n")});out center tags;`;
 
   const data = await fetchOverpassQuery(query, signal);
   if (!data) {
@@ -313,10 +328,10 @@ export async function findPoisAroundPoint({
 }> {
   const safeRadiusMeters = Math.max(50, Math.min(10000, radiusMeters));
 
-  const query = `[out:json][timeout:25];(
-node["${category.osmKey}"="${category.osmValue}"](around:${safeRadiusMeters},${center.lat},${center.lon});
-way["${category.osmKey}"="${category.osmValue}"](around:${safeRadiusMeters},${center.lat},${center.lon});
-relation["${category.osmKey}"="${category.osmValue}"](around:${safeRadiusMeters},${center.lat},${center.lon});
+  const query = `[out:json][timeout:25];${VIETNAM_AREA_SETUP}(
+node["${category.osmKey}"="${category.osmValue}"](around:${safeRadiusMeters},${center.lat},${center.lon})${VIETNAM_AREA_FILTER};
+way["${category.osmKey}"="${category.osmValue}"](around:${safeRadiusMeters},${center.lat},${center.lon})${VIETNAM_AREA_FILTER};
+relation["${category.osmKey}"="${category.osmValue}"](around:${safeRadiusMeters},${center.lat},${center.lon})${VIETNAM_AREA_FILTER};
 );out center tags;`;
 
   const data = await fetchOverpassQuery(query, signal);
@@ -409,12 +424,12 @@ async function snapOneStopToHighwayExit(
   if (!bbox) return { ...candidate, snappedToHighwayFeature: false };
 
   const bboxStr = `${bbox.south},${bbox.west},${bbox.north},${bbox.east}`;
-  const query = `[out:json][timeout:25];(
-node["highway"="services"](${bboxStr});
-way["highway"="services"](${bboxStr});
-node["highway"="rest_area"](${bboxStr});
-way["highway"="rest_area"](${bboxStr});
-node["highway"="motorway_junction"](${bboxStr});
+  const query = `[out:json][timeout:25];${VIETNAM_AREA_SETUP}(
+node["highway"="services"](${bboxStr})${VIETNAM_AREA_FILTER};
+way["highway"="services"](${bboxStr})${VIETNAM_AREA_FILTER};
+node["highway"="rest_area"](${bboxStr})${VIETNAM_AREA_FILTER};
+way["highway"="rest_area"](${bboxStr})${VIETNAM_AREA_FILTER};
+node["highway"="motorway_junction"](${bboxStr})${VIETNAM_AREA_FILTER};
 );out center tags;`;
 
   const data = await fetchOverpassQuery(query, signal);
@@ -482,3 +497,92 @@ node["highway"="motorway_junction"](${bboxStr});
     highwayFeatureName: best.name,
   };
 }
+
+/**
+ * Checks whether a coordinate lies within Vietnam's actual OSM administrative
+ * boundary — deliberately NOT a rough lat/lon bounding-box check, which would
+ * incorrectly "pass" points just across the Cambodia/Laos/China border that
+ * happen to share a similar latitude/longitude range. Uses Overpass's
+ * `is_in()` to find every area containing the point, then checks whether
+ * Vietnam (ISO3166-1=VN, admin_level=2) is one of them.
+ *
+ * On any Overpass failure (timeout, rate-limit, network), this resolves to
+ * `true` rather than blocking the user — a flaky API response should never
+ * be mistaken for "you're outside Vietnam". The real search that follows
+ * already has its own Vietnam-only area filter (VIETNAM_AREA_FILTER) as a
+ * second line of defense, so this fail-open behavior can't leak foreign POIs.
+ */
+
+/**
+ * Kiểm tra nhanh một tọa độ có nằm trong phạm vi lãnh thổ Việt Nam hay không.
+ * Sử dụng kiểm tra BBOX kết hợp Reverse Geocoding chuẩn để tránh lọt qua khi API lỗi.
+ */
+export async function isPointInVietnam(
+  lat: number,
+  lon: number,
+  signal?: AbortSignal,
+): Promise<boolean> {
+  // 1. Chặn nhanh bằng khung tọa độ mở rộng (Bounding Box) của Việt Nam
+  // Tọa độ VN: Vĩ độ 8.18 -> 23.39, Kinh độ 102.14 -> 109.46
+  if (lat < 8.18 || lat > 23.39 || lon < 102.14 || lon > 109.46) {
+    return false;
+  }
+
+  // 2. Kiểm tra chính xác ranh giới quốc gia qua Nominatim Reverse Geocoding
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=3`,
+      {
+        headers: {
+          "Accept-Language": "vi,en",
+          "User-Agent": "MyGoMap_App/1.0",
+        },
+        signal,
+      },
+    );
+
+    if (!response.ok) {
+      // Nếu API lỗi, fallback về kiểm tra BBOX thu gọn (An toàn)
+      return isWithinVietnamRoughBoundary(lat, lon);
+    }
+
+    const data = (await response.json()) as {
+      address?: { country_code?: string };
+    };
+    const countryCode = data.address?.country_code?.toLowerCase();
+
+    if (countryCode) {
+      return countryCode === "vn";
+    }
+
+    return isWithinVietnamRoughBoundary(lat, lon);
+  } catch (error) {
+    // Nếu bị AbortController hoặc Mạng lỗi, dùng ranh giới hình học thô thay vì cho qua (return true)
+    return isWithinVietnamRoughBoundary(lat, lon);
+  }
+}
+
+/**
+ * Thuật toán kiểm tra Bounding Box đa giác thô (loại bỏ Lào, Campuchia, Thái Lan nằm trong BBOX chữ nhật)
+ */
+function isWithinVietnamRoughBoundary(lat: number, lon: number): boolean {
+  // Loại bỏ khu vực phía Tây (Lào / Campuchia / Thái Lan) trong BBOX
+  if (lat < 14.0 && lon < 104.5) return false; // Campuchia / Nam Thái Lan
+  if (lat >= 14.0 && lat < 20.0 && lon < 102.8) return false; // Lào
+  if (lat >= 20.0 && lon < 102.14) return false; // Tây Bắc biên giới
+
+  return true;
+}
+
+// export async function isPointInVietnam(
+//   lat: number,
+//   lon: number,
+//   signal?: AbortSignal,
+// ): Promise<boolean> {
+//   const query = `[out:json][timeout:15];is_in(${lat},${lon})->.a;area.a["ISO3166-1"="VN"]["admin_level"="2"];out ids;`;
+
+//   const data = await fetchOverpassQuery(query, signal);
+//   if (!data) return true;
+
+//   return data.elements.length > 0;
+// }

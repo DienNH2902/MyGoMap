@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { POI_CATEGORIES } from "@/lib/constants";
 import {
   findPoisAroundPoint,
+  isPointInVietnam,
   type AroundSearchInput,
 } from "@/lib/overpass/overpassClient";
 import type { PlaceResult, PoiCategoryId, PoiResult } from "@/lib/types";
@@ -91,6 +92,23 @@ export function AroundSearchPanel({
     const controller = new AbortController();
     setIsLoading(true);
     setWarning(null);
+
+    // Chặn cứng TRƯỚC khi gọi Overpass tìm POI: nếu điểm được chọn không nằm
+    // trong lãnh thổ Việt Nam (kiểm tra bằng ranh giới hành chính OSM thật,
+    // không phải bounding box thô), báo rõ cho người dùng và dừng lại luôn —
+    // không âm thầm trả về danh sách rỗng.
+    const isInVietnam = await isPointInVietnam(
+      center.lat,
+      center.lon,
+      controller.signal,
+    );
+
+    if (!isInVietnam) {
+      setIsLoading(false);
+      onResultsChange([]);
+      setWarning("Kiếm trong nước Việt Nam giùm con đi má!");
+      return;
+    }
 
     const input: AroundSearchInput = {
       center,
@@ -201,7 +219,7 @@ export function AroundSearchPanel({
         </div>
 
         {warning && (
-          <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          <p className="rounded-xl bg-ink/85 px-3 py-2 text-sm text-red-500">
             {warning}
           </p>
         )}
