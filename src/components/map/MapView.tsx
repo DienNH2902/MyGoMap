@@ -10,6 +10,7 @@ import {
   type GeoJSONSource,
   GeolocateControl,
 } from "maplibre-gl";
+import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import {
   // MAP_STYLE_URL,
@@ -24,6 +25,7 @@ import {
   BIEN_DONG_LABEL_TEXT,
   BIEN_DONG_LOCATION,
   MAX_CUSTOM_STOPS,
+  VIETNAM_SOVEREIGNTY_STOPS,
 } from "@/lib/constants";
 import type {
   PlaceResult,
@@ -564,7 +566,7 @@ export function MapView({
           }
         }
       }
-    };;
+    };
 
     runWhenStyleReady(map, applyRoute);
   }, [
@@ -1027,6 +1029,49 @@ export function MapView({
     }
   }, [activePoiId, stops]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const markers: maplibregl.Marker[] = [];
+
+    VIETNAM_SOVEREIGNTY_STOPS.forEach((item) => {
+      // Tạo phần tử HTML chứa nhãn màu cam
+      const el = document.createElement("div");
+      el.className = "sovereignty-label-marker";
+      el.innerHTML = `
+      <div style="
+        background: linear-gradient(135deg, #f97316, #ea580c);
+        color: #ffffff;
+        font-weight: 800;
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+        border: 1.5px solid #ffffff;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        pointer-events: none;
+      ">
+        <strong>${item.label}</strong>
+      </div>
+    `;
+
+      // Gắn Marker vào bản đồ
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([item.lng, item.lat])
+        .addTo(map!);
+
+      markers.push(marker);
+    });
+
+    return () => {
+      markers.forEach((m) => m.remove());
+    };
+  }, [mapStyleId]);
+
   // Hiệu ứng màu cho chủ đề khác
   useEffect(() => {
     const map = mapRef.current;
@@ -1102,38 +1147,38 @@ function addSovereigntyLabels(
 
   const sovereigntyLocations = [HOANG_SA_LOCATION, TRUONG_SA_LOCATION];
 
-  sovereigntyLocations.forEach((location) => {
-    const el = document.createElement("div");
-    el.className = "flex flex-col items-center gap-1 select-none";
-    el.style.pointerEvents = "none";
-    el.innerHTML = `
-      <span style="
-        white-space: nowrap;
-        background-color: #f59e0b;
-        color: #ffffff;
-        font-weight: 700;
-        font-size: 11px;
-        line-height: 1.2;
-        padding: 4px 8px;
-        border-radius: 6px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-      ">${escapeHtml(SOVEREIGNTY_LABEL_TEXT)}</span>
-      <span style="
-        display: block;
-        height: 10px;
-        width: 10px;
-        border-radius: 9999px;
-        background-color: #f59e0b;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-      "></span>
-    `;
+  // sovereigntyLocations.forEach((location) => {
+  //   const el = document.createElement("div");
+  //   el.className = "flex flex-col items-center gap-1 select-none";
+  //   el.style.pointerEvents = "none";
+  //   el.innerHTML = `
+  //     <span style="
+  //       white-space: nowrap;
+  //       background-color: #f59e0b;
+  //       color: #ffffff;
+  //       font-weight: 700;
+  //       font-size: 11px;
+  //       line-height: 1.2;
+  //       padding: 4px 8px;
+  //       border-radius: 6px;
+  //       box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+  //     ">${escapeHtml(SOVEREIGNTY_LABEL_TEXT)}</span>
+  //     <span style="
+  //       display: block;
+  //       height: 10px;
+  //       width: 10px;
+  //       border-radius: 9999px;
+  //       background-color: #f59e0b;
+  //       box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  //     "></span>
+  //   `;
 
-    const marker = new Marker({ element: el, anchor: "bottom" })
-      .setLngLat([location.lon, location.lat])
-      .addTo(map);
+  //   const marker = new Marker({ element: el, anchor: "bottom" })
+  //     .setLngLat([location.lon, location.lat])
+  //     .addTo(map);
 
-    markersRef.current.push(marker);
-  });
+  //   markersRef.current.push(marker);
+  // });
 
   const seaLabelEl = document.createElement("div");
   seaLabelEl.className = "select-none";

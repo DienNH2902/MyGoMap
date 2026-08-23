@@ -123,13 +123,112 @@ export const DEFAULT_MAP_ZOOM = 5.2;
  * Toạ độ là trung tâm gần đúng của mỗi quần đảo (dùng để đặt "chấm" + nhãn trên bản đồ).
  */
 export const SOVEREIGNTY_LABEL_TEXT =
-  "Hoàng Sa và Trường Sa là của Việt Nam, Trung Quốc cút!";
+  // "Hoàng Sa và Trường Sa là của Việt Nam, Trung Quốc cút!";
+  "";
 
 export const BIEN_DONG_LABEL_TEXT = "Biển Đông";
 
 export const HOANG_SA_LOCATION = { lon: 112.34, lat: 16.83 } as const; // Đảo Phú Lâm, trung tâm quần đảo Hoàng Sa
 export const TRUONG_SA_LOCATION = { lon: 111.92, lat: 8.64 } as const; // Đảo Trường Sa Lớn, trung tâm quần đảo Trường Sa
 export const BIEN_DONG_LOCATION = { lon: 113.8, lat: 12.2 } as const;
+
+export interface SovereigntyMarker {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  label: string; // Nội dung nhãn: "Việt Nam" hoặc "Hoàng Sa & Trường Sa là của Việt Nam"
+}
+
+export const VIETNAM_SOVEREIGNTY_STOPS: SovereigntyMarker[] = [
+  // Quần đảo Hoàng Sa (Paracel Islands)
+  {
+    id: "hs-1",
+    name: "Đảo Hoàng Sa",
+    lat: 16.5333,
+    lng: 111.6167,
+    label: "Việt Nam",
+  },
+  {
+    id: "hs-2",
+    name: "Đảo Phú Lâm",
+    lat: 16.46518762273311,
+    lng: 111.74311462019602,
+    label: "Việt Nam",
+  },
+  {
+    id: "hs-3",
+    name: "Đảo Cây",
+    lat: 16.979,
+    lng: 112.2687,
+    label: "Việt Nam",
+  },
+  {
+    id: "hs-4",
+    name: "Quận Tây Sa / Tam Sa",
+    lat: 16.832464076009046,
+    lng: 112.33398167457278,
+    label: "Việt Nam",
+  },
+  {
+    id: "hs-5",
+    name: "",
+    lat: 16.97815023775503,
+    lng: 112.21023251196357,
+    label: "Việt Nam",
+  },
+
+  // Quần đảo Trường Sa (Spratly Islands)
+  {
+    id: "ts-1",
+    name: "Đảo Trường Sa Large",
+    lat: 8.6444,
+    lng: 111.9208,
+    label: "Việt Nam",
+  },
+  // {
+  //   id: "ts-2",
+  //   name: "Đảo Song Tử Tây",
+  //   lat: 11.4283,
+  //   lng: 114.3314,
+  //   label: "Việt Nam",
+  // },
+  // {
+  //   id: "ts-3",
+  //   name: "Đảo Sinh Tồn",
+  //   lat: 9.8858,
+  //   lng: 114.3283,
+  //   label: "Việt Nam",
+  // },
+  // {
+  //   id: "ts-4",
+  //   name: "Đảo Nam Yết",
+  //   lat: 10.1808,
+  //   lng: 114.3644,
+  //   label: "Việt Nam",
+  // },
+  // {
+  //   id: "ts-5",
+  //   name: "Quận Nam Sa / Đá Chữ Thập",
+  //   lat: 9.6167,
+  //   lng: 112.8833,
+  //   label: "Việt Nam",
+  // },
+  // {
+  //   id: "ts-6",
+  //   name: "Đá Vành Khăn",
+  //   lat: 9.9167,
+  //   lng: 115.5333,
+  //   label: "Việt Nam",
+  // },
+  {
+    id: "ts-7",
+    name: "Đá Subi",
+    lat: 10.909995855786818,
+    lng: 114.07107137420098,
+    label: "Việt Nam",
+  },
+];
 
 /** How far around each stop point we search for matching POIs (kept within the 5–10km ask). */
 export const POI_SEARCH_RADIUS_METERS = 8000;
