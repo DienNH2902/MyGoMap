@@ -28,8 +28,9 @@ export const metadata: Metadata = {
   icons: {
     // Icon dùng trong tab trình duyệt (favicon)
     icon: [
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      // { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      // { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/assets/mygomaplogo.png", sizes: "16x16", type: "image/png" },
     ],
     // BẮT BUỘC cho iOS: icon hiện trên màn hình chính khi "Thêm vào MH chính"
     // KHÔNG được lấy từ manifest.json trên iOS — Safari chỉ đọc thẻ
