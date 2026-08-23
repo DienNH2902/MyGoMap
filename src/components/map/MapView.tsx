@@ -62,6 +62,8 @@ interface MapViewProps {
   activeAroundPoiId?: string | null;
   onSelectAroundPoi?: (poiId: string | null) => void;
   onOpenAroundSearchFromMap?: (place: PlaceResult) => void;
+  /** Called with a friendly Vietnamese message whenever geolocation fails (permission denied, timeout, insecure origin) — see the GeolocateControl "error" handler above. */
+  onLocationError?: (message: string) => void;
 }
 
 const POI_FOCUS_ZOOM = 16;
@@ -216,6 +218,7 @@ export function MapView({
   activeAroundPoiId = null,
   onSelectAroundPoi,
   onOpenAroundSearchFromMap,
+  onLocationError,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -268,8 +271,13 @@ export function MapView({
 
     const geolocateControl = new GeolocateControl({
       positionOptions: {
-        enableHighAccuracy: false, // Chuyển thành false để lấy vị trí nhanh qua Wi-Fi/IP/Cell, tránh treo GPS
-        timeout: 10000, // Tối đa 10 giây nếu không lấy được sẽ nhả ra
+        // Bật GPS thật (chip GPS trên điện thoại) thay vì chỉ định vị theo
+        // Wi-Fi/mạng. Trên desktop (không có GPS) trình duyệt tự động dùng
+        // phương án tốt nhất sẵn có nên không bị ảnh hưởng — nhưng trên
+        // mobile, false trước đây đã bỏ phí GPS thật (nhanh + chính xác hơn
+        // nhiều ngoài trời), khiến định vị mobile chậm/kém tin cậy hơn hẳn.
+        enableHighAccuracy: true,
+        timeout: 10000, // Tối đa 10 giây nếu không lấy được sẽ nhả ra, tránh treo vô hạn
         maximumAge: 300000, // Cho phép dùng vị trí trong cache tối đa 5 phút
       },
       trackUserLocation: true,
@@ -277,10 +285,45 @@ export function MapView({
       showAccuracyCircle: true,
     });
 
+    // Trước đây khi định vị lỗi (bị từ chối quyền, timeout, hay trang chạy
+    // qua HTTP không an toàn) thì KHÔNG có gì hiển thị cho người dùng biết —
+    // nhìn như "định vị không hoạt động" mà không rõ lý do. Bắt lỗi cụ thể
+    // và báo rõ ràng, đặc biệt quan trọng trên mobile vì lỗi hay gặp nhất ở
+    // đó là bị từ chối quyền vị trí và KHÔNG THỂ tự xin lại bằng JS được nữa
+    // — người dùng cần biết để tự vào cài đặt trình duyệt bật lại.
+    geolocateControl.on("error", (error: GeolocationPositionError) => {
+      if (error.code === error.PERMISSION_DENIED) {
+        onLocationError?.(
+          "Bạn đã từ chối quyền truy cập vị trí. Vào Cài đặt trình duyệt → Quyền riêng tư/Vị trí để bật lại cho trang này.",
+        );
+      } else if (error.code === error.TIMEOUT) {
+        onLocationError?.(
+          "Không lấy được vị trí (quá thời gian chờ). Hãy đảm bảo đã bật Dịch vụ vị trí trên thiết bị rồi thử lại.",
+        );
+      } else {
+        onLocationError?.(
+          "Không thể xác định vị trí hiện tại của bạn lúc này.",
+        );
+      }
+    });
+
     map.addControl(geolocateControl, "bottom-right");
 
     map.on("load", () => {
-      geolocateControl.trigger();
+      // Geolocation API chỉ hoạt động trên "secure context" (HTTPS, hoặc
+      // localhost khi phát triển). Nếu ai đó mở trang qua địa chỉ IP LAN nội
+      // bộ bằng HTTP để test trên điện thoại (rất hay gặp), trình duyệt
+      // mobile sẽ chặn định vị hoàn toàn — trong khi trên máy tính test qua
+      // "localhost" thì KHÔNG bị chặn, nên tưởng nhầm là "chỉ mobile mới
+      // lỗi". Kiểm tra rõ và báo luôn nguyên nhân thay vì để trigger() thất
+      // bại trong im lặng.
+      if (typeof window !== "undefined" && !window.isSecureContext) {
+        onLocationError?.(
+          "Trình duyệt yêu cầu kết nối HTTPS (hoặc localhost) để dùng định vị. Vui lòng truy cập trang qua địa chỉ https://…",
+        );
+      } else {
+        geolocateControl.trigger();
+      }
       addSovereigntyLabels(map, sovereigntyMarkersRef);
     });
 

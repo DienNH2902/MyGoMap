@@ -87,6 +87,17 @@ export function MapExperience() {
   // State quản lý việc ẩn/hiện banner "Gợi ý từ AI"
   const [isAiTipDismissed, setIsAiTipDismissed] = useState(false);
 
+  // Thông báo lỗi định vị (bị từ chối quyền, timeout, trang chạy không an
+  // toàn qua HTTP...) — trước đây không có gì hiển thị cho người dùng khi
+  // định vị lỗi, đặc biệt hay gặp trên mobile. Tự ẩn sau vài giây.
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!locationError) return;
+    const timer = setTimeout(() => setLocationError(null), 8000);
+    return () => clearTimeout(timer);
+  }, [locationError]);
+
   const [aroundSearchCenter, setAroundSearchCenter] =
     useState<PlaceResult | null>(null);
   const [aroundSearchResults, setAroundSearchResults] = useState<PoiResult[]>(
@@ -286,6 +297,7 @@ export function MapExperience() {
           setAroundSearchResults([]);
           setActiveAroundPoiId(null);
         }}
+        onLocationError={setLocationError}
       />
 
       {/* MAP STYLE TOGGLE - DESKTOP CHUẨN */}
@@ -476,6 +488,22 @@ export function MapExperience() {
       {planner.poiWarning && (
         <div className="pointer-events-auto absolute left-1/2 top-4 z-30 max-w-md -translate-x-1/2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 shadow-lg">
           {planner.poiWarning}
+        </div>
+      )}
+
+      {locationError && (
+        <div className="pointer-events-auto absolute left-1/2 top-4 z-30 max-w-md -translate-x-1/2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 shadow-lg">
+          <div className="flex items-start justify-between gap-2">
+            <span>📍 {locationError}</span>
+            <button
+              type="button"
+              onClick={() => setLocationError(null)}
+              className="flex-shrink-0 text-amber-500 transition hover:text-amber-700"
+              aria-label="Đóng thông báo"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
