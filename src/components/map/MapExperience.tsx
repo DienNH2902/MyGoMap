@@ -178,6 +178,7 @@ export function MapExperience() {
   // Ngữ cảnh chuyến đi truyền cho khung "Hỏi AI" — chỉ có khi đã tính xong lộ
   // trình, để AI luôn trả lời bám sát đúng chuyến đi hiện tại (không phải hỏi
   // đáp chung chung).
+  // Ngữ cảnh chuyến đi truyền cho khung "Hỏi AI" — bổ sung vị trí địa lý thực tế
   const tripContext: TripContext | null = useMemo(() => {
     if (!planner.plan) return null;
 
@@ -185,6 +186,7 @@ export function MapExperience() {
       planner.selectedCategories.includes(category.id),
     ).map((category) => category.label);
 
+    // Chuỗi tóm tắt đơn giản fallback
     const stopSummaries = planner.plan.stops.map((stop) => {
       const poiText =
         stop.pois.length > 0
@@ -192,6 +194,41 @@ export function MapExperience() {
           : "chưa có địa điểm gợi ý";
       return `Điểm dừng ${stop.order} (cách điểm xuất phát ~${stop.distanceFromStartKm.toFixed(0)}km): ${poiText}`;
     });
+
+    // Mảng chi tiết từng điểm dừng kèm khoảng cách & vị trí địa lý thực tế
+    const routeStopPoints = planner.plan.stops.map((stop) => {
+      // Ưu tiên lấy tên hành chính/địa danh thực tế của điểm dừng nếu có
+      const locationName =
+        (
+          stop as unknown as {
+            locationName?: string;
+            cityName?: string;
+            address?: string;
+          }
+        ).locationName ||
+        (stop as unknown as { cityName?: string }).cityName ||
+        (stop as unknown as { address?: string }).address ||
+        `Khu vực mốc ${stop.distanceFromStartKm.toFixed(0)}km`;
+
+      const poiCount = stop.pois.length;
+      const summary =
+        poiCount > 0 ? `${poiCount} địa điểm gợi ý xung quanh` : undefined;
+
+      return {
+        distanceFromStartKm: stop.distanceFromStartKm,
+        locationName,
+        summary,
+      };
+    });
+
+    // Ép kiểu chuyển đổi danh sách điểm dừng tự chọn (CustomStops)
+    const customStops = planner.customStops.map((cs) => ({
+      name: cs.label,
+      lat: cs.lat,
+      lng: cs.lng,
+      address: cs.address,
+      locationName: cs.address || cs.label,
+    }));
 
     return {
       distanceKm: planner.plan.route.distanceKm,
@@ -202,6 +239,8 @@ export function MapExperience() {
       startLabel: planner.start?.label,
       endLabel: planner.end?.label,
       stopSummaries,
+      routeStopPoints,
+      customStops,
     };
   }, [
     planner.plan,
@@ -209,6 +248,7 @@ export function MapExperience() {
     planner.avoidHighways,
     planner.start,
     planner.end,
+    planner.customStops,
   ]);
 
   if (isDelaying) {

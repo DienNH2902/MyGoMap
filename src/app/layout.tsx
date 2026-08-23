@@ -20,7 +20,8 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mỳ Gõ Map — Lập lộ trình thông minh khắp Việt Nam",
+  // title: "Mỳ Gõ Map — Lập lộ trình thông minh khắp Việt Nam",
+  title: "Mỳ Gõ Map — Phượt Việt Nam",
   icons: {
     icon: "/assets/mygomaplogo.png", // Đường dẫn tính từ thư mục public
   },

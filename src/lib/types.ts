@@ -10,6 +10,10 @@ export interface PlaceResult {
   label: string;
   lon: number;
   lat: number;
+  /** Kinh độ alias tương đương với lon để dùng thuận tiện khi mapping sang map/marker component */
+  lng?: number;
+  /** Địa chỉ chi tiết (nếu có từ geocoding/search) */
+  address?: string;
 }
 
 /** Identifier for each point-of-interest category the user can filter stops by. */
