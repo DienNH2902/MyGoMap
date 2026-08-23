@@ -183,7 +183,7 @@ export function RoutePlannerPanel({
       {!isCollapsed && (
         <>
           {/* Thanh chú thích */}
-          <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-ink/10 bg-ink/85 px-4 py-1.5 shadow-xl backdrop-blur-md">
+          <div className="pointer-events-auto hidden md:flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-ink/10 bg-ink/85 px-4 py-1.5 shadow-xl backdrop-blur-md">
             <span className="text-[10px] font-bold uppercase tracking-wide text-cream/50">
               Chú thích:
             </span>
@@ -377,7 +377,7 @@ export function RoutePlannerPanel({
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-2 pt-2 lg:pt-0">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 pt-2 lg:pt-0">
                 {planner.isLoading && (
                   <LoadingSpinner label="Đang tính lộ trình…" />
                 )}

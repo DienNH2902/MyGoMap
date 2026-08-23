@@ -36,41 +36,61 @@ export function RouteStatsBar({ route, stops }: RouteStatsBarProps) {
     return "text-accent-gold";
   };
 
-  const stats = [
-    { label: "Tổng quãng đường", value: `${route.distanceKm.toFixed(1)} km` },
-    {
-      label: "Thời gian ước tính",
-      value: formatDuration(route.durationMinutes),
-    },
-    ...(typeof route.trafficDelayMinutes === "number" &&
-    route.trafficDelayMinutes > 0
-      ? [
-          {
-            label: "Trễ do giao thông",
-            value: formatDuration(route.trafficDelayMinutes),
-          },
-        ]
-      : []),
-    { label: "Điểm dừng", value: `${stops.length} điểm` },
-  ];
+  const hasTrafficDelay =
+    typeof route.trafficDelayMinutes === "number" &&
+    route.trafficDelayMinutes > 0;
 
   return (
     <div className="pointer-events-none absolute left-2 right-2 top-2 z-30 flex flex-wrap justify-end gap-1.5 sm:left-auto sm:right-4 sm:top-4 sm:flex-nowrap sm:gap-2 max-w-[calc(100vw-1rem)] sm:max-w-none">
-      {stats.map((stat) => (
-        <div
-          key={stat.label}
-          className="pointer-events-auto flex-1 min-w-[100px] sm:flex-none rounded-xl sm:rounded-2xl border border-white/10 bg-ink/85 px-2.5 py-1.5 sm:px-4 sm:py-2.5 shadow-xl backdrop-blur-md transition-all"
+      {/* 1. Tổng quãng đường */}
+      <div className="pointer-events-auto flex-1 min-w-[100px] sm:flex-none rounded-xl sm:rounded-2xl border border-white/10 bg-ink/85 px-2.5 py-1.5 sm:px-4 sm:py-2.5 shadow-xl backdrop-blur-md transition-all">
+        <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wide text-cream/50 whitespace-nowrap">
+          Tổng quãng đường
+        </p>
+        <p
+          className={`font-mono text-sm sm:text-lg font-bold ${getValueColorClass()} whitespace-nowrap`}
         >
+          {route.distanceKm.toFixed(1)} km
+        </p>
+      </div>
+
+      {/* 2. Thời gian ước tính */}
+      <div className="pointer-events-auto flex-1 min-w-[100px] sm:flex-none rounded-xl sm:rounded-2xl border border-white/10 bg-ink/85 px-2.5 py-1.5 sm:px-4 sm:py-2.5 shadow-xl backdrop-blur-md transition-all">
+        <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wide text-cream/50 whitespace-nowrap">
+          Thời gian ước tính
+        </p>
+        <p
+          className={`font-mono text-sm sm:text-lg font-bold ${getValueColorClass()} whitespace-nowrap`}
+        >
+          {formatDuration(route.durationMinutes)}
+        </p>
+      </div>
+
+      {/* 3. Trễ do giao thông (Chỉ hiện trên Desktop/Tablet với hidden sm:block) */}
+      {hasTrafficDelay && (
+        <div className="pointer-events-auto hidden sm:block min-w-[100px] sm:flex-none rounded-xl sm:rounded-2xl border border-white/10 bg-ink/85 px-2.5 py-1.5 sm:px-4 sm:py-2.5 shadow-xl backdrop-blur-md transition-all">
           <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wide text-cream/50 whitespace-nowrap">
-            {stat.label}
+            Trễ do giao thông
           </p>
           <p
             className={`font-mono text-sm sm:text-lg font-bold ${getValueColorClass()} whitespace-nowrap`}
           >
-            {stat.value}
+            {formatDuration(route.trafficDelayMinutes!)}
           </p>
         </div>
-      ))}
+      )}
+
+      {/* 4. Điểm dừng */}
+      <div className="pointer-events-auto flex-1 min-w-[100px] sm:flex-none rounded-xl sm:rounded-2xl border border-white/10 bg-ink/85 px-2.5 py-1.5 sm:px-4 sm:py-2.5 shadow-xl backdrop-blur-md transition-all">
+        <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wide text-cream/50 whitespace-nowrap">
+          Điểm dừng
+        </p>
+        <p
+          className={`font-mono text-sm sm:text-lg font-bold ${getValueColorClass()} whitespace-nowrap`}
+        >
+          {stops.length} điểm
+        </p>
+      </div>
     </div>
   );
 }

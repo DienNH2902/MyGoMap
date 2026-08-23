@@ -91,7 +91,7 @@ export function Header() {
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 grid grid-cols-3 h-16 items-center border-b border-white/5 bg-ink/90 px-6 backdrop-blur-md">
+    <header className="fixed inset-x-0 top-0 z-40 flex lg:grid lg:grid-cols-3 h-16 items-center border-b border-white/5 bg-ink/90 px-6 backdrop-blur-md">
       <Link href="/" className="group flex items-center gap-2">
         {/* <Image
           src="/assets/mygomapthumbnail.png"
@@ -135,7 +135,7 @@ export function Header() {
         })}
       </nav>
 
-      <nav className="hidden items-center justify-end gap-6 text-sm font-medium text-cream/70 sm:flex">
+      <nav className="hidden items-center justify-end gap-6 text-sm font-medium text-cream/70 lg:flex">
         {userInfo ? (
           <span
             className={`rounded-md border px-3.5 py-1 text-md font-semibold ${getGreetingBadgeClass()}`}

@@ -120,7 +120,7 @@ export function LandingHero() {
 
       <div className="relative z-10 flex max-w-2xl flex-col items-center gap-6 text-center">
         {/* Logo MyGoMap */}
-        <div className="relative flex items-center justify-center">
+        <div className="relative flex items-center justify-center pt-4">
           {/* Hiệu ứng hào quang/glow phía sau logo */}
           {/* <div className="absolute h-24 w-24 rounded-full bg-primary/30 blur-2xl" /> */}
           <Image
@@ -134,7 +134,7 @@ export function LandingHero() {
           />
         </div>
 
-        <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-cream sm:text-6xl">
+        <h1 className="text-4xl hidden md:block font-extrabold leading-tight tracking-tight text-cream sm:text-6xl">
           {isHydrated && hasUserInfo ? (
             <>
               Chào mừng{" "}

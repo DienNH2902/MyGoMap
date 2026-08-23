@@ -9,7 +9,9 @@ export default function HomePage() {
       <LocationRequest />
       {/* <Header /> */}
       <LandingHero />
-      <LatestUpdatedBadge />
+      <div className="hidden md:block">
+        <LatestUpdatedBadge />
+      </div>
     </>
   );
 }
