@@ -262,7 +262,7 @@ export function MapExperience() {
   }
 
   return (
-    <div className="absolute inset-0 top-16 overflow-hidden">
+    <div className="fixed inset-x-0 top-16 bottom-0 h-[calc(100dvh-4rem)] overflow-hidden">
       <MapView
         start={planner.start}
         end={planner.end}
