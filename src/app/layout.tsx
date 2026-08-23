@@ -22,16 +22,20 @@ const jetBrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   // title: "Mỳ Gõ Map — Lập lộ trình thông minh khắp Việt Nam",
   title: "Mỳ Gõ Map — Phượt Việt Nam",
-  icons: {
-    icon: "/assets/mygomaplogo.png", // Đường dẫn tính từ thư mục public
-  },
+  // icons: {
+  //   icon: "/assets/mygomaplogo.png", // Đường dẫn tính từ thư mục public
+  // },
   description:
     "Mỳ Gõ Map giúp bạn tìm đường, gợi ý trạm xăng, trạm dừng chân, quán ăn và cà phê dọc tuyến đường — hoàn toàn miễn phí.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/assets/mygomaplogo.png",
+    apple: "/icons/icon-192x192.png", // Bắt buộc cho iOS
+  },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
-    title: "Map App",
+    statusBarStyle: "black-translucent",
+    title: "Mỳ Gõ Map",
   },
 };
 
