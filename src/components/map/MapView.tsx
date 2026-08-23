@@ -229,6 +229,8 @@ export function MapView({
     { id: string; dotEl: HTMLDivElement; marker: Marker }[]
   >([]);
 
+  const previousRouteCoordsRef = useRef<string | null>(null);
+
   const sovereigntyMarkersRef = useRef<Marker[]>([]);
 
   const [gender, setGender] = useState<GenderTheme>("nam");
@@ -533,17 +535,36 @@ export function MapView({
         map.moveLayer(ROUTE_LAYER_ID);
       }
 
+      // if (route && route.coordinates.length > 0) {
+      //   const [first, ...rest] = route.coordinates;
+      //   if (first) {
+      //     const bounds = rest.reduce(
+      //       (acc, coord) => acc.extend(coord),
+      //       new LngLatBounds(first, first),
+      //     );
+      //     map.fitBounds(bounds, { padding: 80, duration: 800 });
+      //   }
+      // }
+
+      // Chỉ fitBounds nếu TOÀN BỘ TUYẾN ĐƯỜNG MỚI ĐƯỢC TÍNH LẠI (thay đổi route.coordinates)
+      // Nếu chỉ thêm customStops mà hình dáng tuyến đường chính không đổi thì bỏ qua zoom
+      const currentCoordsString = JSON.stringify(route?.coordinates ?? []);
+
       if (route && route.coordinates.length > 0) {
-        const [first, ...rest] = route.coordinates;
-        if (first) {
-          const bounds = rest.reduce(
-            (acc, coord) => acc.extend(coord),
-            new LngLatBounds(first, first),
-          );
-          map.fitBounds(bounds, { padding: 80, duration: 800 });
+        if (previousRouteCoordsRef.current !== currentCoordsString) {
+          previousRouteCoordsRef.current = currentCoordsString;
+
+          const [first, ...rest] = route.coordinates;
+          if (first) {
+            const bounds = rest.reduce(
+              (acc, coord) => acc.extend(coord),
+              new LngLatBounds(first, first),
+            );
+            map.fitBounds(bounds, { padding: 80, duration: 800 });
+          }
         }
       }
-    };
+    };;
 
     runWhenStyleReady(map, applyRoute);
   }, [
