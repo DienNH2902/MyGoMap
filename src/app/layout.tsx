@@ -48,7 +48,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#000000",
+  themeColor: "#FF6A1A",
   // width/initialScale khai báo tường minh (thay vì để Next tự chèn mặc
   // định) để đảm bảo luôn ra đúng "width=device-width, initial-scale=1" —
   // không bị lệ thuộc vào giá trị mặc định của từng phiên bản Next.js.

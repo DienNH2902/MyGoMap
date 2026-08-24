@@ -27,6 +27,8 @@ export function ServiceWorkerRegistration() {
           scope: "/",
         });
 
+        console.log("✅ Service Worker registered successfully");
+
         // skipWaiting is already set in next.config.mjs, but if a new SW
         // version finishes installing while the app is already open, make
         // sure it takes over as soon as possible rather than waiting for
@@ -38,16 +40,41 @@ export function ServiceWorkerRegistration() {
               newWorker.state === "installed" &&
               navigator.serviceWorker.controller
             ) {
+              console.log("🔄 New Service Worker installed, activating...");
               newWorker.postMessage({ type: "SKIP_WAITING" });
             }
           });
         });
+
+        // iOS-specific: Force service worker activation check
+        if (registration.active) {
+          console.log("✅ Service Worker is active and ready");
+        } else if (registration.installing) {
+          console.log("⏳ Service Worker is installing...");
+        } else if (registration.waiting) {
+          console.log("⏳ Service Worker is waiting...");
+          // Force activation on iOS
+          registration.waiting.postMessage({ type: "SKIP_WAITING" });
+        }
+
+        // Listen for controller change (when SW takes control)
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          console.log("🎉 Service Worker now controlling the page");
+        });
       } catch (err) {
-        console.warn("Không thể đăng ký service worker:", err);
+        console.error("❌ Service Worker registration failed:", err);
       }
     };
 
     register();
+
+    // iOS-specific: Check if we're running in standalone mode
+    const isStandalone = window.matchMedia(
+      "(display-mode: standalone)",
+    ).matches;
+    if (isStandalone) {
+      console.log("📱 Running in standalone mode (PWA)");
+    }
   }, []);
 
   return null;
