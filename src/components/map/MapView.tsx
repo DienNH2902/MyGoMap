@@ -293,7 +293,7 @@ export function MapView({
         // nhiều ngoài trời), khiến định vị mobile chậm/kém tin cậy hơn hẳn.
         enableHighAccuracy: true,
         timeout: 10000, // Tối đa 10 giây nếu không lấy được sẽ nhả ra, tránh treo vô hạn
-        maximumAge: 300000, // Cho phép dùng vị trí trong cache tối đa 5 phút
+        maximumAge: 5000, // Cho phép dùng vị trí cache tối đa 5 giây (giảm từ 300000ms)
       },
       trackUserLocation: true,
       showUserLocation: true,

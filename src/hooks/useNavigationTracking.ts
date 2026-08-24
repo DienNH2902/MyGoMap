@@ -15,6 +15,34 @@ interface UserLocation {
   accuracy: number;
 }
 
+/** Làm mượt giá trị số bằng Exponential Moving Average */
+function smoothValue(
+  currentValue: number,
+  newValue: number,
+  smoothingFactor = 0.3,
+): number {
+  return currentValue + smoothingFactor * (newValue - currentValue);
+}
+
+/** Làm mượt góc (bearing/heading) với xử lý đặc biệt cho việc vượt qua 0°/360° */
+function smoothAngle(
+  currentAngle: number,
+  newAngle: number,
+  smoothingFactor = 0.25,
+): number {
+  let diff = newAngle - currentAngle;
+  // Normalize difference to [-180, 180]
+  while (diff > 180) diff -= 360;
+  while (diff < -180) diff += 360;
+
+  let result = currentAngle + smoothingFactor * diff;
+  // Normalize result to [0, 360)
+  while (result < 0) result += 360;
+  while (result >= 360) result -= 360;
+
+  return result;
+}
+
 /** Điểm đến cố định của chuyến đi (đích cuối cùng) — dùng để tính lại lộ
  * trình từ vị trí hiện tại của người dùng, chứ không phải điểm cuối tĩnh của
  * route đã lên kế hoạch trước đó. */
@@ -69,6 +97,12 @@ export function useNavigationTracking(
   const routeLineRef = useRef<Feature<LineString> | null>(null);
   const userMarkerRef = useRef<Marker | null>(null);
   const currentHeadingRef = useRef<number>(0);
+
+  // Smoothing refs để làm mượt vị trí và góc quay
+  const smoothedLatRef = useRef<number | null>(null);
+  const smoothedLonRef = useRef<number | null>(null);
+  const smoothedBearingRef = useRef<number | null>(null);
+  const lastCameraUpdateRef = useRef<number>(0);
 
   // --- Trạng thái phục vụ việc "tính lại lộ trình theo vị trí hiện tại" ---
   const isNavigatingRef = useRef(false);
@@ -222,17 +256,37 @@ export function useNavigationTracking(
     [route],
   );
 
-  // Cập nhật vị trí & hướng marker trên bản đồ
+  // Cập nhật vị trí & hướng marker trên bản đồ với smoothing
   const updateMarker = useCallback(
     (lng: number, lat: number, heading: number | null) => {
       if (!map) return;
       const marker = getOrCreateMarker();
       if (!marker) return;
 
+      // Làm mượt tọa độ
+      if (smoothedLatRef.current === null || smoothedLonRef.current === null) {
+        smoothedLatRef.current = lat;
+        smoothedLonRef.current = lng;
+      } else {
+        smoothedLatRef.current = smoothValue(smoothedLatRef.current, lat, 0.4);
+        smoothedLonRef.current = smoothValue(smoothedLonRef.current, lng, 0.4);
+      }
+
       const effectiveHeading = heading ?? currentHeadingRef.current ?? 0;
 
-      marker.setLngLat([lng, lat]);
-      marker.setRotation(effectiveHeading);
+      // Làm mượt góc quay
+      if (smoothedBearingRef.current === null) {
+        smoothedBearingRef.current = effectiveHeading;
+      } else {
+        smoothedBearingRef.current = smoothAngle(
+          smoothedBearingRef.current,
+          effectiveHeading,
+          0.3,
+        );
+      }
+
+      marker.setLngLat([smoothedLonRef.current, smoothedLatRef.current]);
+      marker.setRotation(smoothedBearingRef.current);
 
       if (!marker.addTo(map)) {
         marker.addTo(map);
@@ -364,8 +418,8 @@ export function useNavigationTracking(
         if (map) {
           map.flyTo({
             center: [longitude, latitude],
-            zoom: 21,
-            pitch: 80,
+            zoom: 19,
+            pitch: 90,
             bearing: heading ?? currentHeadingRef.current ?? 0,
             duration: 800,
           });
@@ -406,13 +460,30 @@ export function useNavigationTracking(
         updateMarker(longitude, latitude, heading);
 
         setState((prev) => {
-          if (map && prev.isNavigating) {
+          // Throttle camera updates: chỉ cập nhật camera mỗi 800ms để tránh giật
+          const now = Date.now();
+          if (
+            map &&
+            prev.isNavigating &&
+            now - lastCameraUpdateRef.current > 800
+          ) {
+            lastCameraUpdateRef.current = now;
+
+            // Sử dụng vị trí đã smoothed cho camera
+            const targetLng = smoothedLonRef.current ?? longitude;
+            const targetLat = smoothedLatRef.current ?? latitude;
+            const targetBearing =
+              smoothedBearingRef.current ??
+              heading ??
+              currentHeadingRef.current ??
+              0;
+
             map.easeTo({
-              center: [longitude, latitude],
-              zoom: 21,
-              bearing: heading ?? currentHeadingRef.current ?? 0,
-              pitch: 80,
-              duration: 400,
+              center: [targetLng, targetLat],
+              zoom: 19,
+              bearing: targetBearing,
+              pitch: 90,
+              duration: 1000, // Tăng duration lên 1000ms để mượt hơn
             });
           }
 
@@ -445,7 +516,7 @@ export function useNavigationTracking(
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 0,
+        maximumAge: 2000, // ← SỬA TỪ 0 THÀNH 2000ms - CHO PHÉP DÙNG VỊ TRÍ CACHE GẦN ĐÂY
       },
     );
   }, [
@@ -469,6 +540,12 @@ export function useNavigationTracking(
       userMarkerRef.current.remove();
       userMarkerRef.current = null;
     }
+
+    // Reset smoothing refs
+    smoothedLatRef.current = null;
+    smoothedLonRef.current = null;
+    smoothedBearingRef.current = null;
+    lastCameraUpdateRef.current = 0;
 
     // Hủy mọi kết quả tính-lại-lộ-trình đang bay về, và reset toàn bộ trạng
     // thái rerouting để lần navigate tiếp theo bắt đầu sạch sẽ.
