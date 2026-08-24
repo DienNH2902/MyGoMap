@@ -47,14 +47,14 @@ export function useNavigationTracking(
     el.className = "user-location-puck";
     el.innerHTML = `
       <div style="
-        width: 40px; 
-        height: 40px; 
+        width: 64px; 
+        height: 64px; 
         display: flex; 
         align-items: center; 
         justify-content: center;
         filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.3));
       ">
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="102" height="102" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="16" cy="16" r="14" fill="#3B82F6" fill-opacity="0.25" />
           <path d="M16 4L25 24L16 20L7 24L16 4Z" fill="#2563EB" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/>
         </svg>
