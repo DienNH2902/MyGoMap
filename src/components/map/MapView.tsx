@@ -129,26 +129,26 @@ function getThemeStyles(gender: GenderTheme) {
 function getSegmentColorsByGender(gender: GenderTheme): string[] {
   if (gender === "nam") {
     return [
-      "#FF6A1A", // Cam chủ đạo
-      "#EF4444", // Đỏ tươi
-      "#F59E0B", // Hổ phách / Vàng cam
-      "#EA580C", // Cam đậm
-      "#DC2626", // Đỏ đậm
-      "#D97706", // Vàng đậm
-      "#B91C1C", // Đỏ thẫm
+      "#2563EB", // Xanh dương đậm (Royal Blue) - Nam tính, rõ nét
+      "#16A34A", // Xanh lá cây (Emerald Green) - Tương phản tốt với xanh dương
+      "#EA580C", // Cam cháy (Burnt Orange) - Nổi bật
+      "#0891B2", // Xanh ngọc biển (Cyan / Dark Teal)
+      "#9333EA", // Tím đậm (Deep Violet)
+      "#DC2626", // Đỏ tươi (Bright Red)
+      "#D97706", // Vàng hổ phách (Amber Gold)
     ];
   }
 
   if (gender === "nu") {
     return [
-      "#EC4899", // Hồng tươi
-      "#8B5CF6", // Tím tím
-      "#F43F5E", // Đỏ hồng
-      "#D946EF", // Tím hồng
-      "#A855F7", // Tím đậm
-      "#FB7185", // Hồng san hô
-      "#C084FC", // Tím nhạt
-    ];
+    "#EC4899", // Hồng cánh sen tươi (Hot Pink) - Rất nổi bật
+    "#7C3AED", // Tím đậm / Tím hoa đậu biệp (Deep Violet) - Tương phản mạnh với hồng
+    "#F43F5E", // Đỏ hồng san hô (Rose Red) - Thiên về tone ấm
+    "#A855F7", // Tím tươi (Bright Purple) - Chuẩn sắc tím
+    "#FB7185", // Hồng phấn / Hồng pastel (Soft Pink) - Sắc độ sáng nhẹ
+    "#4C1D95", // Tím thẫm / Tím mận (Dark Plum) - Tone tối đậm
+    "#E879F9", // Tím hồng ngọc (Orchid Pink) - Sắc độ rực rỡ
+  ];
   }
 
   // "khac"
