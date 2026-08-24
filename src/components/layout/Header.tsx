@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 type GenderTheme = "nam" | "nu" | "khac";
 const STORAGE_KEY_NAME = "mygomap_user_name";
@@ -26,6 +27,8 @@ export function Header() {
   } | null>(null);
 
   const [hasUserInfo, setHasUserInfo] = useState<boolean>(false);
+
+  const pathname = usePathname();
 
   useEffect(() => {
     const checkUserInfo = () => {
@@ -91,7 +94,7 @@ export function Header() {
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 flex lg:grid lg:grid-cols-3 h-16 items-center border-b border-white/5 bg-ink/90 px-6 backdrop-blur-md">
+    <header className="fixed inset-x-0 top-0 z-40 flex lg:grid lg:grid-cols-3 h-[calc(4rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] items-center border-b border-white/5 bg-ink/90 px-6 backdrop-blur-md">
       <Link href="/" className="group flex items-center gap-2">
         {/* <Image
           src="/assets/mygomapthumbnail.png"
@@ -126,9 +129,10 @@ export function Header() {
       </Link>
 
       {/* Navigation Links (Desktop) */}
-      <nav className="hidden items-center justify-center gap-1 lg:flex md:gap-2 text-md font-medium text-orange-300">
+      <nav className="hidden items-center justify-center gap-1.5 lg:flex text-md font-normal">
         {NAV_ITEMS.map((item) => {
-          const isMapLink = item.href === "/map"; // Nếu có link /map trong menu
+          const isMapLink = item.href === "/map";
+          const isActive = pathname === item.href;
 
           return (
             <Link
@@ -137,18 +141,22 @@ export function Header() {
               onClick={(e) => {
                 if (isMapLink && !hasUserInfo) {
                   e.preventDefault();
-                  // alert(
-                  //   "Vui lòng nhập tên và chọn giới tính trước khi vào bản đồ!",
-                  // );
                 }
               }}
-              className={`rounded-lg shrink-0 px-3 py-1.5 transition-colors ${
+              className={`relative shrink-0 rounded-sm px-3 py-1 transition-all duration-300 ${
                 isMapLink && !hasUserInfo
-                  ? "cursor-not-allowed opacity-40 hover:bg-transparent hover:text-orange-200"
-                  : "hover:bg-white/5 hover:text-cream"
+                  ? "cursor-not-allowed opacity-40 hover:bg-transparent text-cream/40"
+                  : isActive
+                    ? "text-accent-gold shadow-sm font-semibold backdrop-blur-sm"
+                    : "text-orange-400 hover:bg-amber-500/15 hover:text-amber-200 hover:shadow-[0_0_15px_rgba(245,158,11,0.35)]"
               }`}
             >
               {item.label}
+
+              {/* Chấm tròn phát sáng dưới chân tab đang Active */}
+              {isActive && (
+                <span className="absolute -bottom-1 left-1/2 h-0.5 w-20 -translate-x-1/2 rounded-full bg-accent-gold shadow-[0_0_8px_#f59e0b]" />
+              )}
             </Link>
           );
         })}
