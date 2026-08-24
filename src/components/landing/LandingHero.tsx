@@ -74,12 +74,12 @@ export function LandingHero() {
   // Style màu sắc cho tên người dùng dựa trên giới tính
   const getUserNameGradientClass = () => {
     if (gender === "nu") {
-      return "from-pink-400 via-rose-300 to-pink-500";
+      return "from-pink-400 via-rose-300 to-pink-500 drop-shadow-[0_2px_2px_rgba(126,34,206,0.8)]";
     }
     if (gender === "khac") {
-      return "from-amber-300 via-rose-400 to-violet-400";
+      return "from-amber-300 via-rose-400 to-violet-400 drop-shadow-[0_2px_2px_rgba(126,34,206,0.8)]";
     }
-    return "from-primary via-accent-gold to-primary";
+    return "from-primary via-accent-gold to-primary drop-shadow-[0_2px_14px_rgba(234,88,12,0.7)]";
   };
 
   // Style màu nền gradient cho Nút bấm dựa trên giới tính
@@ -100,7 +100,7 @@ export function LandingHero() {
       <HeroRouteLine /> */}
 
       {/* Background Video */}
-      <video
+      {/* <video
         autoPlay
         loop
         muted
@@ -108,12 +108,24 @@ export function LandingHero() {
         playsInline
         className="absolute inset-0 h-full w-full object-cover"
       >
-        <source src="/assets/mapvideo.mp4" type="video/mp4" />
-        {/* <source src="/assets/china-cat.mp4" type="video/mp4" /> */}
-      </video>
+        <source src="/assets/mapvideo.mp4" type="video/mp4" /> */}
+      {/* <source src="/assets/china-cat.mp4" type="video/mp4" /> */}
+      {/* </video> */}
+
+      <Image
+        src="/assets/landing.png" // Thay đường dẫn tới ảnh của bạn trong thư mục public
+        alt="Background"
+        fill
+        priority // Ưu tiên load ngay lập tức vì đây là ảnh nền chính
+        quality={100}
+        sizes="100vw"
+        className="object-cover object-center"
+      />
+
+      <div className="absolute inset-0 bg-ink/30" />
 
       {/* Lớp phủ dải màu tối giúp tương phản chữ tốt hơn */}
-      <div className="pointer-events-none absolute inset-0 bg-ink/50 bg-[radial-gradient(ellipse_at_top_left,_rgba(15,23,42,0.85)_0%,_transparent_60%),_radial-gradient(ellipse_at_bottom_right,_rgba(15,23,42,0.85)_0%,_transparent_60%)] backdrop-blur-[5px]" />
+      {/* <div className="pointer-events-none absolute inset-0 bg-ink/50 bg-[radial-gradient(ellipse_at_top_left,_rgba(15,23,42,0.85)_0%,_transparent_60%),_radial-gradient(ellipse_at_bottom_right,_rgba(15,23,42,0.85)_0%,_transparent_60%)] backdrop-blur-[5px]" /> */}
 
       {/* Overlay lớp phủ tối tỏa từ tâm quanh khu vực chữ */}
       {/* <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(15,23,42,0.98)_0%,_rgba(15,23,42,0.85)_30%,_rgba(15,23,42,0.3)_55%,_transparent_100%)]" /> */}
@@ -134,10 +146,12 @@ export function LandingHero() {
           />
         </div>
 
-        <h1 className="text-4xl hidden md:block font-extrabold leading-tight tracking-tight text-cream sm:text-6xl">
+        <h1 className="hidden text-4xl font-extrabold leading-tight tracking-tight text-cream sm:text-6xl md:block">
           {isHydrated && hasUserInfo ? (
             <>
-              Chào mừng{" "}
+              <span className="drop-shadow-[0_2px_8px_rgba(255,255,255,0.4)]">
+                Chào mừng{" "}
+              </span>
               <span
                 className={`bg-gradient-to-r ${getUserNameGradientClass()} bg-clip-text text-transparent`}
               >
@@ -146,23 +160,27 @@ export function LandingHero() {
             </>
           ) : (
             <>
-              Chào mừng đến với
+              <span className="drop-shadow-[0_2px_4px_rgba(255,255,255,0.4)]">
+                Chào mừng đến với
+              </span>
               <br />
-              <span className="bg-gradient-to-r from-primary via-accent-gold to-primary bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary via-accent-gold to-primary bg-clip-text text-transparent drop-shadow-[0_2px_14px_rgba(234,88,12,0.7)]">
                 Mỳ Gõ Map
               </span>
             </>
           )}
         </h1>
 
-        <p className="max-w-xl text-balance text-base leading-relaxed text-cream/70 sm:text-lg">
-          <span className="font-extrabold bg-gradient-to-r from-amber-300 via-rose-400 to-violet-400 bg-clip-text text-transparent drop-shadow-sm">
+        <p className="max-w-xl text-balance text-base leading-relaxed text-cream/90 sm:text-lg">
+          <span className="bg-gradient-to-r from-amber-300 via-rose-400 to-violet-400 bg-clip-text font-extrabold text-transparent drop-shadow-[0_2px_3px_rgba(126,34,206,0.8)]">
             Phượt thủ à!
           </span>{" "}
-          - chúng tôi giúp bạn lên kế hoạch cho mọi hành trình trên khắp Việt
-          Nam: tìm đường đi nhanh nhất, tự động gợi ý trạm xăng, trạm dừng chân,
-          quán ăn hay quán cà phê ngay trên tuyến đường của bạn —{" "}
-          <span className="font-extrabold bg-gradient-to-r from-amber-300 via-rose-400 to-violet-400 bg-clip-text text-transparent drop-shadow-sm">
+          <span className="drop-shadow-[0_2px_12px_rgba(255,255,255,0.75)]">
+            - chúng tôi giúp bạn lên kế hoạch cho mọi hành trình trên khắp Việt
+            Nam: tìm đường đi nhanh nhất, tự động gợi ý trạm xăng, trạm dừng
+            chân, quán ăn hay quán cà phê ngay trên tuyến đường của bạn -
+          </span>{" "}
+          <span className="bg-gradient-to-r from-amber-300 via-rose-400 to-violet-400 bg-clip-text font-extrabold text-transparent drop-shadow-[0_2px_3px_rgba(126,34,206,0.8)]">
             hoàn toàn miễn phí.
           </span>
         </p>
@@ -173,7 +191,7 @@ export function LandingHero() {
             <div className="flex flex-1 flex-col text-left">
               <label
                 htmlFor="user-name"
-                className="mb-1 text-xs font-medium text-cream/60"
+                className="mb-1 text-sm font-medium text-cream/60"
               >
                 Tên của bạn
               </label>
@@ -191,18 +209,18 @@ export function LandingHero() {
             <div className="flex flex-col text-left sm:w-36">
               <label
                 htmlFor="user-gender"
-                className="mb-1 text-xs font-medium text-cream/60"
+                className="mb-1 text-sm font-medium text-cream/60"
               >
                 Giới tính
               </label>
-              <div className="relative">
+              <div className="relative cursor-pointer">
                 <select
                   id="user-gender"
                   value={gender}
                   onChange={(e) =>
                     handleGenderChange(e.target.value as GenderType)
                   }
-                  className="w-full appearance-none rounded-xl border border-cream/15 bg-white/10 py-2 pl-3.5 pr-8 text-sm text-cream backdrop-blur-md transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full cursor-pointer appearance-none rounded-xl border border-cream/15 bg-white/10 py-2 pl-3.5 pr-8 text-sm text-cream backdrop-blur-md transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   <option
                     value=""
@@ -251,7 +269,7 @@ export function LandingHero() {
               <button
                 type="button"
                 onClick={handleResetUser}
-                className="text-xs font-medium text-cream/40 transition hover:text-rose-400"
+                className="text-md font-medium text-cream/40 transition hover:text-rose-400"
               >
                 Xóa thông tin
               </button>
@@ -278,7 +296,7 @@ export function LandingHero() {
             >
               Bắt đầu hành trình <span aria-hidden="true">→</span>
             </Button>
-            <span className="text-md text-cream/40">
+            <span className="text-md text-cream/90 drop-shadow-[0_2px_12px_rgba(255,255,255,0.75)]">
               Vui lòng nhập tên và chọn giới tính để bắt đầu
             </span>
           </div>

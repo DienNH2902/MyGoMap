@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     // ảnh logo app" dù manifest.json đã khai icon (Android đọc manifest,
     // iOS thì không). File cũ (/icons/icon-192x192.png) trước đây còn
     // KHÔNG TỒN TẠI trên đĩa nên iOS luôn 404 khi xin icon này.
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+    apple: [{ url: "/mobilelogo.png", sizes: "180x180" }],
   },
   appleWebApp: {
     capable: true,

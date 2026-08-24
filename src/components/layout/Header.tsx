@@ -104,10 +104,29 @@ export function Header() {
         <span className="bg-gradient-to-r from-primary via-accent-gold to-primary bg-[length:200%_auto] bg-clip-text text-2xl font-extrabold tracking-tight text-transparent transition-[background-position] duration-700 group-hover:bg-right">
           Mỳ Gõ Map
         </span>
+        <span className="bg-gradient-to-r from-primary via-accent-gold to-primary bg-[length:200%_auto] bg-clip-text text-2xl font-extrabold tracking-tight text-transparent transition-[background-position] duration-700 group-hover:bg-right">
+          -
+        </span>
+        <span className="bg-gradient-to-r from-red-600 via-red-400 to-red-600 bg-[length:200%_auto] bg-clip-text text-2xl font-extrabold tracking-tight text-transparent transition-[background-position] duration-700 group-hover:bg-right">
+          Việt Nam
+        </span>
+        <svg
+          className="inline-block shadow-sm w-8 h-6"
+          viewBox="0 0 900 600"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          {/* Nền cờ đỏ */}
+          <rect width="900" height="800" fill="#DA251D" />
+          {/* Ngôi sao vàng 5 cánh */}
+          <polygon
+            fill="#FFFF00"
+            points="450,150 488,267 612,267 512,340 550,457 450,384 350,457 388,340 288,267 412,267"
+          />
+        </svg>
       </Link>
 
       {/* Navigation Links (Desktop) */}
-      <nav className="hidden items-center justify-center gap-1 lg:flex md:gap-2 text-sm font-medium text-cream/70">
+      <nav className="hidden items-center justify-center gap-1 lg:flex md:gap-2 text-md font-medium text-orange-300">
         {NAV_ITEMS.map((item) => {
           const isMapLink = item.href === "/map"; // Nếu có link /map trong menu
 
@@ -123,9 +142,9 @@ export function Header() {
                   // );
                 }
               }}
-              className={`rounded-lg px-3 py-1.5 transition-colors ${
+              className={`rounded-lg shrink-0 px-3 py-1.5 transition-colors ${
                 isMapLink && !hasUserInfo
-                  ? "cursor-not-allowed opacity-40 hover:bg-transparent hover:text-cream/70"
+                  ? "cursor-not-allowed opacity-40 hover:bg-transparent hover:text-orange-200"
                   : "hover:bg-white/5 hover:text-cream"
               }`}
             >
