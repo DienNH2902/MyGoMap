@@ -506,13 +506,100 @@ export function MapView({
       // từng chặng và chỉ hiển thị một đường màu chính duy nhất cho rõ ràng.
       if (isNavigating) {
         if (map.getLayer(ROUTE_LAYER_ID)) {
-          map.setPaintProperty(ROUTE_LAYER_ID, "line-opacity", 0.9);
-          map.setPaintProperty(ROUTE_LAYER_ID, "line-color", theme.routeColor);
-          map.moveLayer(ROUTE_LAYER_ID);
+          map.setPaintProperty(ROUTE_LAYER_ID, "line-opacity", 0);
         }
-        // Không fitBounds khi đang navigate — camera lúc này do
-        // useNavigationTracking chủ động điều khiển bám theo GPS người dùng,
-        // fitBounds ở đây sẽ giằng co và làm camera giật liên tục.
+
+        if (coords.length > 0 && breakPoints.length > 1) {
+          const findClosestIndex = (pt: [number, number]): number => {
+            let minDistanceSq = Infinity;
+            let closestIndex = 0;
+
+            for (let i = 0; i < coords.length; i++) {
+              const coord = coords[i];
+              if (!coord) continue;
+
+              const dx = coord[0] - pt[0];
+              const dy = coord[1] - pt[1];
+              const distSq = dx * dx + dy * dy;
+
+              if (distSq < minDistanceSq) {
+                minDistanceSq = distSq;
+                closestIndex = i;
+              }
+            }
+
+            return closestIndex;
+          };
+
+          const breakIndices = breakPoints
+            .map(findClosestIndex)
+            .sort((a, b) => a - b);
+
+          const uniqueIndices = Array.from(new Set(breakIndices));
+
+          const palette = getSegmentColorsByGender(gender);
+
+          for (let i = 0; i < uniqueIndices.length - 1; i++) {
+            const segmentStartIndex = uniqueIndices[i];
+            const segmentEndIndex = uniqueIndices[i + 1];
+
+            if (
+              segmentStartIndex === undefined ||
+              segmentEndIndex === undefined
+            ) {
+              continue;
+            }
+
+            const segmentCoords = coords.slice(
+              segmentStartIndex,
+              segmentEndIndex + 1,
+            );
+
+            if (segmentCoords.length < 2) continue;
+
+            const segmentSourceId = `mygomap-live-route-seg-source-${i}`;
+
+            const segmentLayerId = `mygomap-live-route-seg-layer-${i}`;
+
+            const color = palette[i % palette.length];
+
+            const segGeojson: GeoJSON.Feature<GeoJSON.LineString> = {
+              type: "Feature",
+              properties: {},
+              geometry: {
+                type: "LineString",
+                coordinates: segmentCoords,
+              },
+            };
+
+            map.addSource(segmentSourceId, {
+              type: "geojson",
+              data: segGeojson,
+            });
+
+            map.addLayer({
+              id: segmentLayerId,
+              type: "line",
+              source: segmentSourceId,
+              layout: {
+                "line-cap": "round",
+                "line-join": "round",
+              },
+              paint: {
+                "line-color": color,
+                "line-width": 10,
+                "line-opacity": 1,
+              },
+            });
+
+            activeSegmentLayersRef.current.push(segmentLayerId);
+
+            if (map.getLayer(TRAFFIC_LAYER_ID)) {
+              map.moveLayer(segmentLayerId);
+            }
+          }
+        }
+
         return;
       }
 
