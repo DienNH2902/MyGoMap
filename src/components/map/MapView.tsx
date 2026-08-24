@@ -64,6 +64,8 @@ interface MapViewProps {
   onOpenAroundSearchFromMap?: (place: PlaceResult) => void;
   /** Called with a friendly Vietnamese message whenever geolocation fails (permission denied, timeout, insecure origin) — see the GeolocateControl "error" handler above. */
   onLocationError?: (message: string) => void;
+  /** Called when map is ready (for external ref access) */
+  onMapReady?: (map: MapLibreMap) => void;
 }
 
 const POI_FOCUS_ZOOM = 16;
@@ -219,6 +221,7 @@ export function MapView({
   onSelectAroundPoi,
   onOpenAroundSearchFromMap,
   onLocationError,
+  onMapReady,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -328,6 +331,9 @@ export function MapView({
     });
 
     mapRef.current = map;
+
+    // Notify parent component that map is ready
+    onMapReady?.(map);
 
     return () => {
       sovereigntyMarkersRef.current.forEach((marker) => marker.remove());

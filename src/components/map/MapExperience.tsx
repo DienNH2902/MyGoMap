@@ -1,11 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useRoutePlanner } from "@/hooks/useRoutePlanner";
+import { useNavigationTracking } from "@/hooks/useNavigationTracking";
+import type { Map as MapLibreMap } from "maplibre-gl";
 import { RoutePlannerPanel } from "./RoutePlannerPanel";
 import { RouteStatsBar } from "./RouteStatsBar";
 import { StopDetailDrawer } from "./StopDetailDrawer";
+import { NavigationControls } from "./NavigationControls";
 import { OwlLoadingSpinner } from "../ui/OwlLoadingSpinner";
 import Image from "next/image";
 import { usePoiEnrichment } from "@/hooks/usePoiEnrichment";
@@ -48,14 +51,20 @@ function getCaughtCatImageByGender(gender: GenderTheme): string {
 }
 
 // MapLibre reaches into `window`, so it must never render during server-side rendering.
-const MapView = dynamic(() => import("./MapView").then((mod) => mod.MapView), {
-  ssr: false,
-  loading: () => (
-    <div className="absolute inset-0 top-[var(--header-h)] flex items-center justify-center bg-surface-muted z-50 whitespace-pre-line">
-      <OwlLoadingSpinner label="Xong rồi!" />
-    </div>
-  ),
-});
+const MapView = dynamic(
+  () =>
+    import("./MapView").then((mod) => ({
+      default: mod.MapView,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="absolute inset-0 top-[var(--header-h)] flex items-center justify-center bg-surface-muted z-50 whitespace-pre-line">
+        <OwlLoadingSpinner label="Xong rồi!" />
+      </div>
+    ),
+  },
+);
 
 /**
  * Composes everything below the header on the /map page: the map itself, the
@@ -64,6 +73,10 @@ const MapView = dynamic(() => import("./MapView").then((mod) => mod.MapView), {
  */
 export function MapExperience() {
   const planner = useRoutePlanner();
+  const mapRef = useRef<MapLibreMap | null>(null);
+
+  // Navigation tracking hook
+  const navigation = useNavigationTracking(mapRef.current, planner.plan?.route ?? null);
 
   const [isDelaying, setIsDelaying] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -298,7 +311,22 @@ export function MapExperience() {
           setActiveAroundPoiId(null);
         }}
         onLocationError={setLocationError}
+        onMapReady={(map) => {
+          mapRef.current = map;
+        }}
       />
+
+      {/* Navigation Controls - Hiện khi có route */}
+      {planner.plan?.route && (
+        <NavigationControls
+          isNavigating={navigation.isNavigating}
+          distanceToDestination={navigation.distanceToDestination}
+          estimatedTimeRemaining={navigation.estimatedTimeRemaining}
+          isOffRoute={navigation.isOffRoute}
+          onStartNavigation={navigation.startNavigation}
+          onStopNavigation={navigation.stopNavigation}
+        />
+      )}
 
       {/* MAP STYLE TOGGLE - DESKTOP CHUẨN */}
       <div className="hidden md:block">
