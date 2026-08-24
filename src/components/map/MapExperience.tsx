@@ -59,7 +59,7 @@ const MapView = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="absolute inset-0 top-[var(--header-h)] flex items-center justify-center bg-surface-muted z-50 whitespace-pre-line">
+      <div className="absolute inset-0 flex items-center justify-center bg-surface-muted z-50 whitespace-pre-line">
         <OwlLoadingSpinner label="Xong rồi!" />
       </div>
     ),
