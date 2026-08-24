@@ -66,6 +66,17 @@ interface MapViewProps {
   onLocationError?: (message: string) => void;
   /** Called when map is ready (for external ref access) */
   onMapReady?: (map: MapLibreMap) => void;
+  /**
+   * true khi đang trong chế độ dẫn đường thời gian thực (đã bấm "Về giữa").
+   * Lúc này `route` không còn là tuyến A→B tĩnh nữa mà được cha component
+   * (MapExperience) truyền vào là lộ trình TÍNH LẠI liên tục từ vị trí hiện
+   * tại của người dùng đến đích — nên bản đồ KHÔNG được tự ý fitBounds/zoom
+   * ra để "khoe" toàn tuyến mỗi khi route đổi (việc zoom/camera lúc này do
+   * useNavigationTracking chủ động điều khiển theo GPS), và cũng không chia
+   * màu theo từng chặng dừng như lúc lập kế hoạch. Mặc định false để mọi
+   * hành vi cũ (không navigate) giữ nguyên 100%.
+   */
+  isNavigating?: boolean;
 }
 
 const POI_FOCUS_ZOOM = 16;
@@ -222,6 +233,7 @@ export function MapView({
   onOpenAroundSearchFromMap,
   onLocationError,
   onMapReady,
+  isNavigating = false,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -488,6 +500,22 @@ export function MapView({
         });
       }
 
+      // Đang dẫn đường thời gian thực: route ở đây là lộ trình được tính lại
+      // liên tục từ vị trí hiện tại → đích, không còn khớp với các mốc dừng
+      // đã lập kế hoạch (start/stops/end cũ) nữa, nên bỏ qua việc chia màu
+      // từng chặng và chỉ hiển thị một đường màu chính duy nhất cho rõ ràng.
+      if (isNavigating) {
+        if (map.getLayer(ROUTE_LAYER_ID)) {
+          map.setPaintProperty(ROUTE_LAYER_ID, "line-opacity", 0.9);
+          map.setPaintProperty(ROUTE_LAYER_ID, "line-color", theme.routeColor);
+          map.moveLayer(ROUTE_LAYER_ID);
+        }
+        // Không fitBounds khi đang navigate — camera lúc này do
+        // useNavigationTracking chủ động điều khiển bám theo GPS người dùng,
+        // fitBounds ở đây sẽ giằng co và làm camera giật liên tục.
+        return;
+      }
+
       // Xử lý chia màu từng chặng nếu có các điểm dừng trên đường
       if (coords.length > 0 && breakPoints.length > 2) {
         const findClosestIndex = (pt: [number, number]): number => {
@@ -628,6 +656,7 @@ export function MapView({
     stops,
     customStops,
     gender,
+    isNavigating,
   ]);
 
   // Marker điểm A - B

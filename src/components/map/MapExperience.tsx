@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { useMemo, useState, useEffect, useRef } from "react";
-import { useRoutePlanner } from "@/hooks/useRoutePlanner";
 import { useNavigationTracking } from "@/hooks/useNavigationTracking";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { RoutePlannerPanel } from "./RoutePlannerPanel";
@@ -19,6 +18,7 @@ import { AiAssistantPanel } from "./AiAssistantPanel";
 import { MapStyleToggle } from "./MapStyleToggle";
 import { PlaceResult, PoiResult } from "@/lib/types";
 import { AroundSearchPanel } from "./SearchAroundPannel";
+import { useRoutePlanner } from "@/hooks/useRoutePlanner";
 
 const STORAGE_KEY_USER_GENDER = "mygomap_user_gender";
 const STORAGE_KEY_LOADER = "mygomap_user_loader";
@@ -75,8 +75,30 @@ export function MapExperience() {
   const planner = useRoutePlanner();
   const mapRef = useRef<MapLibreMap | null>(null);
 
-  // Navigation tracking hook
-  const navigation = useNavigationTracking(mapRef.current, planner.plan?.route ?? null);
+  // Navigation tracking hook — truyền thêm điểm đến cố định (planner.end) và
+  // cùng option né cao tốc/kẹt xe đã dùng để lập kế hoạch, để mỗi lần tính
+  // lại lộ trình theo vị trí hiện tại vẫn tôn trọng đúng lựa chọn của người
+  // dùng (né cao tốc cho xe máy, có/không tính traffic...).
+  const navigation = useNavigationTracking(
+    mapRef.current,
+    planner.plan?.route ?? null,
+    planner.end &&
+      Number.isFinite(planner.end.lon) &&
+      Number.isFinite(planner.end.lat)
+      ? { lon: planner.end.lon, lat: planner.end.lat }
+      : null,
+    { avoidHighways: planner.avoidHighways, useTraffic: planner.avoidTraffic },
+  );
+
+  // Tuyến đường thực sự cần vẽ lên bản đồ: khi đang dẫn đường (đã bấm "Về
+  // giữa"), luôn ưu tiên lộ trình vừa được TÍNH LẠI từ vị trí hiện tại của
+  // người dùng đến đích (navigation.liveRoute) — không phải tuyến A→B tĩnh
+  // đã lập lúc trước. Trước khi lần tính-lại đầu tiên trả về (vài trăm ms),
+  // tạm hiển thị route tĩnh để không bị trống bản đồ. Khi KHÔNG dẫn đường,
+  // hành vi giữ nguyên 100% như cũ.
+  const displayRoute = navigation.isNavigating
+    ? (navigation.liveRoute ?? planner.plan?.route ?? null)
+    : (planner.plan?.route ?? null);
 
   const [isDelaying, setIsDelaying] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -290,7 +312,8 @@ export function MapExperience() {
       <MapView
         start={planner.start}
         end={planner.end}
-        route={planner.plan?.route ?? null}
+        route={displayRoute}
+        isNavigating={navigation.isNavigating}
         stops={planner.plan?.stops ?? []}
         customStops={planner.customStops}
         activeStopId={planner.activeStopId}
