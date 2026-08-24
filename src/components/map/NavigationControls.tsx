@@ -30,10 +30,10 @@ export function NavigationControls({
         )}
 
         {/* Thanh Navigation thu gọn 1 hàng ngang */}
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-white/95 p-3 shadow-2xl backdrop-blur-md">
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-ink/85 p-3 shadow-2xl backdrop-blur-xl">
           <div className="flex items-center gap-3 pl-2">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-ink/40">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-cream/50">
                 Còn lại
               </p>
               {distanceToDestination !== null ? (
@@ -42,7 +42,7 @@ export function NavigationControls({
                   <span className="text-xs">km</span>
                 </p>
               ) : (
-                <p className="animate-pulse text-xs font-medium text-ink/40">
+                <p className="animate-pulse text-xs font-medium text-cream/40">
                   Đang tính...
                 </p>
               )}
@@ -51,16 +51,18 @@ export function NavigationControls({
             <div className="h-7 w-[1px] bg-ink/10" />
 
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-ink/40">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-cream/50">
                 Thời gian
               </p>
               {estimatedTimeRemaining !== null ? (
-                <p className="text-sm font-semibold leading-none text-ink/80">
+                <p className="text-xl font-semibold leading-none text-cream/90">
                   ~{Math.ceil(estimatedTimeRemaining)}{" "}
-                  <span className="text-xs font-normal text-ink/60">phút</span>
+                  <span className="text-xs font-normal text-cream/60">
+                    phút
+                  </span>
                 </p>
               ) : (
-                <p className="animate-pulse text-xs text-ink/40">-- phút</p>
+                <p className="animate-pulse text-xs text-cream/40">-- phút</p>
               )}
             </div>
           </div>
