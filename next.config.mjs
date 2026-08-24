@@ -11,7 +11,7 @@ const withPWA = withPWAInit({
   // luôn thất bại. Tắt register ở đây và tự đăng ký thủ công bằng
   // ServiceWorkerRegistration.tsx (mount trong app/layout.tsx) — cách được
   // next-pwa/cộng đồng khuyến nghị chính thức cho App Router.
-  register: false,
+  register: true,
   skipWaiting: true,
   // MẶC ĐỊNH next-pwa precache TOÀN BỘ thư mục /public ngay từ bước cài đặt
   // service worker — kể cả file KHÔNG liên quan gì đến app shell. Dự án này
@@ -27,6 +27,9 @@ const withPWA = withPWAInit({
   // qua các rule runtimeCaching có sẵn (StaleWhileRevalidate/CacheFirst theo
   // đuôi file, xem phần dưới sw.js được sinh ra) thay vì bắt buộc phải tải
   // hết ngay từ đầu.
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: true,
+  reloadOnOnline: true,
   publicExcludes: [
     "!assets/**/*.mp4",
     "!assets/**/*.mp3",
