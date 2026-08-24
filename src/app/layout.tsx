@@ -67,7 +67,9 @@ export default function RootLayout({
       <body className="bg-surface font-display text-ink antialiased">
         <ServiceWorkerRegistration />
         <Header />
-        {children}
+        <main className="pt-[calc(4rem+env(safe-area-inset-top))] min-h-screen">
+          {children}
+        </main>
       </body>
     </html>
   );
