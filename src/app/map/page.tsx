@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Header } from "@/components/layout/Header";
 import { MapExperience } from "@/components/map/MapExperience";
 import { OwlLoadingSpinner } from "@/components/ui/OwlLoadingSpinner";
 import { CatBlock } from "@/components/ui/CatBlock";
@@ -27,7 +26,7 @@ export default function MapPage() {
   // Trong lúc chờ kiểm tra thông tin, hiển thị màn hình chờ bảo vệ
   if (isAuthorized === null) {
     return (
-      <main className="flex h-screen w-screen items-center justify-center bg-surface">
+      <main className="flex h-dvh w-full items-center justify-center bg-surface">
         <OwlLoadingSpinner label="Đang kiểm tra thông tin người dùng..." />
       </main>
     );
@@ -35,15 +34,14 @@ export default function MapPage() {
 
   if (!isAuthorized) {
     return (
-      <main className="flex h-screen w-screen items-center justify-center bg-surface">
+      <main className="flex h-dvh w-full items-center justify-center bg-surface">
         <CatBlock />
       </main>
     );
   }
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-surface">
-      <Header />
+    <main className="relative h-dvh w-full overflow-hidden bg-surface">
       <MapExperience />
     </main>
   );

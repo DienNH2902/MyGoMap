@@ -54,7 +54,7 @@ const TEAM_MEMBERS = [
 
 export default function MembersPage() {
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-ink text-cream">
+    <div className="relative min-h-dvh overflow-x-hidden bg-ink text-cream">
       {/* Background Ảnh nền định vị cố định bên phải, làm mờ nhẹ */}
       <div className="fixed inset-0 z-0 pointer-events-none flex justify-end">
         <div className="relative h-full w-full lg:w-3/4 opacity-20 blur-[1px]">
@@ -73,7 +73,7 @@ export default function MembersPage() {
       <div className="fixed inset-0 z-0 bg-gradient-to-r from-ink via-ink/90 to-transparent pointer-events-none" />
 
       {/* Nội dung chính */}
-      <main className="relative z-10 mx-auto max-w-7xl px-6 pt-28 pb-20">
+      <main className="relative z-10 mx-auto max-w-7xl px-6 pt-[calc(var(--header-h)+1.5rem)] pb-20">
         <div className="max-w-full">
           {/* Tiêu đề trang */}
           <div className="mb-12 text-left max-w-2xl lg:max-w-3xl">

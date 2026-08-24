@@ -49,10 +49,22 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#000000",
+  // width/initialScale khai báo tường minh (thay vì để Next tự chèn mặc
+  // định) để đảm bảo luôn ra đúng "width=device-width, initial-scale=1" —
+  // không bị lệ thuộc vào giá trị mặc định của từng phiên bản Next.js.
   width: "device-width",
   initialScale: 1,
+  // Khoá cứng scale=1: đây là app dạng bản đồ toàn màn hình, việc phóng to
+  // (pinch-zoom) cả TRANG là không cần thiết vì bản thân bản đồ (MapLibre)
+  // đã tự xử lý cử chỉ zoom riêng. Khoá scale còn chặn triệt để tình trạng
+  // Safari "tự zoom" trang khi chạm vào ô nhập liệu rồi không zoom lại —
+  // kết hợp với việc ép font-size ô nhập liệu tối thiểu 16px trong
+  // globals.css, lỗi "vào app bị zoom to phải tự zoom tay lại" được chặn ở
+  // cả 2 lớp (nguyên nhân gốc + hàng rào an toàn).
   maximumScale: 1,
   userScalable: false,
+  // viewport-fit=cover để nội dung tràn đúng ra mép màn hình có notch/tai thỏ
+  // khi chạy standalone trên iPhone — tránh dải trắng/đen thừa 2 bên.
   viewportFit: "cover",
 };
 
@@ -64,14 +76,12 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${beVietnamPro.variable} ${jetBrainsMono.variable} h-full overflow-hidden`}
+      className={`${beVietnamPro.variable} ${jetBrainsMono.variable}`}
     >
-      <body className="bg-surface font-display text-ink antialiased h-full w-full overflow-hidden flex flex-col">
+      <body className="bg-surface font-display text-ink antialiased">
         <ServiceWorkerRegistration />
         <Header />
-        <main className="relative flex-1 w-full overflow-x-hidden overflow-y-auto pt-[calc(4rem+env(safe-area-inset-top))] pb-[env(safe-area-inset-bottom)]">
-          {children}
-        </main>
+        {children}
       </body>
     </html>
   );

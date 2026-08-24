@@ -94,7 +94,7 @@ export function LandingHero() {
   };
 
   return (
-    <section className="relative flex h-full items-center justify-center overflow-hidden bg-ink px-6 py-12">
+    <section className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-ink px-6 py-12">
       {/* Ambient glow behind the copy, reinforcing the orange brand color. */}
       {/* <div className="absolute left-1/2 top-1/3 h-[500px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-[140px]" />
       <HeroRouteLine /> */}
@@ -171,7 +171,7 @@ export function LandingHero() {
           )}
         </h1>
 
-        <p className="max-w-xl text-balance text-base leading-relaxed text-cream/90 sm:text-lg">
+        <p className="max-w-xl text-balance text-xs text-cream/90 sm:text-base leading-relaxed">
           <span className="bg-gradient-to-r from-amber-300 via-rose-400 to-violet-400 bg-clip-text font-extrabold text-transparent drop-shadow-[0_2px_3px_rgba(126,34,206,0.8)]">
             Phượt thủ à!
           </span>{" "}
@@ -186,12 +186,13 @@ export function LandingHero() {
         </p>
 
         {/* Khối nhập thông tin người dùng */}
-        <div className="w-full max-w-md rounded-2xl border border-cream/10 bg-white/5 p-4 backdrop-blur-md">
-          <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="w-full max-w-md rounded-2xl border border-cream/10 bg-white/5 p-3 sm:p-4 backdrop-blur-md">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-3">
+            {/* Tên của bạn */}
             <div className="flex flex-1 flex-col text-left">
               <label
                 htmlFor="user-name"
-                className="mb-1 text-sm font-medium text-cream/60"
+                className="mb-1 text-xs sm:text-sm font-medium text-cream/60"
               >
                 Tên của bạn
               </label>
@@ -202,14 +203,15 @@ export function LandingHero() {
                 maxLength={20}
                 value={userName}
                 onChange={(e) => handleNameChange(e.target.value)}
-                className="w-full rounded-xl border border-cream/15 bg-white/10 px-3.5 py-2 text-sm text-cream placeholder:text-cream/30 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full rounded-xl border border-cream/15 bg-white/10 px-3 py-1.5 sm:px-3.5 sm:py-2 text-sm text-cream placeholder:text-cream/30 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
 
+            {/* Giới tính */}
             <div className="flex flex-col text-left sm:w-36">
               <label
                 htmlFor="user-gender"
-                className="mb-1 text-sm font-medium text-cream/60"
+                className="mb-1 text-xs sm:text-sm font-medium text-cream/60"
               >
                 Giới tính
               </label>
@@ -220,7 +222,7 @@ export function LandingHero() {
                   onChange={(e) =>
                     handleGenderChange(e.target.value as GenderType)
                   }
-                  className="w-full cursor-pointer appearance-none rounded-xl border border-cream/15 bg-white/10 py-2 pl-3.5 pr-8 text-sm text-cream backdrop-blur-md transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full cursor-pointer appearance-none rounded-xl border border-cream/15 bg-white/10 py-1.5 sm:py-2 pl-3 pr-8 sm:pl-3.5 text-sm text-cream backdrop-blur-md transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   <option
                     value=""
@@ -263,13 +265,13 @@ export function LandingHero() {
             </div>
           </div>
 
-          {/* Nút Xóa thông tin (hiển thị khi đã nhập ít nhất 1 trường) */}
+          {/* Nút Xóa thông tin */}
           {isHydrated && (userName || gender) && (
-            <div className="mt-3 flex justify-center">
+            <div className="mt-2.5 sm:mt-3 flex justify-center">
               <button
                 type="button"
                 onClick={handleResetUser}
-                className="text-md font-medium text-cream/40 transition hover:text-rose-400"
+                className="text-xs sm:text-sm font-medium text-cream/40 transition hover:text-rose-400"
               >
                 Xóa thông tin
               </button>
@@ -282,7 +284,7 @@ export function LandingHero() {
           <Link href="/map">
             <Button
               variant="primary"
-              className={`mt-2 px-8 py-4 text-base transition-all duration-300 ${getButtonGenderClass()}`}
+              className={`mt-2 px-4 py-2 sm:px-8 sm:py-4 text-sm sm:text-base transition-all duration-300 ${getButtonGenderClass()}`}
             >
               Bắt đầu hành trình <span aria-hidden="true">→</span>
             </Button>

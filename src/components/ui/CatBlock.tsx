@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export function CatBlock() {
   return (
-    <div className="flex min-h-screen w-full flex-col bg-surface-muted md:flex-row">
+    <div className="flex min-h-dvh w-full flex-col bg-surface-muted md:flex-row">
       {/* Màn hình bên trái: Hình ảnh đại diện */}
       <div className="relative flex min-h-[40vh] w-full items-center justify-end overflow-hidden bg-surface-muted p-6 md:min-h-screen md:w-1/2">
         <div className="absolute inset-0 bg-surface-muted" />

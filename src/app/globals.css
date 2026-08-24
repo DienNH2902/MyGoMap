@@ -2,22 +2,62 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Biến CSS dùng chung cho toàn app, tính đúng theo tai thỏ / Dynamic Island.
+ * --header-h: chiều cao thật của Header (4rem cơ bản + phần bị tai thỏ che
+ * phía trên, lấy qua env(safe-area-inset-top)). MỌI nơi cần chừa chỗ cho
+ * Header cố định (top offset, padding-top, chiều cao phần còn lại của màn
+ * hình...) đều phải dùng biến này thay vì số cứng "4rem"/"64px" — nếu không
+ * trên các máy có tai thỏ/Dynamic Island, phần nội dung sẽ bắt đầu sớm hơn
+ * mép dưới thật của Header đúng bằng phần tai thỏ, gây ra hiện tượng
+ * "tai thỏ che mất nội dung" dù bản thân Header đã tự né đúng.
+ */
+:root {
+  --header-h: calc(4rem + env(safe-area-inset-top, 0px));
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
 @layer base {
-  html,
-  body {
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
+  html {
+    scroll-behavior: smooth;
+    /* Ngăn Safari tự phóng to cỡ chữ khi xoay ngang, và ngăn hành vi
+       auto-zoom-out mặc định trên iOS khi trang tải lần đầu. */
     -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    height: 100%;
+    /* Chặn scroll ngang ở gốc — đây là lớp phòng vệ cuối cùng, phòng khi có
+       phần tử con nào đó (ảnh, panel tuyệt đối...) lỡ tràn rộng hơn màn
+       hình, tránh xuất hiện thanh cuộn ngang không mong muốn. */
+    overflow-x: hidden;
+    width: 100%;
   }
 
-  /* Ngăn iPhone tự động zoom vào input khi click */
-  input,
-  select,
-  textarea {
-    font-size: 16px !important;
+  body {
+    position: relative;
+    width: 100%;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    margin: 0;
+  }
+
+  /*
+   * Nguyên nhân chính khiến Safari iOS tự phóng to (zoom in) toàn trang khi
+   * người dùng chạm vào một ô nhập liệu: mọi input/select/textarea có
+   * font-size nhỏ hơn 16px sẽ khiến iOS tự zoom để "dễ đọc hơn", và sau đó
+   * KHÔNG tự zoom lại về bình thường — đây chính là lý do user phải tự zoom
+   * tay để vừa lại màn hình. Ép cứng tối thiểu 16px cho toàn bộ ô nhập liệu
+   * trên mobile để chặn hẳn hành vi này, bất kể class Tailwind (text-sm,
+   * text-xs...) được gán ở từng nơi.
+   */
+  @media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
   }
 }
 

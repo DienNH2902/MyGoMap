@@ -94,7 +94,7 @@ export function Header() {
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 flex lg:grid lg:grid-cols-3 h-[calc(4rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] items-center border-b border-white/5 bg-ink/90 px-6 backdrop-blur-md">
+    <header className="fixed inset-x-0 top-0 z-40 flex lg:grid lg:grid-cols-3 h-[var(--header-h)] pt-[var(--safe-top)] items-center border-b border-white/5 bg-ink/90 px-6 backdrop-blur-md">
       <Link href="/" className="group flex items-center gap-2">
         {/* <Image
           src="/assets/mygomapthumbnail.png"
@@ -147,7 +147,7 @@ export function Header() {
                 isMapLink && !hasUserInfo
                   ? "cursor-not-allowed opacity-40 hover:bg-transparent text-cream/40"
                   : isActive
-                    ? "text-accent-gold shadow-sm font-semibold backdrop-blur-sm"
+                    ? "text-accent-gold shadow-sm font-semibold"
                     : "text-orange-400 hover:bg-amber-500/15 hover:text-amber-200 hover:shadow-[0_0_15px_rgba(245,158,11,0.35)]"
               }`}
             >

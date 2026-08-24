@@ -51,7 +51,7 @@ function getCaughtCatImageByGender(gender: GenderTheme): string {
 const MapView = dynamic(() => import("./MapView").then((mod) => mod.MapView), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-surface-muted">
+    <div className="absolute inset-0 top-[var(--header-h)] flex items-center justify-center bg-surface-muted z-50 whitespace-pre-line">
       <OwlLoadingSpinner label="Xong rồi!" />
     </div>
   ),
@@ -264,7 +264,7 @@ export function MapExperience() {
 
   if (isDelaying) {
     return (
-      <div className="absolute inset-0 top-16 flex items-center justify-center bg-surface-muted z-50 whitespace-pre-line">
+      <div className="absolute inset-0 top-[var(--header-h)] flex items-center justify-center bg-surface-muted z-50 whitespace-pre-line">
         <OwlLoadingSpinner
           label={`Tôi đang bay lên cao để nhìn bản đồ rõ hơn\nHãy đợi tôi một chút!`}
         />
@@ -273,7 +273,7 @@ export function MapExperience() {
   }
 
   return (
-    <div className="fixed inset-x-0 top-16 bottom-0 h-[calc(100dvh-4rem)] overflow-hidden">
+    <div className="fixed inset-x-0 bottom-0 top-[var(--header-h)] h-[calc(100dvh-var(--header-h))] overflow-hidden">
       <MapView
         start={planner.start}
         end={planner.end}
@@ -307,7 +307,7 @@ export function MapExperience() {
 
       {/* MAP STYLE TOGGLE - MOBILE PANEL KÉO RA KÉO VÀO */}
       <div
-        className={`fixed top-20 right-0 z-40 transition-transform duration-300 md:hidden ${
+        className={`fixed top-[calc(var(--header-h)+1rem)] right-0 z-40 transition-transform duration-300 md:hidden ${
           isMobileStyleOpen
             ? "translate-x-0"
             : "translate-x-[calc(100%-2.75rem)]"
@@ -547,9 +547,9 @@ export function MapExperience() {
 
       {/* ROUTE PLANNER PANEL - DESKTOP HOẶC BOTTOM DRAWER SLIDE TRÊN MOBILE */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-30 transition-transform duration-300 md:static ${
+        className={`fixed inset-x-0 bottom-0 z-30 pb-[var(--safe-bottom)] transition-transform duration-300 md:static md:pb-0 ${
           isPanelCollapsed
-            ? "translate-y-[calc(100%-3rem)] md:translate-y-0"
+            ? "translate-y-[calc(100%-3rem-var(--safe-bottom))] md:translate-y-0"
             : "translate-y-0"
         }`}
       >
