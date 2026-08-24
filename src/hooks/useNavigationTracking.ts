@@ -75,6 +75,8 @@ const REROUTE_MIN_DISTANCE_METERS = 40;
 const REROUTE_MIN_INTERVAL_MS = 8000;
 const REROUTE_MAX_INTERVAL_MS = 25000; // vẫn làm mới định kỳ dù đứng yên
 const REROUTE_OFFROUTE_MIN_INTERVAL_MS = 4000; // đi lệch route thì ưu tiên tính lại nhanh hơn
+// Lấy chiều cao màn hình hiện tại để tính chính xác 1/3
+const screenHeight = typeof window !== "undefined" ? window.innerHeight : 800;
 
 export function useNavigationTracking(
   map: MapLibreMap | null,
@@ -124,14 +126,14 @@ export function useNavigationTracking(
     el.className = "user-location-puck";
     el.innerHTML = `
       <div style="
-        width: 64px; 
-        height: 64px; 
+        width: 84px; 
+        height: 84px; 
         display: flex; 
         align-items: center; 
         justify-content: center;
         filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.3));
       ">
-        <svg width="102" height="102" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="112" height="112" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="16" cy="16" r="14" fill="#3B82F6" fill-opacity="0.25" />
           <path d="M16 4L25 24L16 20L7 24L16 4Z" fill="#2563EB" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/>
         </svg>
@@ -419,9 +421,16 @@ export function useNavigationTracking(
           map.flyTo({
             center: [longitude, latitude],
             zoom: 19,
-            pitch: 90,
+            pitch: 80,
             bearing: heading ?? currentHeadingRef.current ?? 0,
             duration: 800,
+            // Đẩy điểm center xuống 1/3 phía dưới màn hình
+            padding: {
+              top: Math.round(screenHeight * 0.33),
+              bottom: 0,
+              left: 0,
+              right: 0,
+            },
           });
         }
 
@@ -482,8 +491,14 @@ export function useNavigationTracking(
               center: [targetLng, targetLat],
               zoom: 19,
               bearing: targetBearing,
-              pitch: 90,
+              pitch: 80,
               duration: 1000, // Tăng duration lên 1000ms để mượt hơn
+              padding: {
+                top: Math.round(screenHeight * 0.33),
+                bottom: 0,
+                left: 0,
+                right: 0,
+              },
             });
           }
 

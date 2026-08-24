@@ -45,7 +45,7 @@ export function VehicleModeToggle({
   };
 
   return (
-    <div className="flex flex-1 flex-col justify-end min-w-[140px]">
+    <div className="flex flex-1 flex-col justify-end min-w-[120px]">
       {label && (
         <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-cream/50">
           {label}
@@ -57,13 +57,13 @@ export function VehicleModeToggle({
           onClick={() => onChange(false)}
           aria-pressed={!avoidHighways}
           className={clsx(
-            "flex h-full flex-1 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition",
+            "flex h-full w-1/2 items-center justify-center gap-1 rounded-xl px-1.5 sm:px-3 text-xs font-semibold transition whitespace-nowrap",
             !avoidHighways
               ? getActiveStyles()
               : clsx("bg-transparent text-cream/90", getHoverStyles()),
           )}
         >
-          Ô tô
+          <span>Ô tô</span>
         </button>
 
         <button
@@ -71,13 +71,13 @@ export function VehicleModeToggle({
           onClick={() => onChange(true)}
           aria-pressed={avoidHighways}
           className={clsx(
-            "flex h-full flex-1 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition",
+            "flex h-full w-1/2 items-center justify-center gap-1 rounded-xl px-1.5 sm:px-3 text-xs font-semibold transition whitespace-nowrap",
             avoidHighways
               ? getActiveStyles()
               : clsx("bg-transparent text-cream/90", getHoverStyles()),
           )}
         >
-          Xe máy
+          <span>Xe máy</span>
         </button>
       </div>
     </div>

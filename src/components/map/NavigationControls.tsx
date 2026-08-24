@@ -19,76 +19,86 @@ export function NavigationControls({
 }: NavigationControlsProps) {
   if (isNavigating) {
     return (
-      <div className="pointer-events-auto absolute bottom-32 left-1/2 z-0 flex -translate-x-1/2 flex-col items-center gap-3">
-        {/* Thông tin navigation */}
-        <div className="flex flex-col items-center gap-2 rounded-2xl border border-ink/10 bg-white/95 px-6 py-4 shadow-2xl backdrop-blur-md min-w-[200px]">
-          {isOffRoute && (
-            <div className="mb-1 rounded-lg bg-red-50 px-3 py-1.5 text-center">
-              <p className="text-xs font-semibold text-red-600">
-                ⚠️ Bạn đang đi chệch route!
-              </p>
-            </div>
-          )}
-
-          <div className="text-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-ink/40">
-              Còn lại
+      <div className="pointer-events-auto absolute bottom-4 left-1/2 z-10 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 flex flex-col gap-2">
+        {/* Cảnh báo lệch đường (nếu có) */}
+        {isOffRoute && (
+          <div className="rounded-xl bg-red-500/90 px-3 py-1.5 text-center shadow-lg backdrop-blur-md">
+            <p className="text-xs font-semibold text-white">
+              ⚠️ Bạn đang đi chệch tuyến đường!
             </p>
-            {distanceToDestination !== null ? (
-              <p className="font-mono text-2xl font-bold text-primary pt-2">
-                {distanceToDestination.toFixed(1)} km
+          </div>
+        )}
+
+        {/* Thanh Navigation thu gọn 1 hàng ngang */}
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-white/95 p-3 shadow-2xl backdrop-blur-md">
+          <div className="flex items-center gap-3 pl-2">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-ink/40">
+                Còn lại
               </p>
-            ) : (
-              <p className="animate-pulse font-medium text-md text-ink/30 pt-2">
-                Đang tính...
+              {distanceToDestination !== null ? (
+                <p className="font-mono text-xl font-bold leading-none text-primary">
+                  {distanceToDestination.toFixed(1)}{" "}
+                  <span className="text-xs">km</span>
+                </p>
+              ) : (
+                <p className="animate-pulse text-xs font-medium text-ink/40">
+                  Đang tính...
+                </p>
+              )}
+            </div>
+
+            <div className="h-7 w-[1px] bg-ink/10" />
+
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-ink/40">
+                Thời gian
               </p>
-            )}
+              {estimatedTimeRemaining !== null ? (
+                <p className="text-sm font-semibold leading-none text-ink/80">
+                  ~{Math.ceil(estimatedTimeRemaining)}{" "}
+                  <span className="text-xs font-normal text-ink/60">phút</span>
+                </p>
+              ) : (
+                <p className="animate-pulse text-xs text-ink/40">-- phút</p>
+              )}
+            </div>
           </div>
 
-          <div className="text-center">
-            {estimatedTimeRemaining !== null ? (
-              <p className="text-xs text-ink/60">
-                Dự kiến ~{Math.ceil(estimatedTimeRemaining)} phút
-              </p>
-            ) : (
-              <p className="animate-pulse text-xs text-ink/30">-- phút</p>
-            )}
-          </div>
-        </div>
-
-        {/* Nút Thoát */}
-        <button
-          type="button"
-          onClick={onStopNavigation}
-          className="flex items-center gap-2 rounded-full bg-red-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-red-600 active:scale-95"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
+          {/* Nút Thoát dạng tròn/gọn */}
+          <button
+            type="button"
+            onClick={onStopNavigation}
+            className="flex h-10 items-center gap-1.5 rounded-xl bg-red-500 px-4 text-xs font-semibold text-white shadow-md transition hover:bg-red-600 active:scale-95 shrink-0"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-          Thoát
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+            Thoát
+          </button>
+        </div>
       </div>
     );
   }
 
-  // Nút "Về giữa" khi chưa bắt đầu navigation
+  // Nút "Bắt đầu chỉ đường" khi chưa bật Navigation
   return (
     <div className="pointer-events-auto absolute bottom-32 left-1/2 z-0 -translate-x-1/2">
       <button
         type="button"
         onClick={onStartNavigation}
-        className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-90 active:scale-95"
+        className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-xl transition hover:opacity-90 active:scale-95"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -104,7 +114,7 @@ export function NavigationControls({
             d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
           />
         </svg>
-        Về giữa
+        Chỉ đường
       </button>
     </div>
   );

@@ -139,10 +139,51 @@ export default function PurposePage() {
               </div>
             </section>
 
+            {/* Section 4: Các hạn chế kỹ thuật hiện tại */}
+            <section className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 backdrop-blur-md sm:p-8">
+              <h2 className="mb-4 text-xl font-bold text-red-600 flex items-center gap-2 sm:text-2xl">
+                Các điểm yếu & Hạn chế hiện tại
+              </h2>
+              <p className="text-sm leading-relaxed text-cream/80 sm:text-base">
+                Để người dùng có trải nghiệm minh bạch nhất, chúng tôi xin công
+                khai một số hạn chế kỹ thuật đang trong quá trình tối ưu:
+              </p>
+              <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-cream/70 sm:text-base">
+                <li>
+                  <strong className="text-cream">Giới hạn điểm dừng:</strong> Hệ
+                  thống hiện chỉ hỗ trợ tối đa 10 điểm dừng cho mỗi chuyến đi.
+                </li>
+                <li>
+                  <strong className="text-cream">Tốc độ phản hồi:</strong> Thời
+                  gian phản hồi còn tương đối lâu, đôi khi có thể xảy ra lỗi
+                  hoặc chậm; bạn có thể cần thực hiện lại thao tác.
+                </li>
+                <li>
+                  <strong className="text-cream">
+                    Hạn chế công cụ Tìm kiếm:
+                  </strong>{" "}
+                  Tìm kiếm địa điểm hiện hoạt động ổn định nhất theo tên tỉnh và
+                  thành phố. Các dữ liệu chi tiết hơn như tên đường, số nhà có
+                  thể chưa tra cứu chính xác hoặc chưa ra kết quả.
+                </li>
+                <li>
+                  <strong className="text-cream">Trải nghiệm giao diện:</strong>{" "}
+                  Thao tác cuộn/phóng to bản đồ chưa thật sự mượt mà và chỉ mang
+                  tính tương đối, vẫn còn tình trạng giật lag trên một số thiết
+                  bị.
+                </li>
+                <li>
+                  <strong className="text-cream">Yêu cầu đường truyền:</strong>{" "}
+                  Ứng dụng đòi hỏi kết nối Internet chất lượng cao và ổn định để
+                  hoạt động tốt nhất, nếu mạng yếu hệ thống sẽ xử lý rất chậm.
+                </li>
+              </ul>
+            </section>
+
             {/* Chú thích thêm dẫn sang Google Maps */}
-            <div className="pt-2 text-md leading-relaxed text-cream/50">
-              * Nếu bạn không hài lòng về hệ thống thì cút sang GoogleMaps - Tôi
-              để sẵn link để bạn đỡ phải gõ:{" "}
+            <div className="pt-2 text-md leading-relaxed text-red-600">
+              * LƯU Ý: Nếu bạn không hài lòng về hệ thống thì vui lòng cút sang
+              GoogleMaps <br /> Tôi để sẵn link để bạn đỡ phải gõ:{" "}
               <a
                 href="https://www.google.com/maps"
                 target="_blank"

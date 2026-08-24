@@ -6,9 +6,9 @@ import { VehicleModeToggle } from "./VehicleModeToggle";
 import { NumberStepper } from "../ui/NumberStepper";
 import { Button } from "../ui/Button";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
-import type { UseRoutePlannerReturn } from "@/hooks/useRoutePlanner";
 import { useEffect, useState } from "react";
 import { MAX_CUSTOM_STOPS, POI_CATEGORIES } from "@/lib/constants";
+import { UseRoutePlannerReturn } from "@/hooks/useRoutePlanner";
 
 type GenderTheme = "nam" | "nu" | "khac";
 const STORAGE_KEY_GENDER = "mygomap_user_gender";
@@ -152,7 +152,7 @@ export function RoutePlannerPanel({
   };
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-2 px-4 pb-4">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-2 px-4 pb-10">
       {/* Nút bấm Đóng / Mở bảng điều khiển */}
       {onToggleCollapse && (
         <button
@@ -231,28 +231,34 @@ export function RoutePlannerPanel({
                   onChange={planner.setStopCount}
                 />
               )}
-              <VehicleModeToggle
-                label="Loại xe"
-                avoidHighways={planner.avoidHighways}
-                onChange={planner.setAvoidHighways}
-              />
+              {/* Khối chọn Loại xe & Giao thông cùng 1 hàng ngang trên Mobile */}
+              <div className="grid grid-cols-3 gap-2 sm:flex sm:items-end sm:gap-3">
+                <div className="col-span-2">
+                  <VehicleModeToggle
+                    label="Loại xe"
+                    avoidHighways={planner.avoidHighways}
+                    onChange={planner.setAvoidHighways}
+                  />
+                </div>
 
-              <div className="flex min-w-[80px] flex-col gap-0.5">
-                <span className="text-[10px] font-bold uppercase tracking-wide text-cream/50">
-                  Giao thông
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => planner.setAvoidTraffic(!planner.avoidTraffic)}
-                  className={`mt-1 h-[44px] rounded-xl text-xs font-semibold transition ${
-                    planner.avoidTraffic
-                      ? getActiveStyles()
-                      : `bg-black/20 text-cream/90 ${getHoverStyles()}`
-                  }`}
-                >
-                  {planner.avoidTraffic ? "Bật" : "Tắt"}
-                </button>
+                <div className="col-span-1 flex flex-col justify-end">
+                  <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-cream/50 truncate">
+                    Giao thông
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      planner.setAvoidTraffic(!planner.avoidTraffic)
+                    }
+                    className={`h-[44px] w-full rounded-2xl text-xs font-semibold transition flex items-center justify-center gap-1 px-2 ${
+                      planner.avoidTraffic
+                        ? getActiveStyles()
+                        : `bg-black/20 text-cream/90 ${getHoverStyles()}`
+                    }`}
+                  >
+                    <span>{planner.avoidTraffic ? "Bật" : "Tắt"}</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -379,7 +385,9 @@ export function RoutePlannerPanel({
 
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 pt-2 lg:pt-0">
                 {planner.isLoading && (
-                  <LoadingSpinner label="Đang tính lộ trình…" />
+                  <div className="flex w-full items-center justify-center sm:w-auto">
+                    <LoadingSpinner label="Đang tính lộ trình…" />
+                  </div>
                 )}
                 <Button
                   variant="ghost"

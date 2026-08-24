@@ -48,7 +48,7 @@ export function RouteStatsBar({ route, stops }: RouteStatsBarProps) {
           Tổng quãng đường
         </p>
         <p
-          className={`font-mono text-sm sm:text-lg font-bold ${getValueColorClass()} whitespace-nowrap`}
+          className={`font-mono text-[12px] sm:text-lg font-bold ${getValueColorClass()} whitespace-nowrap`}
         >
           {route.distanceKm.toFixed(1)} km
         </p>
@@ -60,7 +60,7 @@ export function RouteStatsBar({ route, stops }: RouteStatsBarProps) {
           Thời gian ước tính
         </p>
         <p
-          className={`font-mono text-sm sm:text-lg font-bold ${getValueColorClass()} whitespace-nowrap`}
+          className={`font-mono text-[12px] sm:text-lg font-bold ${getValueColorClass()} whitespace-nowrap`}
         >
           {formatDuration(route.durationMinutes)}
         </p>
@@ -73,7 +73,7 @@ export function RouteStatsBar({ route, stops }: RouteStatsBarProps) {
             Trễ do giao thông
           </p>
           <p
-            className={`font-mono text-sm sm:text-lg font-bold ${getValueColorClass()} whitespace-nowrap`}
+            className={`font-mono text-[12px] sm:text-lg font-bold ${getValueColorClass()} whitespace-nowrap`}
           >
             {formatDuration(route.trafficDelayMinutes!)}
           </p>
@@ -86,7 +86,7 @@ export function RouteStatsBar({ route, stops }: RouteStatsBarProps) {
           Điểm dừng
         </p>
         <p
-          className={`font-mono text-sm sm:text-lg font-bold ${getValueColorClass()} whitespace-nowrap`}
+          className={`font-mono text-[12px] sm:text-lg font-bold ${getValueColorClass()} whitespace-nowrap`}
         >
           {stops.length} điểm
         </p>
