@@ -99,29 +99,18 @@ export function InstallAppButton() {
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // Nếu app đã được thêm vào màn hình chính và đang chạy
-    // ở chế độ standalone thì không cần hiện Download nữa.
+    // Nếu app đã được thêm vào màn hình chính
+    // và đang chạy ở chế độ standalone thì ẩn Download.
     if (isStandaloneMode()) {
       setShowButton(false);
       return;
     }
 
     const ios = isIOSDevice();
+
     setIsIOS(ios);
 
-    /*
-     * Luôn hiển thị nút khi chưa chạy standalone.
-     *
-     * Android/Chrome:
-     *   beforeinstallprompt → cài PWA native.
-     *
-     * iPhone/Safari:
-     *   không có beforeinstallprompt → mở hướng dẫn
-     *   Share → Add to Home Screen.
-     *
-     * Browser khác:
-     *   mở hướng dẫn chung.
-     */
+    // Hiển thị nút Download nếu chưa được cài.
     setShowButton(true);
 
     const handleBeforeInstallPrompt = (event: Event) => {
@@ -159,7 +148,7 @@ export function InstallAppButton() {
   const handleInstall = useCallback(async () => {
     /*
      * Android Chrome / Chromium:
-     * mở popup cài đặt PWA native.
+     * Giữ nguyên logic cài đặt native hiện tại.
      */
     if (installPrompt) {
       await installPrompt.prompt();
@@ -175,18 +164,22 @@ export function InstallAppButton() {
     }
 
     /*
-     * iOS Safari:
-     *
-     * Apple không cho website tự mở menu Share.
-     * Vì vậy hiển thị hướng dẫn Add to Home Screen.
+     * iPhone / Safari:
+     * Không thể tự mở Share → Add to Home Screen.
+     * Hiển thị modal hướng dẫn.
      */
     setShowGuide(true);
   }, [installPrompt]);
 
-  if (!showButton) return null;
+  if (!showButton) {
+    return null;
+  }
 
   return (
     <>
+      {/* =========================================================
+          BUTTON
+         ========================================================= */}
       <button
         type="button"
         onClick={handleInstall}
@@ -194,20 +187,26 @@ export function InstallAppButton() {
           isIOS ? "Thêm Mỳ Gõ Map vào màn hình chính" : "Cài Mỳ Gõ Map"
         }
         className="
-            inline-flex items-center gap-2
-            rounded-lg
-            border border-emerald-500/40
-            bg-emerald-500/10
-            px-3 py-1.5
-            text-sm font-semibold
-            text-emerald-400
-            shadow-sm
-            transition-all duration-200
-            hover:border-emerald-400/70
-            hover:bg-emerald-500/20
-            hover:text-emerald-200
-            hover:shadow-[0_0_18px_rgba(16,185,129,0.35)]
-            active:scale-95
+          inline-flex
+          items-center
+          gap-2
+          rounded-lg
+          border
+          border-emerald-500/40
+          bg-emerald-500/10
+          px-3
+          py-1.5
+          text-sm
+          font-semibold
+          text-emerald-400
+          shadow-sm
+          transition-all
+          duration-200
+          hover:border-emerald-400/70
+          hover:bg-emerald-500/20
+          hover:text-emerald-200
+          hover:shadow-[0_0_18px_rgba(16,185,129,0.35)]
+          active:scale-95
         "
       >
         <DownloadIcon />
@@ -215,14 +214,33 @@ export function InstallAppButton() {
         <span className="hidden sm:inline">Download</span>
       </button>
 
+      {/* =========================================================
+          INSTALL GUIDE MODAL
+         ========================================================= */}
       {showGuide && (
         <div
           className="
-            fixed inset-0 z-[100]
-            flex items-end justify-center
-            bg-black/70 p-4
+            fixed
+            left-0
+            right-0
+            top-0
+            bottom-0
+            z-[9999]
+
+            flex
+            items-center
+            justify-center
+
+            overflow-y-auto
+
+            bg-black/70
+
+            p-4
             backdrop-blur-sm
-            sm:items-center
+
+            overscroll-contain
+
+            [-webkit-overflow-scrolling:touch]
           "
           role="dialog"
           aria-modal="true"
@@ -233,32 +251,64 @@ export function InstallAppButton() {
             }
           }}
         >
+          {/* =====================================================
+              MODAL CONTENT
+
+              Quan trọng:
+              - max-h-[calc(100dvh-2rem)]
+              - overflow-y-auto
+              - min-h-0
+
+              Giúp Safari iOS không đẩy modal ra ngoài viewport.
+             ===================================================== */}
           <div
             className="
               relative
-              w-full max-w-md
+              flex
+              w-full
+              max-w-md
+              min-h-0
+              max-h-[calc(100dvh-2rem)]
+              flex-col
+
               overflow-hidden
+
               rounded-2xl
-              border border-white/10
+              border
+              border-white/10
               bg-[#111827]
+
               shadow-2xl
+
+              sm:max-h-[calc(100vh-2rem)]
             "
           >
-            {/* Header modal */}
+            {/* ===================================================
+                HEADER
+               =================================================== */}
             <div
               className="
-                flex items-start
-                justify-between gap-4
-                border-b border-white/10
-                px-5 py-4
+                flex
+                shrink-0
+                items-start
+                justify-between
+                gap-4
+
+                border-b
+                border-white/10
+
+                px-5
+                py-4
               "
             >
-              <div>
+              <div className="min-w-0">
                 <p
                   className="
-                    text-xs font-semibold
-                    uppercase tracking-[0.18em]
-                    text-primary
+                    text-xs
+                    font-semibold
+                    uppercase
+                    tracking-[0.18em]
+                    text-emerald-400
                   "
                 >
                   Mỳ Gõ Map
@@ -268,7 +318,9 @@ export function InstallAppButton() {
                   id="install-app-title"
                   className="
                     mt-1
-                    text-xl font-bold
+                    text-xl
+                    font-bold
+                    leading-tight
                     text-white
                   "
                 >
@@ -281,24 +333,38 @@ export function InstallAppButton() {
                 onClick={closeGuide}
                 aria-label="Đóng"
                 className="
-                  rounded-full p-2
+                  shrink-0
+                  rounded-full
+                  p-2
                   text-white/60
                   transition
                   hover:bg-white/10
                   hover:text-white
+                  active:scale-95
                 "
               >
                 <XIcon />
               </button>
             </div>
 
-            {/* Nội dung */}
+            {/* ===================================================
+                BODY
+               =================================================== */}
             <div
               className="
-                space-y-5
-                px-5 py-5
+                min-h-0
+                flex-1
+                overflow-y-auto
+
+                px-5
+                py-5
+
                 text-sm
                 text-white/80
+
+                overscroll-contain
+
+                [-webkit-overflow-scrolling:touch]
               "
             >
               {isIOS ? (
@@ -308,105 +374,120 @@ export function InstallAppButton() {
                     chỉ cần thực hiện 3 bước sau:
                   </p>
 
-                  <div className="space-y-3">
-                    {/* Step 1 */}
+                  <div className="mt-5 space-y-3">
+                    {/* STEP 1 */}
                     <div
                       className="
-                        flex gap-3
+                        flex
+                        gap-3
                         rounded-xl
-                        border border-white/10
+                        border
+                        border-white/10
                         bg-white/5
                         p-3
                       "
                     >
                       <span
                         className="
-                          flex h-8 w-8
+                          flex
+                          h-8
+                          w-8
                           shrink-0
-                          items-center justify-center
+                          items-center
+                          justify-center
                           rounded-full
-                          bg-primary/15
+                          bg-emerald-500/15
                           font-bold
-                          text-primary
+                          text-emerald-400
                         "
                       >
                         1
                       </span>
 
-                      <div className="flex-1">
+                      <div className="min-w-0 flex-1">
                         <p className="font-semibold text-white">Nhấn Chia sẻ</p>
 
-                        <p className="mt-1 text-white/60">
-                          Nút hình ô vuông có mũi tên đi lên trên Safari.
+                        <p className="mt-1 leading-5 text-white/60">
+                          Nhấn nút hình ô vuông có mũi tên đi lên trên Safari.
                         </p>
                       </div>
 
                       <ShareIcon />
                     </div>
 
-                    {/* Step 2 */}
+                    {/* STEP 2 */}
                     <div
                       className="
-                        flex gap-3
+                        flex
+                        gap-3
                         rounded-xl
-                        border border-white/10
+                        border
+                        border-white/10
                         bg-white/5
                         p-3
                       "
                     >
                       <span
                         className="
-                          flex h-8 w-8
+                          flex
+                          h-8
+                          w-8
                           shrink-0
-                          items-center justify-center
+                          items-center
+                          justify-center
                           rounded-full
-                          bg-primary/15
+                          bg-emerald-500/15
                           font-bold
-                          text-primary
+                          text-emerald-400
                         "
                       >
                         2
                       </span>
 
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <p className="font-semibold text-white">
                           Chọn “Thêm vào Màn hình chính”
                         </p>
 
-                        <p className="mt-1 text-white/60">
+                        <p className="mt-1 leading-5 text-white/60">
                           Kéo xuống trong menu Chia sẻ nếu chưa thấy mục này.
                         </p>
                       </div>
                     </div>
 
-                    {/* Step 3 */}
+                    {/* STEP 3 */}
                     <div
                       className="
-                        flex gap-3
+                        flex
+                        gap-3
                         rounded-xl
-                        border border-white/10
+                        border
+                        border-white/10
                         bg-white/5
                         p-3
                       "
                     >
                       <span
                         className="
-                          flex h-8 w-8
+                          flex
+                          h-8
+                          w-8
                           shrink-0
-                          items-center justify-center
+                          items-center
+                          justify-center
                           rounded-full
-                          bg-primary/15
+                          bg-emerald-500/15
                           font-bold
-                          text-primary
+                          text-emerald-400
                         "
                       >
                         3
                       </span>
 
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <p className="font-semibold text-white">Nhấn “Thêm”</p>
 
-                        <p className="mt-1 text-white/60">
+                        <p className="mt-1 leading-5 text-white/60">
                           Mỳ Gõ Map sẽ xuất hiện như một ứng dụng trên màn hình
                           chính.
                         </p>
@@ -414,15 +495,18 @@ export function InstallAppButton() {
                     </div>
                   </div>
 
+                  {/* NOTE */}
                   <div
                     className="
+                      mt-5
                       rounded-xl
-                      border border-primary/20
-                      bg-primary/10
+                      border
+                      border-emerald-500/20
+                      bg-emerald-500/10
                       p-3
                       text-xs
                       leading-5
-                      text-orange-100/80
+                      text-emerald-100/80
                     "
                   >
                     Sau khi thêm, hãy mở Mỳ Gõ Map từ biểu tượng trên màn hình
@@ -439,12 +523,20 @@ export function InstallAppButton() {
               )}
             </div>
 
-            {/* Footer */}
+            {/* ===================================================
+                FOOTER
+               =================================================== */}
             <div
               className="
-                flex justify-end
-                border-t border-white/10
-                px-5 py-4
+                flex
+                shrink-0
+                justify-end
+
+                border-t
+                border-white/10
+
+                px-5
+                py-4
               "
             >
               <button
@@ -452,12 +544,16 @@ export function InstallAppButton() {
                 onClick={closeGuide}
                 className="
                   rounded-lg
-                  bg-primary
-                  px-4 py-2
-                  text-sm font-bold
+                  bg-emerald-600
+                  px-4
+                  py-2
+                  text-sm
+                  font-bold
                   text-white
+
                   transition
-                  hover:bg-primary/90
+
+                  hover:bg-emerald-500
                   active:scale-95
                 "
               >
