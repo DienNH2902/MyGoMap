@@ -28,7 +28,6 @@ const withPWA = withPWAInit({
   // đuôi file, xem phần dưới sw.js được sinh ra) thay vì bắt buộc phải tải
   // hết ngay từ đầu.
   cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
   publicExcludes: [
     "!assets/**/*.mp4",
