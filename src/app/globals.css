@@ -87,3 +87,11 @@
 .maplibregl-ctrl-bottom-right {
   bottom: 80px !important; /* Thay đổi con số này theo ý bạn */
 }
+
+/* PWA/iOS: tránh hiệu ứng highlight mặc định khi chạm các nút cài app. */
+@media (hover: none) and (pointer: coarse) {
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
