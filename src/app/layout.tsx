@@ -49,8 +49,10 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#000000",
-  // viewport-fit=cover để nội dung tràn đúng ra mép màn hình có notch/tai thỏ
-  // khi chạy standalone trên iPhone — tránh dải trắng/đen thừa 2 bên.
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
 };
 
@@ -62,12 +64,12 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${beVietnamPro.variable} ${jetBrainsMono.variable}`}
+      className={`${beVietnamPro.variable} ${jetBrainsMono.variable} h-full overflow-hidden`}
     >
-      <body className="bg-surface font-display text-ink antialiased">
+      <body className="bg-surface font-display text-ink antialiased h-full w-full overflow-hidden flex flex-col">
         <ServiceWorkerRegistration />
         <Header />
-        <main className="pt-[calc(4rem+env(safe-area-inset-top))] min-h-screen">
+        <main className="relative flex-1 w-full overflow-x-hidden overflow-y-auto pt-[calc(4rem+env(safe-area-inset-top))] pb-[env(safe-area-inset-bottom)]">
           {children}
         </main>
       </body>

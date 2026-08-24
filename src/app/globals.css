@@ -3,8 +3,21 @@
 @tailwind utilities;
 
 @layer base {
-  html {
-    scroll-behavior: smooth;
+  html,
+  body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Ngăn iPhone tự động zoom vào input khi click */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
   }
 }
 

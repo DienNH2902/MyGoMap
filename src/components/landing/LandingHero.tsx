@@ -94,7 +94,7 @@ export function LandingHero() {
   };
 
   return (
-    <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-ink px-6 py-12">
+    <section className="relative flex h-full items-center justify-center overflow-hidden bg-ink px-6 py-12">
       {/* Ambient glow behind the copy, reinforcing the orange brand color. */}
       {/* <div className="absolute left-1/2 top-1/3 h-[500px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-[140px]" />
       <HeroRouteLine /> */}
@@ -119,7 +119,7 @@ export function LandingHero() {
         priority // Ưu tiên load ngay lập tức vì đây là ảnh nền chính
         quality={100}
         sizes="100vw"
-        className="object-cover object-center"
+        className="object-cover object-bottom"
       />
 
       <div className="absolute inset-0 bg-ink/30" />
@@ -132,7 +132,7 @@ export function LandingHero() {
 
       <div className="relative z-10 flex max-w-2xl flex-col items-center gap-6 text-center">
         {/* Logo MyGoMap */}
-        <div className="relative flex items-center justify-center pt-4">
+        <div className="relative flex items-center justify-center">
           {/* Hiệu ứng hào quang/glow phía sau logo */}
           {/* <div className="absolute h-24 w-24 rounded-full bg-primary/30 blur-2xl" /> */}
           <Image
