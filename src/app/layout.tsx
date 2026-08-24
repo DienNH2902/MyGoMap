@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   title: "Mỳ Gõ Map — Phượt Việt Nam",
   description:
     "Mỳ Gõ Map giúp bạn tìm đường, gợi ý trạm xăng, trạm dừng chân, quán ăn và cà phê dọc tuyến đường — hoàn toàn miễn phí.",
-  manifest: "/manifest.json",
+  manifest: "/manifest.ts",
   icons: {
     // Icon dùng trong tab trình duyệt (favicon)
     icon: [
