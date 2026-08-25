@@ -9,6 +9,13 @@ interface NavigationControlsProps {
   onStopNavigation: () => void;
 }
 
+/** Formats a minute count as "X giờ Y phút" or just "Y phút" when under an hour. */
+function formatDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const mins = Math.round(minutes % 60);
+  return hours === 0 ? `${mins} phút` : `${hours}h ${mins}p`;
+}
+
 export function NavigationControls({
   isNavigating,
   distanceToDestination,
@@ -56,10 +63,10 @@ export function NavigationControls({
               </p>
               {estimatedTimeRemaining !== null ? (
                 <p className="text-xl font-semibold leading-none text-cream/90">
-                  ~{Math.ceil(estimatedTimeRemaining)}{" "}
-                  <span className="text-xs font-normal text-cream/60">
+                  ~{formatDuration(estimatedTimeRemaining)}{" "}
+                  {/* <span className="text-xs font-normal text-cream/60">
                     phút
-                  </span>
+                  </span> */}
                 </p>
               ) : (
                 <p className="animate-pulse text-xs text-cream/40">-- phút</p>
