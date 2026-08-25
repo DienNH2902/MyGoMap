@@ -141,14 +141,14 @@ function getSegmentColorsByGender(gender: GenderTheme): string[] {
 
   if (gender === "nu") {
     return [
-    "#EC4899", // Hồng cánh sen tươi (Hot Pink) - Rất nổi bật
-    "#7C3AED", // Tím đậm / Tím hoa đậu biệp (Deep Violet) - Tương phản mạnh với hồng
-    "#F43F5E", // Đỏ hồng san hô (Rose Red) - Thiên về tone ấm
-    "#A855F7", // Tím tươi (Bright Purple) - Chuẩn sắc tím
-    "#FB7185", // Hồng phấn / Hồng pastel (Soft Pink) - Sắc độ sáng nhẹ
-    "#4C1D95", // Tím thẫm / Tím mận (Dark Plum) - Tone tối đậm
-    "#E879F9", // Tím hồng ngọc (Orchid Pink) - Sắc độ rực rỡ
-  ];
+      "#EC4899", // Hồng cánh sen tươi (Hot Pink) - Rất nổi bật
+      "#7C3AED", // Tím đậm / Tím hoa đậu biệp (Deep Violet) - Tương phản mạnh với hồng
+      "#F43F5E", // Đỏ hồng san hô (Rose Red) - Thiên về tone ấm
+      "#A855F7", // Tím tươi (Bright Purple) - Chuẩn sắc tím
+      "#FB7185", // Hồng phấn / Hồng pastel (Soft Pink) - Sắc độ sáng nhẹ
+      "#4C1D95", // Tím thẫm / Tím mận (Dark Plum) - Tone tối đậm
+      "#E879F9", // Tím hồng ngọc (Orchid Pink) - Sắc độ rực rỡ
+    ];
   }
 
   // "khac"
@@ -258,6 +258,40 @@ export function MapView({
   const [styleReloadKey, setStyleReloadKey] = useState(0);
 
   const activeSegmentLayersRef = useRef<string[]>([]);
+
+  // Khi đang ở chế độ dẫn đường (isNavigating), useNavigationTracking đã tự
+  // vẽ marker mũi tên riêng (kèm vùng báo hướng) — nếu để nguyên, chấm định
+  // vị + vòng tròn độ chính xác + kim la bàn mặc định của GeolocateControl
+  // (MapLibre) vẫn hiển thị song song, gây ra tình trạng "2 chấm cùng lúc"
+  // rất rối như phản ánh. Effect này chỉ ẩn/hiện chúng bằng CSS theo
+  // isNavigating — KHÔNG đụng vào cấu hình/logic của GeolocateControl phía
+  // trên (trackUserLocation, showUserLocation... giữ nguyên 100%), nên lúc
+  // không navigate (duyệt bản đồ bình thường) chấm định vị gốc vẫn hoạt
+  // động y như cũ.
+  useEffect(() => {
+    const styleEl = document.createElement("style");
+    styleEl.setAttribute("data-mygomap-nav-dot-toggle", "true");
+    styleEl.textContent = `
+      .mygomap-hide-native-locate-dot .maplibregl-user-location-dot,
+      .mygomap-hide-native-locate-dot .maplibregl-user-location-accuracy-circle,
+      .mygomap-hide-native-locate-dot .maplibregl-user-location-heading {
+        display: none !important;
+      }
+    `;
+    document.head.appendChild(styleEl);
+
+    return () => {
+      styleEl.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const container = map.getContainer();
+    container.classList.toggle("mygomap-hide-native-locate-dot", isNavigating);
+  }, [isNavigating]);
 
   useEffect(() => {
     const savedGender =
