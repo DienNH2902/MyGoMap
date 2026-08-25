@@ -28,13 +28,13 @@ export function NavigationControls({
     return (
       <div className="pointer-events-auto absolute bottom-4 left-1/2 z-10 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 flex flex-col gap-2">
         {/* Cảnh báo lệch đường (nếu có) */}
-        {isOffRoute && (
+        {/* {isOffRoute && (
           <div className="rounded-xl bg-red-500/90 px-3 py-1.5 text-center shadow-lg backdrop-blur-md">
             <p className="text-xs font-semibold text-white">
               ⚠️ Bạn đang đi chệch tuyến đường!
             </p>
           </div>
-        )}
+        )} */}
 
         {/* Thanh Navigation thu gọn 1 hàng ngang */}
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-ink/85 p-3 shadow-2xl backdrop-blur-xl">

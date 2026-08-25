@@ -224,16 +224,31 @@ export function RoutePlannerPanel({
                 isLocating={isLocatingEnd}
                 dropdownPlacement="bottom"
               />
-              {planner.stopMode === "auto" && (
+              {/* {planner.stopMode === "auto" && (
                 <NumberStepper
                   label="Số điểm dừng"
                   value={planner.stopCount}
                   onChange={planner.setStopCount}
                 />
-              )}
+              )} */}
               {/* Khối chọn Loại xe & Giao thông cùng 1 hàng ngang trên Mobile */}
-              <div className="grid grid-cols-3 gap-2 sm:flex sm:items-end sm:gap-3">
-                <div className="col-span-2">
+              {/* Khối chọn Số điểm dừng (nếu auto), Loại xe & Giao thông */}
+              <div className="grid grid-cols-12 gap-2 sm:flex sm:items-end sm:gap-3">
+                {planner.stopMode === "auto" && (
+                  <div className="col-span-4 sm:col-span-auto">
+                    <NumberStepper
+                      label="Số điểm dừng"
+                      value={planner.stopCount}
+                      onChange={planner.setStopCount}
+                    />
+                  </div>
+                )}
+
+                <div
+                  className={
+                    planner.stopMode === "auto" ? "col-span-5" : "col-span-8"
+                  }
+                >
                   <VehicleModeToggle
                     label="Loại xe"
                     avoidHighways={planner.avoidHighways}
@@ -241,7 +256,11 @@ export function RoutePlannerPanel({
                   />
                 </div>
 
-                <div className="col-span-1 flex flex-col justify-end">
+                <div
+                  className={`${
+                    planner.stopMode === "auto" ? "col-span-3" : "col-span-4"
+                  } flex flex-col justify-end`}
+                >
                   <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-cream/50 truncate">
                     Giao thông
                   </span>
@@ -385,7 +404,7 @@ export function RoutePlannerPanel({
 
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 pt-2 lg:pt-0">
                 {planner.isLoading && (
-                  <div className="flex w-full items-center justify-center sm:w-auto">
+                  <div className="flex w-full items-center justify-center sm:w-auto scale-75 sm:scale-100 origin-center">
                     <LoadingSpinner label="Đang tính lộ trình…" />
                   </div>
                 )}
