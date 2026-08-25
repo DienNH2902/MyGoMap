@@ -16,7 +16,7 @@ interface UserLocation {
 }
 
 /**
- * Làm mượt giá trị số bằng Exponential Moving Average.
+ * Làm mượt giá trị số bằng Exponential Moving Average
  */
 function smoothValue(
   currentValue: number,
@@ -27,8 +27,7 @@ function smoothValue(
 }
 
 /**
- * Làm mượt góc quay.
- * Xử lý trường hợp vượt qua 0° / 360°.
+ * Làm mượt góc quay, xử lý trường hợp đi qua 0°/360°
  */
 function smoothAngle(
   currentAngle: number,
@@ -49,7 +48,30 @@ function smoothAngle(
 }
 
 /**
- * Điểm đến cố định.
+ * Nội suy tuyến tính
+ */
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+/**
+ * Nội suy góc theo hướng ngắn nhất.
+ */
+function lerpAngle(a: number, b: number, t: number): number {
+  const diff = ((b - a + 540) % 360) - 180;
+  return (a + diff * t + 360) % 360;
+}
+
+/**
+ * Ease-out để marker dừng mềm hơn.
+ */
+function easeOutCubic(t: number): number {
+  const clamped = Math.min(Math.max(t, 0), 1);
+  return 1 - Math.pow(1 - clamped, 3);
+}
+
+/**
+ * Điểm đến cố định của chuyến đi.
  */
 interface NavigationDestination {
   lon: number;
@@ -68,7 +90,7 @@ interface NavigationState {
 }
 
 /**
- * Ngưỡng reroute.
+ * Cấu hình reroute
  */
 const REROUTE_MIN_DISTANCE_METERS = 40;
 const REROUTE_MIN_INTERVAL_MS = 8000;
@@ -76,59 +98,35 @@ const REROUTE_MAX_INTERVAL_MS = 25000;
 const REROUTE_OFFROUTE_MIN_INTERVAL_MS = 4000;
 
 /**
- * Chiều cao màn hình.
- */
-const screenHeight = typeof window !== "undefined" ? window.innerHeight : 800;
-
-/**
- * Camera navigation.
+ * Camera navigation
  */
 const NAV_CAMERA_ZOOM = 19;
 const NAV_CAMERA_PITCH = 80;
 
 /**
- * Camera không được update nhanh hơn khoảng thời gian này.
+ * GPS
  *
- * Trước đây:
- *
- * duration: 1000
- * interval: 800
- *
- * => animation cũ chưa xong thì animation mới bắt đầu.
- *
- * Bây giờ duration < interval để tránh chồng animation.
+ * GPS mobile không phải lúc nào cũng chính xác.
+ * Các giá trị này giúp loại bỏ những dao động nhỏ khi người dùng đứng yên.
  */
-const CAMERA_UPDATE_INTERVAL_MS = 800;
-const CAMERA_ANIMATION_DURATION_MS = 650;
+const GPS_STATIONARY_THRESHOLD_METERS = 8;
+const GPS_MAX_JUMP_METERS = 80;
+const GPS_MIN_ACCURACY_METERS = 60;
 
 /**
- * GPS filtering.
- *
- * GPS trên điện thoại không phải lúc nào cũng chính xác tuyệt đối.
- * Khi đứng yên, tọa độ có thể dao động vài mét.
- *
- * Các giá trị dưới đây dùng để chống "GPS drift".
+ * Animation marker
  */
-const STATIONARY_SPEED_THRESHOLD_MS = 0.8;
-const MIN_MOVEMENT_THRESHOLD_METERS = 2.5;
-const ACCURACY_MULTIPLIER = 0.6;
+const MARKER_ANIMATION_DURATION_MS = 700;
 
 /**
- * Không cho GPS có accuracy quá tệ kéo marker đi lung tung.
- *
- * 50m vẫn có thể xảy ra ở khu vực GPS yếu.
+ * Camera chỉ update tối đa khoảng 10 lần / giây.
  */
-const MAX_ACCEPTABLE_ACCURACY_METERS = 50;
+const CAMERA_UPDATE_INTERVAL_MS = 100;
 
 /**
- * Smoothing khi đang di chuyển.
+ * Lấy chiều cao màn hình hiện tại để tính padding.
  */
-const MOVING_POSITION_SMOOTHING = 0.45;
-
-/**
- * Smoothing heading.
- */
-const MOVING_HEADING_SMOOTHING = 0.3;
+const screenHeight = typeof window !== "undefined" ? window.innerHeight : 800;
 
 export function useNavigationTracking(
   map: MapLibreMap | null,
@@ -153,55 +151,64 @@ export function useNavigationTracking(
 
   const userMarkerRef = useRef<Marker | null>(null);
 
+  /**
+   * Đảm bảo marker chỉ được add vào map một lần.
+   */
+  const markerMountedRef = useRef(false);
+
   const currentHeadingRef = useRef<number>(0);
 
   /**
-   * ============================================================
-   * SMOOTHING / GPS FILTER
-   * ============================================================
+   * GPS smoothing
    */
-
   const smoothedLatRef = useRef<number | null>(null);
-
   const smoothedLonRef = useRef<number | null>(null);
-
   const smoothedBearingRef = useRef<number | null>(null);
 
   /**
-   * Vị trí GPS raw cuối cùng.
+   * GPS thực tế gần nhất được chấp nhận.
    */
-  const lastRawLatRef = useRef<number | null>(null);
-
-  const lastRawLonRef = useRef<number | null>(null);
+  const lastAcceptedGpsRef = useRef<{
+    lat: number;
+    lon: number;
+    accuracy: number;
+    timestamp: number;
+  } | null>(null);
 
   /**
-   * Thời điểm GPS cuối cùng.
+   * Vị trí marker đang hiển thị.
    */
-  const lastGpsTimestampRef = useRef<number | null>(null);
+  const displayedPositionRef = useRef<{
+    lat: number;
+    lon: number;
+    heading: number;
+  } | null>(null);
 
   /**
-   * Camera update.
+   * Animation marker.
+   */
+  const markerAnimationFrameRef = useRef<number | null>(null);
+
+  const markerAnimationStartRef = useRef<{
+    lat: number;
+    lon: number;
+    heading: number;
+  } | null>(null);
+
+  const markerAnimationTargetRef = useRef<{
+    lat: number;
+    lon: number;
+    heading: number;
+  } | null>(null);
+
+  /**
+   * Camera throttle
    */
   const lastCameraUpdateRef = useRef<number>(0);
 
   /**
-   * Vị trí cuối cùng camera đã theo.
+   * Navigation
    */
-  const lastCameraLatRef = useRef<number | null>(null);
-
-  const lastCameraLonRef = useRef<number | null>(null);
-
-  /**
-   * Trạng thái đứng yên.
-   */
-  const stationaryRef = useRef(false);
-
-  /**
-   * ============================================================
-   * REROUTING
-   * ============================================================
-   */
-
   const isNavigatingRef = useRef(false);
 
   const destinationRef = useRef<NavigationDestination | null>(destination);
@@ -212,35 +219,48 @@ export function useNavigationTracking(
 
   routeOptionsRef.current = routeOptions;
 
+  /**
+   * Reroute
+   */
   const isFetchingRouteRef = useRef(false);
 
   const lastRerouteAtRef = useRef(0);
 
-  const lastReroutePosRef = useRef<{ lat: number; lon: number } | null>(null);
+  const lastReroutePosRef = useRef<{
+    lat: number;
+    lon: number;
+  } | null>(null);
 
   const rerouteRequestIdRef = useRef(0);
 
   /**
-   * ============================================================
-   * WAKE LOCK
-   * ============================================================
-   *
-   * Chỉ giữ màn hình sáng.
-   *
-   * Không phải background location service.
+   * Camera follow
    */
+  const cameraFollowEnabledRef = useRef(false);
 
+  /**
+   * Wake Lock
+   */
   const wakeLockRef = useRef<any>(null);
 
+  /**
+   * ---------------------------------------------------------
+   * WAKE LOCK
+   * ---------------------------------------------------------
+   *
+   * Giữ màn hình sáng trong lúc navigation.
+   */
   const acquireWakeLock = useCallback(async () => {
     try {
       if (typeof navigator !== "undefined" && "wakeLock" in navigator) {
-        wakeLockRef.current = await (navigator as any).wakeLock.request(
-          "screen",
-        );
+        if (!wakeLockRef.current) {
+          wakeLockRef.current = await (navigator as any).wakeLock.request(
+            "screen",
+          );
+        }
       }
-    } catch (err) {
-      console.warn("Không thể giữ màn hình sáng khi dẫn đường:", err);
+    } catch (error) {
+      console.warn("Không thể giữ màn hình sáng khi dẫn đường:", error);
     }
   }, []);
 
@@ -253,9 +273,10 @@ export function useNavigationTracking(
   }, []);
 
   /**
-   * Wake Lock bị browser release khi document hidden.
+   * iOS / Safari có thể tự release Wake Lock khi tab
+   * bị hidden.
    *
-   * Khi quay lại app thì xin lại.
+   * Khi quay lại app -> xin lại.
    */
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -272,11 +293,15 @@ export function useNavigationTracking(
   }, [acquireWakeLock]);
 
   /**
-   * ============================================================
-   * MARKER
-   * ============================================================
+   * ---------------------------------------------------------
+   * CREATE NAVIGATION ARROW
+   * ---------------------------------------------------------
+   *
+   * Khi đang chỉ đường:
+   * CHỈ tạo mũi tên.
+   *
+   * Hook này không tạo thêm chấm xanh.
    */
-
   const getOrCreateMarker = useCallback(() => {
     if (userMarkerRef.current || !map) {
       return userMarkerRef.current;
@@ -287,14 +312,19 @@ export function useNavigationTracking(
     el.className = "user-location-puck";
 
     el.innerHTML = `
-      <div style="
-        width: 84px;
-        height: 84px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.3));
-      ">
+      <div
+        style="
+          width: 84px;
+          height: 84px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          filter: drop-shadow(
+            0px 4px 6px rgba(0, 0, 0, 0.3)
+          );
+          pointer-events: none;
+        "
+      >
         <svg
           width="112"
           height="112"
@@ -307,7 +337,7 @@ export function useNavigationTracking(
             cy="16"
             r="14"
             fill="#3B82F6"
-            fill-opacity="0.25"
+            fill-opacity="0.18"
           />
 
           <path
@@ -323,54 +353,71 @@ export function useNavigationTracking(
 
     userMarkerRef.current = new maplibregl.Marker({
       element: el,
+
+      /**
+       * Mũi tên xoay theo map.
+       */
       rotationAlignment: "map",
+
       pitchAlignment: "map",
+
+      /**
+       * Cho phép pointer event đi xuyên qua marker.
+       *
+       * Quan trọng:
+       * marker không được chặn thao tác map.
+       */
+      clickTolerance: 3,
     });
 
     return userMarkerRef.current;
   }, [map]);
 
   /**
-   * ============================================================
+   * ---------------------------------------------------------
    * DEVICE ORIENTATION
-   * ============================================================
+   * ---------------------------------------------------------
    */
-
   useEffect(() => {
     const handleOrientation = (event: DeviceOrientationEvent) => {
       let compassHeading: number | null = null;
 
+      /**
+       * iOS
+       */
       if (
         "webkitCompassHeading" in event &&
         typeof (event as any).webkitCompassHeading === "number"
       ) {
         compassHeading = (event as any).webkitCompassHeading;
       } else if (event.alpha !== null) {
+        /**
+         * Android
+         */
         compassHeading = 360 - event.alpha;
       }
 
-      if (compassHeading !== null) {
-        currentHeadingRef.current = compassHeading;
+      if (compassHeading === null) {
+        return;
+      }
 
+      currentHeadingRef.current = compassHeading;
+
+      /**
+       * Khi đang navigation:
+       * heading sẽ được dùng làm hướng mũi tên.
+       */
+      if (isNavigatingRef.current && markerAnimationTargetRef.current) {
+        markerAnimationTargetRef.current = {
+          ...markerAnimationTargetRef.current,
+          heading: compassHeading,
+        };
+      } else if (userMarkerRef.current) {
         /**
-         * Không xoay marker mạnh khi người dùng
-         * đang đứng yên.
-         *
-         * Giảm hiện tượng mũi tên rung liên tục.
+         * Khi chưa navigation:
+         * vẫn giữ behavior cũ của marker.
          */
-        if (!stationaryRef.current && userMarkerRef.current) {
-          if (smoothedBearingRef.current === null) {
-            smoothedBearingRef.current = compassHeading;
-          } else {
-            smoothedBearingRef.current = smoothAngle(
-              smoothedBearingRef.current,
-              compassHeading,
-              0.12,
-            );
-          }
-
-          userMarkerRef.current.setRotation(smoothedBearingRef.current);
-        }
+        userMarkerRef.current.setRotation(compassHeading);
       }
     };
 
@@ -384,11 +431,10 @@ export function useNavigationTracking(
   }, []);
 
   /**
-   * ============================================================
+   * ---------------------------------------------------------
    * ROUTE LINE
-   * ============================================================
+   * ---------------------------------------------------------
    */
-
   useEffect(() => {
     if (!route || !route.coordinates || route.coordinates.length < 2) {
       routeLineRef.current = null;
@@ -405,11 +451,10 @@ export function useNavigationTracking(
   }, [route]);
 
   /**
-   * ============================================================
-   * REMAINING DISTANCE
-   * ============================================================
+   * ---------------------------------------------------------
+   * CALCULATE REMAINING DISTANCE
+   * ---------------------------------------------------------
    */
-
   const calculateRemainingDistance = useCallback(
     (userLat: number, userLon: number) => {
       if (!routeLineRef.current) {
@@ -480,185 +525,321 @@ export function useNavigationTracking(
   );
 
   /**
-   * ============================================================
-   * GPS POSITION FILTER
-   * ============================================================
-   *
-   * Đây là phần quan trọng nhất.
-   *
-   * GPS đứng yên vẫn có thể trả về:
-   *
-   * A
-   * A + 3m
-   * A - 2m
-   * A + 5m
-   * A - 4m
-   *
-   * Nếu đưa thẳng vào marker thì marker sẽ rung.
-   *
-   * Hàm này:
-   *
-   * 1. kiểm tra accuracy
-   * 2. xác định người dùng có đang đứng yên không
-   * 3. nếu đứng yên thì giữ marker
-   * 4. nếu di chuyển thì smoothing
+   * ---------------------------------------------------------
+   * STOP MARKER ANIMATION
+   * ---------------------------------------------------------
    */
+  const stopMarkerAnimation = useCallback(() => {
+    if (markerAnimationFrameRef.current !== null) {
+      cancelAnimationFrame(markerAnimationFrameRef.current);
 
-  const updateMarker = useCallback(
-    (
-      lng: number,
-      lat: number,
-      heading: number | null,
-      accuracy: number,
-      speed: number | null,
-    ) => {
-      if (!map) return;
+      markerAnimationFrameRef.current = null;
+    }
+  }, []);
 
+  /**
+   * ---------------------------------------------------------
+   * ANIMATE MARKER
+   * ---------------------------------------------------------
+   */
+  const animateMarkerTo = useCallback(
+    (lng: number, lat: number, heading: number) => {
       const marker = getOrCreateMarker();
 
-      if (!marker) return;
+      if (!marker || !map) {
+        return;
+      }
+
+      stopMarkerAnimation();
+
+      const current = displayedPositionRef.current ?? {
+        lat,
+        lon: lng,
+        heading,
+      };
+
+      const start = {
+        ...current,
+      };
+
+      const target = {
+        lat,
+        lon: lng,
+        heading,
+      };
+
+      markerAnimationStartRef.current = start;
+
+      markerAnimationTargetRef.current = target;
+
+      const startedAt = performance.now();
+
+      const animate = (now: number) => {
+        const elapsed = now - startedAt;
+
+        const progress = easeOutCubic(elapsed / MARKER_ANIMATION_DURATION_MS);
+
+        const currentLat = lerp(start.lat, target.lat, progress);
+
+        const currentLon = lerp(start.lon, target.lon, progress);
+
+        const currentHeading = lerpAngle(
+          start.heading,
+          target.heading,
+          progress,
+        );
+
+        displayedPositionRef.current = {
+          lat: currentLat,
+          lon: currentLon,
+          heading: currentHeading,
+        };
+
+        marker.setLngLat([currentLon, currentLat]);
+
+        marker.setRotation(currentHeading);
+
+        /**
+         * Camera follow.
+         */
+        if (isNavigatingRef.current && cameraFollowEnabledRef.current) {
+          const nowTime = Date.now();
+
+          if (
+            nowTime - lastCameraUpdateRef.current >=
+            CAMERA_UPDATE_INTERVAL_MS
+          ) {
+            lastCameraUpdateRef.current = nowTime;
+
+            map.jumpTo({
+              center: [currentLon, currentLat],
+
+              zoom: NAV_CAMERA_ZOOM,
+
+              bearing: currentHeading,
+
+              pitch: NAV_CAMERA_PITCH,
+
+              padding: {
+                top: Math.round(screenHeight * 0.33),
+                bottom: 0,
+                left: 0,
+                right: 0,
+              },
+            });
+          }
+        }
+
+        if (progress < 1 && isNavigatingRef.current) {
+          markerAnimationFrameRef.current = requestAnimationFrame(animate);
+        } else {
+          markerAnimationFrameRef.current = null;
+        }
+      };
+
+      markerAnimationFrameRef.current = requestAnimationFrame(animate);
+    },
+    [getOrCreateMarker, map, stopMarkerAnimation],
+  );
+
+  /**
+   * ---------------------------------------------------------
+   * ENSURE MARKER
+   * ---------------------------------------------------------
+   */
+  const ensureMarkerOnMap = useCallback(() => {
+    if (!map) {
+      return null;
+    }
+
+    const marker = getOrCreateMarker();
+
+    if (!marker) {
+      return null;
+    }
+
+    if (!markerMountedRef.current) {
+      marker.addTo(map);
+      markerMountedRef.current = true;
+    }
+
+    return marker;
+  }, [map, getOrCreateMarker]);
+
+  /**
+   * ---------------------------------------------------------
+   * FILTER GPS
+   * ---------------------------------------------------------
+   *
+   * Đây là phần quan trọng nhất để xử lý:
+   *
+   * "Đứng yên nhưng chấm cứ chạy xung quanh."
+   */
+  const acceptGpsPosition = useCallback(
+    (lat: number, lon: number, accuracy: number) => {
+      const previous = lastAcceptedGpsRef.current;
 
       /**
-       * Nếu accuracy quá tệ thì không dùng GPS fix này
-       * để kéo marker.
+       * GPS accuracy quá tệ.
        *
-       * Tuy nhiên vẫn giữ GPS raw cho navigation/reroute.
+       * Ví dụ accuracy = 100m thì không nên
+       * để marker nhảy theo tọa độ đó.
        */
-      const usableAccuracy = Math.min(
-        Math.max(Number.isFinite(accuracy) ? accuracy : 50, 1),
-        MAX_ACCEPTABLE_ACCURACY_METERS,
+      if (Number.isFinite(accuracy) && accuracy > GPS_MIN_ACCURACY_METERS) {
+        if (previous) {
+          return false;
+        }
+      }
+
+      if (!previous) {
+        lastAcceptedGpsRef.current = {
+          lat,
+          lon,
+          accuracy,
+          timestamp: Date.now(),
+        };
+
+        return true;
+      }
+
+      const distance = turf.distance(
+        turf.point([previous.lon, previous.lat]),
+        turf.point([lon, lat]),
+        {
+          units: "meters",
+        },
       );
 
       /**
-       * Vị trí filtered hiện tại.
+       * Nếu GPS chỉ dao động trong bán kính nhỏ
+       * -> coi như người dùng đang đứng yên.
+       *
+       * Không di chuyển marker.
        */
-      if (smoothedLatRef.current === null || smoothedLonRef.current === null) {
-        smoothedLatRef.current = lat;
-        smoothedLonRef.current = lng;
-
-        lastRawLatRef.current = lat;
-        lastRawLonRef.current = lng;
-
-        stationaryRef.current =
-          speed !== null && speed < STATIONARY_SPEED_THRESHOLD_MS;
-      } else {
-        const distanceFromFiltered = turf.distance(
-          turf.point([smoothedLonRef.current, smoothedLatRef.current]),
-          turf.point([lng, lat]),
-          {
-            units: "meters",
-          },
-        );
-
+      if (distance < GPS_STATIONARY_THRESHOLD_METERS) {
         /**
-         * Xác định đang đứng yên.
-         *
-         * Nếu GPS báo speed gần 0 và vị trí mới
-         * vẫn nằm trong vùng sai số thì coi như
-         * người dùng vẫn đứng nguyên.
+         * Nhưng vẫn cập nhật accuracy tốt hơn.
          */
-        const stationaryBySpeed =
-          speed !== null && speed >= 0 && speed < STATIONARY_SPEED_THRESHOLD_MS;
-
-        const stationaryByDistance =
-          distanceFromFiltered <=
-          Math.max(
-            MIN_MOVEMENT_THRESHOLD_METERS,
-            usableAccuracy * ACCURACY_MULTIPLIER,
-          );
-
-        const isStationary = stationaryBySpeed && stationaryByDistance;
-
-        stationaryRef.current = isStationary;
-
-        if (!isStationary) {
-          /**
-           * Khi đang di chuyển:
-           *
-           * GPS tốt → phản hồi nhanh hơn.
-           * GPS kém → smoothing mạnh hơn.
-           */
-          const accuracyFactor = clamp(
-            1 - (usableAccuracy / 50) * 0.5,
-            0.2,
-            0.7,
-          );
-
-          const smoothingFactor = Math.min(
-            MOVING_POSITION_SMOOTHING,
-            accuracyFactor,
-          );
-
-          smoothedLatRef.current = smoothValue(
-            smoothedLatRef.current,
-            lat,
-            smoothingFactor,
-          );
-
-          smoothedLonRef.current = smoothValue(
-            smoothedLonRef.current,
-            lng,
-            smoothingFactor,
-          );
+        if (accuracy < previous.accuracy) {
+          lastAcceptedGpsRef.current = {
+            ...previous,
+            accuracy,
+          };
         }
 
-        lastRawLatRef.current = lat;
-        lastRawLonRef.current = lng;
+        return false;
       }
 
       /**
-       * Heading.
-       *
-       * Khi đứng yên GPS heading thường không đáng tin.
-       * Vì vậy không liên tục quay mũi tên theo GPS noise.
+       * Nếu GPS nhảy quá xa trong một lần
+       * update -> khả năng cao là GPS outlier.
+       */
+      const timeDiff = Date.now() - previous.timestamp;
+
+      /**
+       * Nếu update rất nhanh mà nhảy > 80m
+       * thì bỏ qua.
+       */
+      if (distance > GPS_MAX_JUMP_METERS && timeDiff < 5000) {
+        return false;
+      }
+
+      lastAcceptedGpsRef.current = {
+        lat,
+        lon,
+        accuracy,
+        timestamp: Date.now(),
+      };
+
+      return true;
+    },
+    [],
+  );
+
+  /**
+   * ---------------------------------------------------------
+   * UPDATE MARKER
+   * ---------------------------------------------------------
+   */
+  const updateMarker = useCallback(
+    (lng: number, lat: number, heading: number | null, accuracy: number) => {
+      if (!map) {
+        return;
+      }
+
+      const accepted = acceptGpsPosition(lat, lng, accuracy);
+
+      /**
+       * GPS nhiễu -> không di chuyển marker.
+       */
+      if (!accepted) {
+        return;
+      }
+
+      const marker = ensureMarkerOnMap();
+
+      if (!marker) {
+        return;
+      }
+
+      /**
+       * Smooth heading.
        */
       const effectiveHeading = heading ?? currentHeadingRef.current ?? 0;
 
       if (smoothedBearingRef.current === null) {
         smoothedBearingRef.current = effectiveHeading;
-      } else if (!stationaryRef.current) {
+      } else {
         smoothedBearingRef.current = smoothAngle(
           smoothedBearingRef.current,
           effectiveHeading,
-          MOVING_HEADING_SMOOTHING,
+          0.35,
         );
       }
 
       /**
-       * Đặt marker.
+       * Smooth coordinate.
        */
-      marker.setLngLat([smoothedLonRef.current, smoothedLatRef.current]);
+      if (smoothedLatRef.current === null || smoothedLonRef.current === null) {
+        smoothedLatRef.current = lat;
 
-      marker.setRotation(smoothedBearingRef.current);
+        smoothedLonRef.current = lng;
+      } else {
+        smoothedLatRef.current = smoothValue(smoothedLatRef.current, lat, 0.35);
+
+        smoothedLonRef.current = smoothValue(smoothedLonRef.current, lng, 0.35);
+      }
+
+      const targetLat = smoothedLatRef.current;
+
+      const targetLon = smoothedLonRef.current;
+
+      const targetHeading = smoothedBearingRef.current;
+
+      if (targetLat === null || targetLon === null || targetHeading === null) {
+        return;
+      }
 
       /**
-       * MapLibre Marker chỉ cần add một lần.
+       * Animation marker thay vì nhảy trực tiếp.
        */
-      if (!marker.getElement().parentElement) {
-        marker.addTo(map);
-      }
+      animateMarkerTo(targetLon, targetLat, targetHeading);
     },
-    [map, getOrCreateMarker],
+    [map, acceptGpsPosition, ensureMarkerOnMap, animateMarkerTo],
   );
 
   /**
-   * clamp helper.
-   */
-  function clamp(value: number, min: number, max: number) {
-    return Math.min(Math.max(value, min), max);
-  }
-
-  /**
-   * ============================================================
+   * ---------------------------------------------------------
    * REROUTE
-   * ============================================================
+   * ---------------------------------------------------------
    */
-
   const performReroute = useCallback(
     async (userLat: number, userLon: number) => {
       const dest = destinationRef.current;
 
-      if (!dest) return;
+      if (!dest) {
+        return;
+      }
 
       if (isFetchingRouteRef.current) {
         return;
@@ -686,6 +867,10 @@ export function useNavigationTracking(
           routeOptionsRef.current,
         );
 
+        /**
+         * Nếu đã có request mới hơn hoặc user
+         * đã stop navigation -> bỏ kết quả.
+         */
         if (
           requestId !== rerouteRequestIdRef.current ||
           !isNavigatingRef.current
@@ -724,11 +909,10 @@ export function useNavigationTracking(
   );
 
   /**
-   * ============================================================
+   * ---------------------------------------------------------
    * MAYBE REROUTE
-   * ============================================================
+   * ---------------------------------------------------------
    */
-
   const maybeReroute = useCallback(
     (userLat: number, userLon: number, isOffRoute: boolean) => {
       if (!destinationRef.current) {
@@ -765,124 +949,18 @@ export function useNavigationTracking(
   );
 
   /**
-   * ============================================================
-   * CAMERA
-   * ============================================================
-   *
-   * Camera sử dụng vị trí đã lọc.
-   *
-   * Không dùng GPS raw để camera chạy theo.
-   *
-   * Điều này rất quan trọng để tránh:
-   *
-   * GPS noise → camera rung → map rung.
-   */
-
-  const updateNavigationCamera = useCallback(
-    (heading: number | null) => {
-      if (!map) return;
-
-      if (!isNavigatingRef.current) {
-        return;
-      }
-
-      /**
-       * Nếu đang đứng yên thì không cần
-       * liên tục animate camera.
-       */
-      if (stationaryRef.current) {
-        return;
-      }
-
-      const lat = smoothedLatRef.current;
-
-      const lon = smoothedLonRef.current;
-
-      if (lat === null || lon === null) {
-        return;
-      }
-
-      const now = Date.now();
-
-      /**
-       * Throttle camera.
-       */
-      if (now - lastCameraUpdateRef.current < CAMERA_UPDATE_INTERVAL_MS) {
-        return;
-      }
-
-      /**
-       * Nếu marker gần như chưa di chuyển
-       * thì camera cũng không cần chạy.
-       */
-      if (
-        lastCameraLatRef.current !== null &&
-        lastCameraLonRef.current !== null
-      ) {
-        const cameraDistance = turf.distance(
-          turf.point([lastCameraLonRef.current, lastCameraLatRef.current]),
-          turf.point([lon, lat]),
-          {
-            units: "meters",
-          },
-        );
-
-        if (cameraDistance < 2) {
-          return;
-        }
-      }
-
-      lastCameraUpdateRef.current = now;
-
-      lastCameraLatRef.current = lat;
-
-      lastCameraLonRef.current = lon;
-
-      const targetBearing =
-        smoothedBearingRef.current ?? heading ?? currentHeadingRef.current ?? 0;
-
-      /**
-       * duration < interval.
-       *
-       * Không để animation camera chồng nhau.
-       */
-      map.easeTo({
-        center: [lon, lat],
-        zoom: NAV_CAMERA_ZOOM,
-        bearing: targetBearing,
-        pitch: NAV_CAMERA_PITCH,
-
-        duration: CAMERA_ANIMATION_DURATION_MS,
-
-        padding: {
-          top: Math.round(screenHeight * 0.33),
-          bottom: 0,
-          left: 0,
-          right: 0,
-        },
-
-        essential: true,
-      });
-    },
-    [map],
-  );
-
-  /**
-   * ============================================================
+   * ---------------------------------------------------------
    * START NAVIGATION
-   * ============================================================
+   * ---------------------------------------------------------
    */
-
   const startNavigation = useCallback(() => {
     if (!navigator.geolocation) {
       alert("Trình duyệt không hỗ trợ GPS");
-
       return;
     }
 
     if (!route) {
       alert("Chưa có lộ trình để điều hướng");
-
       return;
     }
 
@@ -897,20 +975,39 @@ export function useNavigationTracking(
     }
 
     /**
-     * Reset navigation.
+     * Bắt đầu navigation NGAY.
      */
     setState((prev) => ({
       ...prev,
+
       isNavigating: true,
+
+      /**
+       * QUAN TRỌNG:
+       *
+       * Route đã được tìm thấy từ trước.
+       *
+       * Không chờ API reroute mới bắt đầu
+       * chỉ đường.
+       */
+      liveRoute: route,
+
+      isRerouting: false,
     }));
 
     isNavigatingRef.current = true;
 
+    /**
+     * Reset reroute.
+     */
     lastRerouteAtRef.current = 0;
+
     lastReroutePosRef.current = null;
 
+    rerouteRequestIdRef.current += 1;
+
     /**
-     * Reset smoothing.
+     * Reset GPS smoothing.
      */
     smoothedLatRef.current = null;
 
@@ -918,19 +1015,11 @@ export function useNavigationTracking(
 
     smoothedBearingRef.current = null;
 
-    lastRawLatRef.current = null;
+    lastAcceptedGpsRef.current = null;
 
-    lastRawLonRef.current = null;
-
-    lastGpsTimestampRef.current = null;
-
-    stationaryRef.current = false;
+    displayedPositionRef.current = null;
 
     lastCameraUpdateRef.current = 0;
-
-    lastCameraLatRef.current = null;
-
-    lastCameraLonRef.current = null;
 
     /**
      * Giữ màn hình sáng.
@@ -938,38 +1027,38 @@ export function useNavigationTracking(
     void acquireWakeLock();
 
     /**
-     * ========================================================
-     * FIRST GPS FIX
-     * ========================================================
+     * -----------------------------------------------------
+     * INITIAL GPS
+     * -----------------------------------------------------
      */
-
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const { latitude, longitude, heading, accuracy, speed } =
-          position.coords;
+        const { latitude, longitude, heading, accuracy } = position.coords;
 
+        /**
+         * Route đã có sẵn -> tính thông tin
+         * trên route hiện tại ngay lập tức.
+         */
         const remaining = calculateRemainingDistance(latitude, longitude);
 
-        updateMarker(longitude, latitude, heading, accuracy, speed);
+        updateMarker(longitude, latitude, heading, accuracy);
 
+        /**
+         * Camera ban đầu.
+         *
+         * Không đợi reroute API.
+         */
         if (map) {
           map.flyTo({
-            center: [
-              smoothedLonRef.current ?? longitude,
-              smoothedLatRef.current ?? latitude,
-            ],
+            center: [longitude, latitude],
 
             zoom: NAV_CAMERA_ZOOM,
 
             pitch: NAV_CAMERA_PITCH,
 
-            bearing:
-              smoothedBearingRef.current ??
-              heading ??
-              currentHeadingRef.current ??
-              0,
+            bearing: heading ?? currentHeadingRef.current ?? 0,
 
-            duration: 800,
+            duration: 500,
 
             padding: {
               top: Math.round(screenHeight * 0.33),
@@ -977,9 +1066,17 @@ export function useNavigationTracking(
               left: 0,
               right: 0,
             },
-
-            essential: true,
           });
+
+          /**
+           * Sau khi flyTo hoàn thành,
+           * camera bắt đầu follow GPS.
+           */
+          setTimeout(() => {
+            if (isNavigatingRef.current) {
+              cameraFollowEnabledRef.current = true;
+            }
+          }, 550);
         }
 
         setState((prev) => ({
@@ -1002,85 +1099,127 @@ export function useNavigationTracking(
         }));
 
         /**
-         * Reroute vẫn dùng GPS raw.
+         * -------------------------------------------------
+         * REROUTE CHẠY NỀN
+         * -------------------------------------------------
          *
-         * Không dùng vị trí smoothed.
+         * Người dùng đã thấy route ngay.
          *
-         * Như vậy không làm thay đổi logic
-         * tính lại route của hệ thống.
+         * API chỉ cập nhật route mới ở background.
          */
         void performReroute(latitude, longitude);
       },
-
       (error) => {
         console.warn("Lỗi lấy vị trí ban đầu:", error);
       },
-
       {
         enableHighAccuracy: true,
 
-        timeout: 10000,
+        timeout: 5000,
 
         /**
-         * Cho phép lấy cache rất gần đây.
+         * Không dùng cache cũ cho initial fix.
          */
-        maximumAge: 1000,
+        maximumAge: 0,
       },
     );
 
     /**
-     * ========================================================
+     * -----------------------------------------------------
      * WATCH GPS
-     * ========================================================
+     * -----------------------------------------------------
      */
-
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
     }
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
-        const { latitude, longitude, heading, accuracy, speed } =
-          position.coords;
+        if (!isNavigatingRef.current) {
+          return;
+        }
+
+        const { latitude, longitude, heading, accuracy } = position.coords;
+
+        /**
+         * Kiểm tra GPS trước.
+         *
+         * updateMarker tự bỏ GPS nhiễu.
+         */
+        const previousGps = lastAcceptedGpsRef.current;
+
+        const previousLat = previousGps?.lat;
+
+        const previousLon = previousGps?.lon;
+
+        let shouldUpdateState = true;
+
+        /**
+         * Nếu GPS thay đổi rất nhỏ,
+         * coi như người dùng đứng yên.
+         */
+        if (previousLat !== undefined && previousLon !== undefined) {
+          const distance = turf.distance(
+            turf.point([previousLon, previousLat]),
+            turf.point([longitude, latitude]),
+            {
+              units: "meters",
+            },
+          );
+
+          if (distance < GPS_STATIONARY_THRESHOLD_METERS) {
+            shouldUpdateState = false;
+          }
+        }
+
+        /**
+         * update marker.
+         *
+         * Hàm này tự:
+         * - loại GPS noise
+         * - smooth tọa độ
+         * - smooth heading
+         * - animate marker
+         */
+        updateMarker(longitude, latitude, heading, accuracy);
 
         const remaining = calculateRemainingDistance(latitude, longitude);
 
         /**
-         * Marker sử dụng filtered position.
-         */
-        updateMarker(longitude, latitude, heading, accuracy, speed);
-
-        /**
-         * Camera cũng sử dụng filtered position.
-         */
-        updateNavigationCamera(heading);
-
-        /**
-         * State vẫn cập nhật GPS raw.
+         * Nếu đứng yên:
          *
-         * Không thay đổi logic dữ liệu navigation.
+         * Không cần liên tục setState vị trí
+         * để tránh render dư thừa.
          */
-        setState((prev) => ({
-          ...prev,
+        if (shouldUpdateState) {
+          setState((prev) => ({
+            ...prev,
 
-          userLocation: {
-            lat: latitude,
-            lon: longitude,
-            heading,
-            accuracy,
-          },
+            userLocation: {
+              lat: latitude,
+              lon: longitude,
+              heading,
+              accuracy,
+            },
 
-          distanceToDestination: remaining?.distanceToDestination ?? null,
+            distanceToDestination:
+              remaining?.distanceToDestination ?? prev.distanceToDestination,
 
-          estimatedTimeRemaining: remaining?.estimatedTimeRemaining ?? null,
+            estimatedTimeRemaining:
+              remaining?.estimatedTimeRemaining ?? prev.estimatedTimeRemaining,
 
-          nearestPointOnRoute: remaining?.nearestPointOnRoute ?? null,
+            nearestPointOnRoute:
+              remaining?.nearestPointOnRoute ?? prev.nearestPointOnRoute,
 
-          isOffRoute: remaining?.isOffRoute ?? false,
-        }));
+            isOffRoute: remaining?.isOffRoute ?? prev.isOffRoute,
+          }));
+        }
 
         /**
-         * Reroute vẫn dùng vị trí raw.
+         * Reroute theo vị trí.
+         *
+         * Không reroute từng GPS tick.
+         * maybeReroute tự throttle.
          */
         maybeReroute(latitude, longitude, remaining?.isOffRoute ?? false);
       },
@@ -1096,21 +1235,16 @@ export function useNavigationTracking(
       },
 
       {
-        /**
-         * Yêu cầu GPS tốt nhất mà browser
-         * có thể cung cấp.
-         */
         enableHighAccuracy: true,
 
-        timeout: 15000,
+        timeout: 10000,
 
         /**
-         * Cho phép sử dụng GPS fix gần đây.
+         * Cho phép dùng GPS cache rất gần.
          *
-         * 1000ms giúp giảm tình trạng chờ
-         * GPS mới quá lâu trên mobile.
+         * Không dùng cache quá cũ.
          */
-        maximumAge: 1000,
+        maximumAge: 2000,
       },
     );
   }, [
@@ -1118,19 +1252,20 @@ export function useNavigationTracking(
     route,
     calculateRemainingDistance,
     updateMarker,
-    updateNavigationCamera,
     performReroute,
     maybeReroute,
     acquireWakeLock,
   ]);
 
   /**
-   * ============================================================
+   * ---------------------------------------------------------
    * STOP NAVIGATION
-   * ============================================================
+   * ---------------------------------------------------------
    */
-
   const stopNavigation = useCallback(() => {
+    /**
+     * Stop GPS.
+     */
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
 
@@ -1138,13 +1273,20 @@ export function useNavigationTracking(
     }
 
     /**
-     * Remove marker.
+     * Stop marker animation.
+     */
+    stopMarkerAnimation();
+
+    /**
+     * Remove navigation arrow.
      */
     if (userMarkerRef.current) {
       userMarkerRef.current.remove();
 
       userMarkerRef.current = null;
     }
+
+    markerMountedRef.current = false;
 
     /**
      * Reset smoothing.
@@ -1155,25 +1297,31 @@ export function useNavigationTracking(
 
     smoothedBearingRef.current = null;
 
-    lastRawLatRef.current = null;
+    lastAcceptedGpsRef.current = null;
 
-    lastRawLonRef.current = null;
+    displayedPositionRef.current = null;
 
-    lastGpsTimestampRef.current = null;
+    markerAnimationStartRef.current = null;
 
-    stationaryRef.current = false;
+    markerAnimationTargetRef.current = null;
 
     lastCameraUpdateRef.current = 0;
 
-    lastCameraLatRef.current = null;
-
-    lastCameraLonRef.current = null;
+    cameraFollowEnabledRef.current = false;
 
     /**
-     * Hủy reroute.
+     * Release Wake Lock.
+     */
+    releaseWakeLock();
+
+    /**
+     * Reset navigation.
      */
     isNavigatingRef.current = false;
 
+    /**
+     * Cancel pending reroute.
+     */
     rerouteRequestIdRef.current += 1;
 
     isFetchingRouteRef.current = false;
@@ -1183,10 +1331,8 @@ export function useNavigationTracking(
     lastReroutePosRef.current = null;
 
     /**
-     * Trả lại quyền tự khóa màn hình.
+     * Reset state.
      */
-    releaseWakeLock();
-
     setState({
       isNavigating: false,
 
@@ -1206,44 +1352,58 @@ export function useNavigationTracking(
     });
 
     /**
-     * Trả camera về trạng thái map bình thường.
+     * Trả camera về trạng thái bình thường.
      */
     if (map) {
       map.easeTo({
         bearing: 0,
+
         pitch: 0,
+
         duration: 800,
+
+        padding: {
+          top: 0,
+          bottom: 0,
+          left: 0,
+          right: 0,
+        },
       });
     }
-  }, [map, releaseWakeLock]);
+  }, [map, releaseWakeLock, stopMarkerAnimation]);
 
   /**
-   * ============================================================
+   * ---------------------------------------------------------
    * CLEANUP
-   * ============================================================
+   * ---------------------------------------------------------
    */
-
   useEffect(() => {
     return () => {
+      isNavigatingRef.current = false;
+
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
+
+        watchIdRef.current = null;
       }
+
+      stopMarkerAnimation();
 
       if (userMarkerRef.current) {
         userMarkerRef.current.remove();
+
+        userMarkerRef.current = null;
       }
+
+      markerMountedRef.current = false;
 
       if (wakeLockRef.current) {
         wakeLockRef.current.release?.().catch(() => {});
+
+        wakeLockRef.current = null;
       }
     };
-  }, []);
-
-  /**
-   * ============================================================
-   * RETURN
-   * ============================================================
-   */
+  }, [stopMarkerAnimation]);
 
   return {
     ...state,
