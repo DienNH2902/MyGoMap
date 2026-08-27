@@ -128,6 +128,19 @@ export function useNavigationTracking(
     null,
   );
 
+  // --- Dead-reckoning (ngoại suy chuyển động giữa 2 lần định vị GPS) ---
+  // Trình duyệt/GPS không bắn tọa độ đều đặn theo khung hình (có khi 1-5
+  // giây mới có một lần), nên nếu chỉ chờ tín hiệu mới rồi mới di chuyển
+  // marker thì chấm định vị sẽ "đứng khựng" giữa 2 lần rồi giật một phát khi
+  // có fix mới. Các ref dưới đây lưu vận tốc + hướng di chuyển THỰC (suy ra
+  // từ GPS) tại lần fix gần nhất, để vòng lặp animateMarker có thể tự đẩy vị
+  // trí MỤC TIÊU tiến tiếp theo thời gian thực giữa các lần fix — đúng kỹ
+  // thuật Google Maps/TomTom dùng để tạo cảm giác "trôi" liên tục.
+  const lastFixAtRef = useRef<number>(0);
+  const extrapolationSpeedRef = useRef<number>(0); // m/s, 0 = không ngoại suy
+  const extrapolationBearingRef = useRef<number | null>(null);
+  const lastAnimFrameTimeRef = useRef<number>(0);
+
   // --- Trạng thái phục vụ việc "tính lại lộ trình theo vị trí hiện tại" ---
   const isNavigatingRef = useRef(false);
   const destinationRef = useRef<NavigationDestination | null>(destination);
@@ -369,6 +382,64 @@ export function useNavigationTracking(
       return;
     }
 
+    // ============================================================
+    // DEAD-RECKONING: đẩy vị trí MỤC TIÊU (smoothed) tiến thêm theo vận
+    // tốc/hướng di chuyển thực gần nhất, dựa trên thời gian thực trôi qua kể
+    // từ khung hình trước — để marker tiếp tục "trôi" mượt trong lúc chờ tín
+    // hiệu GPS tiếp theo, thay vì đứng yên tại điểm cũ rồi giật khi có fix
+    // mới. Chỉ áp dụng khi: (1) thực sự đang di chuyển đủ nhanh, và (2) lần
+    // fix GPS gần nhất chưa quá cũ (tránh trôi lung tung nếu mất tín hiệu
+    // lâu, ví dụ vào hầm/khuất sóng).
+    const nowMs = Date.now();
+    const frameDtSeconds = lastAnimFrameTimeRef.current
+      ? (nowMs - lastAnimFrameTimeRef.current) / 1000
+      : 0;
+    lastAnimFrameTimeRef.current = nowMs;
+
+    const msSinceLastFix = lastFixAtRef.current
+      ? nowMs - lastFixAtRef.current
+      : Infinity;
+
+    const canExtrapolate =
+      extrapolationSpeedRef.current > 0.6 &&
+      extrapolationBearingRef.current !== null &&
+      msSinceLastFix < 4000 &&
+      frameDtSeconds > 0 &&
+      frameDtSeconds < 0.5; // bỏ qua khung hình bất thường (tab bị ẩn/lag nặng)
+
+    if (
+      canExtrapolate &&
+      smoothedLatRef.current !== null &&
+      smoothedLonRef.current !== null
+    ) {
+      const distanceKm =
+        (extrapolationSpeedRef.current * frameDtSeconds) / 1000;
+
+      if (distanceKm > 0) {
+        try {
+          const advanced = turf.destination(
+            turf.point([smoothedLonRef.current, smoothedLatRef.current]),
+            distanceKm,
+            extrapolationBearingRef.current as number,
+            { units: "kilometers" },
+          );
+          const [advancedLon, advancedLat] = advanced.geometry.coordinates;
+
+          if (
+            typeof advancedLon === "number" &&
+            typeof advancedLat === "number" &&
+            Number.isFinite(advancedLon) &&
+            Number.isFinite(advancedLat)
+          ) {
+            smoothedLonRef.current = advancedLon;
+            smoothedLatRef.current = advancedLat;
+          }
+        } catch {
+          // ignore lỗi ngoại suy, giữ nguyên vị trí mục tiêu hiện tại
+        }
+      }
+    }
+
     const targetLat = smoothedLatRef.current;
     const targetLon = smoothedLonRef.current;
     const targetBearing = smoothedBearingRef.current;
@@ -524,6 +595,20 @@ export function useNavigationTracking(
           effectiveHeading,
           0.2,
         );
+      }
+
+      // Ghi lại thời điểm + vận tốc/hướng của lần fix GPS này, để vòng lặp
+      // animateMarker (dead-reckoning ở trên) biết còn nên ngoại suy tiếp
+      // hay không, và ngoại suy theo hướng nào. Chỉ coi là "đang di chuyển
+      // thật" khi GPS heading đáng tin (cùng điều kiện với bước 3 ở trên) —
+      // nếu không, đặt speed về 0 để animateMarker không tự trôi lung tung
+      // lúc người dùng đứng yên.
+      lastFixAtRef.current = now;
+      if (isMovingFastEnoughForGpsHeading) {
+        extrapolationSpeedRef.current = speed ?? 0;
+        extrapolationBearingRef.current = effectiveHeading;
+      } else {
+        extrapolationSpeedRef.current = 0;
       }
 
       // ============================================================
@@ -859,6 +944,13 @@ export function useNavigationTracking(
     renderedLonRef.current = null;
     renderedBearingRef.current = null;
     lastRawFixRef.current = null;
+
+    // Reset trạng thái dead-reckoning để lần navigate tiếp theo không bị
+    // ngoại suy nhầm theo vận tốc/hướng của lần chạy trước.
+    lastFixAtRef.current = 0;
+    extrapolationSpeedRef.current = 0;
+    extrapolationBearingRef.current = null;
+    lastAnimFrameTimeRef.current = 0;
 
     // Hủy mọi kết quả tính-lại-lộ-trình đang bay về, và reset toàn bộ trạng
     // thái rerouting để lần navigate tiếp theo bắt đầu sạch sẽ.
