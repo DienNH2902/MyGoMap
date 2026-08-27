@@ -402,29 +402,31 @@ export function RoutePlannerPanel({
                 </div>
               )}
 
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 pt-2 lg:pt-0">
+              <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center sm:justify-end lg:pt-0">
                 {planner.isLoading && (
-                  <div className="flex w-full items-center justify-center sm:w-auto scale-75 sm:scale-100 origin-center">
+                  <div className="flex w-full items-center justify-center scale-75 sm:w-auto sm:scale-100 origin-center">
                     <LoadingSpinner label="Đang tính lộ trình…" />
                   </div>
                 )}
-                <Button
-                  variant="ghost"
-                  type="button"
-                  onClick={planner.reset}
-                  className="border border-ink/10 bg-black/20 text-cream/90 hover:bg-white/10 flex-1 sm:flex-initial"
-                >
-                  Đặt lại
-                </Button>
-                <Button
-                  variant="primary"
-                  type="button"
-                  disabled={!canPlan}
-                  onClick={() => void planner.planTrip()}
-                  className="flex-1 sm:flex-initial "
-                >
-                  Bắt đầu
-                </Button>
+                <div className="flex w-full items-center gap-2 sm:w-auto">
+                  <Button
+                    variant="ghost"
+                    type="button"
+                    onClick={planner.reset}
+                    className="flex-1 border border-ink/10 bg-black/20 text-cream/90 hover:bg-white/10 sm:flex-initial"
+                  >
+                    Đặt lại
+                  </Button>
+                  <Button
+                    variant="primary"
+                    type="button"
+                    disabled={!canPlan}
+                    onClick={() => void planner.planTrip()}
+                    className="flex-1 sm:flex-initial"
+                  >
+                    Bắt đầu
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
