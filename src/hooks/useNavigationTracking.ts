@@ -43,6 +43,32 @@ function smoothAngle(
   return result;
 }
 
+/**
+ * Ghép toạ độ đoạn đường CÒN LẠI (đã cắt cục bộ ở client, KHÔNG cần gọi API)
+ * vào một RouteGeometry để hiển thị ngay. Dùng ngay mỗi lần có tín hiệu GPS
+ * thay vì chỉ chờ performReroute() (gọi API, chỉ chạy mỗi 8-25s) mới cập
+ * nhật line — đây là lý do trước đây mũi tên đã đi qua một điểm rồi mà
+ * đường vẽ vẫn "quay ngược" về điểm đó: line chỉ cập nhật theo nhịp API,
+ * không theo nhịp GPS (vốn nhanh hơn nhiều).
+ */
+function buildTrimmedLiveRoute(
+  fallback: RouteGeometry | null,
+  remainingCoordinates: [number, number][] | undefined,
+  distanceToDestination: number | null,
+  estimatedTimeRemaining: number | null,
+): RouteGeometry | null {
+  if (!remainingCoordinates || remainingCoordinates.length < 2) {
+    return fallback;
+  }
+
+  return {
+    ...(fallback ?? { distanceKm: 0, durationMinutes: 0, coordinates: [] }),
+    coordinates: remainingCoordinates,
+    distanceKm: distanceToDestination ?? fallback?.distanceKm ?? 0,
+    durationMinutes: estimatedTimeRemaining ?? fallback?.durationMinutes ?? 0,
+  };
+}
+
 /** Điểm đến cố định của chuyến đi (đích cuối cùng) — dùng để tính lại lộ
  * trình từ vị trí hiện tại của người dùng, chứ không phải điểm cuối tĩnh của
  * route đã lên kế hoạch trước đó. */
@@ -377,6 +403,13 @@ export function useNavigationTracking(
             number,
           ],
           isOffRoute,
+          // Toạ độ đoạn đường CÒN LẠI (đã cắt sẵn từ vị trí hiện tại tới
+          // đích) — dùng để cập nhật line hiển thị ngay mỗi lần có GPS mới,
+          // không cần đợi API reroute.
+          remainingCoordinates: slicedRoute.geometry.coordinates as [
+            number,
+            number,
+          ][],
         };
       } catch (err) {
         console.error("Failed to calculate remaining distance:", err);
@@ -840,6 +873,12 @@ export function useNavigationTracking(
           estimatedTimeRemaining: remaining?.estimatedTimeRemaining ?? null,
           nearestPointOnRoute: remaining?.nearestPointOnRoute ?? null,
           isOffRoute: remaining?.isOffRoute ?? false,
+          liveRoute: buildTrimmedLiveRoute(
+            prev.liveRoute ?? route,
+            remaining?.remainingCoordinates,
+            remaining?.distanceToDestination ?? null,
+            remaining?.estimatedTimeRemaining ?? null,
+          ),
         }));
 
         // Tính ngay lộ trình THẬT từ vị trí hiện tại → điểm đến, thay vì chỉ
@@ -909,6 +948,12 @@ export function useNavigationTracking(
             estimatedTimeRemaining: remaining?.estimatedTimeRemaining ?? null,
             nearestPointOnRoute: remaining?.nearestPointOnRoute ?? null,
             isOffRoute: remaining?.isOffRoute ?? false,
+            liveRoute: buildTrimmedLiveRoute(
+              prev.liveRoute ?? route,
+              remaining?.remainingCoordinates,
+              remaining?.distanceToDestination ?? null,
+              remaining?.estimatedTimeRemaining ?? null,
+            ),
           };
         });
 
