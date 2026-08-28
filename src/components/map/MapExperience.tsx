@@ -454,7 +454,11 @@ export function MapExperience() {
       )}
 
       {planner.plan && (
-        <RouteStatsBar route={planner.plan.route} stops={planner.plan.stops} />
+        <RouteStatsBar
+          route={planner.plan.route}
+          stops={planner.plan.stops}
+          isNavigating={navigation.isNavigating}
+        />
       )}
 
       <StopDetailDrawer

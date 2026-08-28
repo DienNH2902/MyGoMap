@@ -9,6 +9,7 @@ const STORAGE_KEY_GENDER = "mygomap_user_gender";
 interface RouteStatsBarProps {
   route: RouteGeometry;
   stops: RouteStop[];
+  isNavigating?: boolean;
 }
 
 /** Formats a minute count as "X giờ Y phút" or just "Y phút" when under an hour. */
@@ -19,7 +20,11 @@ function formatDuration(minutes: number): string {
 }
 
 /** Floating stat cards summarizing the current trip with dynamic accent colors. */
-export function RouteStatsBar({ route, stops }: RouteStatsBarProps) {
+export function RouteStatsBar({
+  route,
+  stops,
+  isNavigating = false,
+}: RouteStatsBarProps) {
   const [gender, setGender] = useState<GenderTheme>("nam");
 
   useEffect(() => {
@@ -39,6 +44,8 @@ export function RouteStatsBar({ route, stops }: RouteStatsBarProps) {
   const hasTrafficDelay =
     typeof route.trafficDelayMinutes === "number" &&
     route.trafficDelayMinutes > 0;
+
+    if (isNavigating) return null;
 
   return (
     <div className="pointer-events-none absolute left-2 right-2 top-2 z-30 flex flex-wrap justify-end gap-1.5 sm:left-auto sm:right-4 sm:top-4 sm:flex-nowrap sm:gap-2 max-w-[calc(100vw-1rem)] sm:max-w-none">
