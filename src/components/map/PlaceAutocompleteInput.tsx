@@ -13,6 +13,7 @@ interface PlaceAutocompleteInputProps {
   onUseCurrentLocation?: () => void;
   isLocating?: boolean;
   dropdownPlacement?: "top" | "bottom";
+  userLocation?: { lat: number; lon: number } | null;
 }
 
 export function PlaceAutocompleteInput({
@@ -23,6 +24,7 @@ export function PlaceAutocompleteInput({
   onUseCurrentLocation,
   isLocating = false,
   dropdownPlacement = "top",
+  userLocation,
 }: PlaceAutocompleteInputProps) {
   const [query, setQuery] = useState(value?.label ?? "");
   const [results, setResults] = useState<PlaceResult[]>([]);
@@ -40,14 +42,28 @@ export function PlaceAutocompleteInput({
 
     async function runSearch() {
       setIsSearching(true);
-      const places = await searchPlaces(debouncedQuery, controller.signal);
-      setResults(places);
-      setIsSearching(false);
+      try {
+        const places = await searchPlaces(
+          debouncedQuery,
+          controller.signal,
+          userLocation,
+        );
+        setResults(places);
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === "AbortError") {
+          // Bỏ qua lỗi do người dùng gõ tiếp làm hủy request cũ
+          return;
+        }
+        console.error("Lỗi tìm kiếm địa điểm:", err);
+        setResults([]);
+      } finally {
+        setIsSearching(false);
+      }
     }
 
     void runSearch();
     return () => controller.abort();
-  }, [debouncedQuery, isOpen]);
+  }, [debouncedQuery, isOpen, userLocation]);
 
   return (
     <div className="relative w-full min-w-0 flex-1 sm:min-w-[200px]">

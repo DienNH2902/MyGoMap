@@ -11,6 +11,10 @@ import { MAX_CUSTOM_STOPS, POI_CATEGORIES } from "@/lib/constants";
 import { UseRoutePlannerReturn } from "@/hooks/useRoutePlanner";
 
 type GenderTheme = "nam" | "nu" | "khac";
+type UserLocation = {
+  lat: number;
+  lon: number;
+};
 const STORAGE_KEY_GENDER = "mygomap_user_gender";
 
 interface RoutePlannerPanelProps {
@@ -36,11 +40,34 @@ export function RoutePlannerPanel({
   const [isLocatingStart, setIsLocatingStart] = useState(false);
   const [isLocatingEnd, setIsLocatingEnd] = useState(false);
   const [gender, setGender] = useState<GenderTheme>("nam");
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
 
   useEffect(() => {
     const savedGender =
       (localStorage.getItem(STORAGE_KEY_GENDER) as GenderTheme) || "nam";
     setGender(savedGender);
+  }, []);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+        });
+      },
+      () => {
+        // Không làm ảnh hưởng đến chức năng tìm đường nếu người dùng
+        // không cấp quyền định vị.
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 30000,
+      },
+    );
   }, []);
 
   const getActiveStyles = () => {
@@ -214,6 +241,7 @@ export function RoutePlannerPanel({
                 onUseCurrentLocation={() => fetchCurrentLocation("start")}
                 isLocating={isLocatingStart}
                 dropdownPlacement="bottom"
+                userLocation={userLocation}
               />
               <PlaceAutocompleteInput
                 label="Điểm kết thúc"
@@ -223,6 +251,7 @@ export function RoutePlannerPanel({
                 onUseCurrentLocation={() => fetchCurrentLocation("end")}
                 isLocating={isLocatingEnd}
                 dropdownPlacement="bottom"
+                userLocation={userLocation}
               />
               {/* {planner.stopMode === "auto" && (
                 <NumberStepper
@@ -380,6 +409,7 @@ export function RoutePlannerPanel({
                             planner.updateCustomStop(index, place)
                           }
                           dropdownPlacement="bottom"
+                          userLocation={userLocation}
                         />
                         <Button
                           variant="ghost"

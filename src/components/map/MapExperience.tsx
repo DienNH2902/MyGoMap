@@ -358,7 +358,7 @@ export function MapExperience() {
 
       {/* MAP STYLE TOGGLE - MOBILE PANEL KÉO RA KÉO VÀO */}
       <div
-        className={`fixed top-[calc(var(--header-h)+3rem)] right-0 z-40 transition-transform duration-300 md:hidden ${
+        className={`fixed top-[calc(var(--header-h)+4rem)] right-0 z-40 transition-transform duration-300 md:hidden ${
           isMobileStyleOpen
             ? "translate-x-0"
             : "translate-x-[calc(100%-2.75rem)]"

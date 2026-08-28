@@ -17,6 +17,7 @@ interface NominatimItem {
 export async function searchPlaces(
   query: string,
   signal?: AbortSignal,
+  userLocation?: { lat: number; lon: number } | null,
 ): Promise<PlaceResult[]> {
   const trimmed = query.trim();
   if (trimmed.length < 2) return [];
@@ -25,22 +26,57 @@ export async function searchPlaces(
   url.searchParams.set("q", `${trimmed}*`);
   url.searchParams.set("format", "json");
   url.searchParams.set("countrycodes", "vn");
-  url.searchParams.set("limit", "5");
+  // url.searchParams.set("limit", "5");
   url.searchParams.set("accept-language", "vi");
 
   const response = await fetch(url.toString(), {
     signal,
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      // Bắt buộc đối với Nominatim Policy
+      "User-Agent": "MyGoMapApp/1.0",
+    },
   });
   if (!response.ok) return [];
 
   const items = (await response.json()) as NominatimItem[];
-  return items.map((item) => ({
+  const results = items.map((item) => ({
     id: String(item.place_id),
     label: item.display_name,
     lon: Number(item.lon),
     lat: Number(item.lat),
   }));
+
+  if (!userLocation) {
+    return results;
+  }
+
+  const toRadians = (value: number) => (value * Math.PI) / 180;
+
+  const getDistance = (lat: number, lon: number) => {
+    const earthRadius = 6371;
+
+    const dLat = toRadians(lat - userLocation.lat);
+    const dLon = toRadians(lon - userLocation.lon);
+
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRadians(userLocation.lat)) *
+        Math.cos(toRadians(lat)) *
+        Math.sin(dLon / 2) ** 2;
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return earthRadius * c;
+  };
+
+  return results
+    .map((result) => ({
+      ...result,
+      distance: getDistance(result.lat, result.lon),
+    }))
+    .sort((a, b) => a.distance - b.distance)
+    .map(({ distance: _distance, ...result }) => result);
 }
 
 interface NominatimReverseResponse {
