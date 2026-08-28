@@ -100,6 +100,17 @@ export function PlaceAutocompleteInput({
       )}
 
       <div className="relative flex items-center">
+        {hideFocusRing && (
+          <div className="pointer-events-none absolute left-3 flex items-center justify-center">
+            <svg
+              className="h-[26px] w-[26px] text-green-300"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+            </svg>
+          </div>
+        )}
         <input
           type="text"
           value={query}
@@ -112,10 +123,10 @@ export function PlaceAutocompleteInput({
           }}
           onFocus={() => setIsOpen(true)}
           onBlur={() => setTimeout(() => setIsOpen(false), 200)}
-          className={`w-full rounded-xl border border-ink/10 bg-black/30 px-4 py-2.5 pr-9 text-base text-cream placeholder:text-cream/30 transition focus:outline-none disabled:bg-black/10 disabled:text-cream/40 sm:text-sm ${
+          className={`w-full rounded-xl border border-ink/10 bg-black/30 py-2.5 pr-9 text-base text-cream placeholder:text-cream/30 transition focus:outline-none disabled:bg-black/10 disabled:text-cream/40 sm:text-sm ${
             hideFocusRing
-              ? "focus:border-white/20 placeholder:text-teal-500"
-              : "focus:border-primary focus:ring-2 focus:ring-primary/30"
+              ? "pl-10 focus:border-white/20 placeholder:text-teal-500"
+              : "px-4 focus:border-primary focus:ring-2 focus:ring-primary/30"
           }`}
         />
 

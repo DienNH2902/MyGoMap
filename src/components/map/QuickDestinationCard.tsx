@@ -69,10 +69,10 @@ export function QuickDestinationCard({
               {/* Điểm xuất phát */}
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 flex flex-col items-center">
-                  <span className="ml-[1px] h-5 w-5 rounded-full border-2 border-emerald-400 bg-emerald-400/20" />
+                  <span className="ml-[2px] h-5 w-5 rounded-full border-2 border-emerald-400 bg-emerald-400/20" />
 
                   <svg
-                    className="my-1 h-5 w-5 text-yellow-400"
+                    className="ml-0.5 h-5 w-5 text-yellow-400"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -101,7 +101,7 @@ export function QuickDestinationCard({
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 flex items-center justify-center">
                   <svg
-                    className="h-6 w-6 text-blue-400"
+                    className="h-[26px] w-[26px] text-blue-400"
                     viewBox="0 0 24 24"
                     fill="currentColor"
                   >
