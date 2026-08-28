@@ -9,12 +9,9 @@ import { LoadingSpinner } from "../ui/LoadingSpinner";
 import { useEffect, useState } from "react";
 import { MAX_CUSTOM_STOPS, POI_CATEGORIES } from "@/lib/constants";
 import { UseRoutePlannerReturn } from "@/hooks/useRoutePlanner";
+import { useUserLocationBias } from "@/hooks/useUserLocationBias";
 
 type GenderTheme = "nam" | "nu" | "khac";
-type UserLocation = {
-  lat: number;
-  lon: number;
-};
 const STORAGE_KEY_GENDER = "mygomap_user_gender";
 
 interface RoutePlannerPanelProps {
@@ -40,41 +37,14 @@ export function RoutePlannerPanel({
   const [isLocatingStart, setIsLocatingStart] = useState(false);
   const [isLocatingEnd, setIsLocatingEnd] = useState(false);
   const [gender, setGender] = useState<GenderTheme>("nam");
-  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  // Vị trí GPS của người dùng, dùng để ưu tiên & sắp xếp gợi ý tìm kiếm địa
+  // điểm theo khoảng cách gần nhất — tránh gợi ý ra nơi trùng tên ở tỉnh khác.
+  const userLocation = useUserLocationBias();
 
   useEffect(() => {
     const savedGender =
       (localStorage.getItem(STORAGE_KEY_GENDER) as GenderTheme) || "nam";
     setGender(savedGender);
-  }, []);
-
-  // Thêm useEffect để tự động switch sang Mô tô (avoidHighways = true) khi mount
-  useEffect(() => {
-    if (!planner.avoidHighways) {
-      planner.setAvoidHighways(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!navigator.geolocation) return;
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({
-          lat: position.coords.latitude,
-          lon: position.coords.longitude,
-        });
-      },
-      () => {
-        // Không làm ảnh hưởng đến chức năng tìm đường nếu người dùng
-        // không cấp quyền định vị.
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 30000,
-      },
-    );
   }, []);
 
   const getActiveStyles = () => {

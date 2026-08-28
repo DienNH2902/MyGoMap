@@ -8,6 +8,11 @@ interface NominatimItem {
   lat: string;
 }
 
+export type UserLocationBias = {
+  lat: number;
+  lon: number;
+};
+
 /**
  * Searches for places by free-text query using the free Nominatim (OpenStreetMap)
  * geocoding API, biased toward Vietnam. Per Nominatim's usage policy this is fine

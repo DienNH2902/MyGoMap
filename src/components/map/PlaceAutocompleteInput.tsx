@@ -6,7 +6,7 @@ import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import type { PlaceResult } from "@/lib/types";
 
 interface PlaceAutocompleteInputProps {
-  label: string;
+  label?: string;
   placeholder: string;
   value: PlaceResult | null;
   onSelect: (place: PlaceResult | null) => void;
@@ -14,6 +14,7 @@ interface PlaceAutocompleteInputProps {
   isLocating?: boolean;
   dropdownPlacement?: "top" | "bottom";
   userLocation?: { lat: number; lon: number } | null;
+  hideFocusRing?: boolean;
 }
 
 export function PlaceAutocompleteInput({
@@ -25,6 +26,7 @@ export function PlaceAutocompleteInput({
   isLocating = false,
   dropdownPlacement = "top",
   userLocation,
+  hideFocusRing = false,
 }: PlaceAutocompleteInputProps) {
   const [query, setQuery] = useState(value?.label ?? "");
   const [results, setResults] = useState<PlaceResult[]>([]);
@@ -65,30 +67,37 @@ export function PlaceAutocompleteInput({
     return () => controller.abort();
   }, [debouncedQuery, isOpen, userLocation]);
 
+  const hasHeaderContent = Boolean(label) || Boolean(onUseCurrentLocation);
+
   return (
     <div className="relative w-full min-w-0 flex-1 sm:min-w-[200px]">
-      <div className="mb-1.5 flex items-center justify-between gap-2">
-        <label className="block truncate text-[10px] font-bold uppercase tracking-wide text-cream/50">
-          {label}
-        </label>
-        {onUseCurrentLocation && (
-          <button
-            type="button"
-            onClick={onUseCurrentLocation}
-            disabled={isLocating}
-            className="flex shrink-0 items-center gap-1 text-[11px] font-semibold text-primary transition hover:text-primary/80 hover:underline active:scale-95 disabled:opacity-50"
-          >
-            {isLocating ? (
-              <>
-                <span className="h-2 w-2 animate-ping rounded-full bg-primary" />
-                <span className="truncate">Đang lấy định vị GPS…</span>
-              </>
-            ) : (
-              "Vị trí hiện tại"
-            )}
-          </button>
-        )}
-      </div>
+      {/* Chỉ render phần header khi có label HOẶC nút lấy vị trí hiện tại */}
+      {hasHeaderContent && (
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          {Boolean(label) && (
+            <label className="block truncate text-[10px] font-bold uppercase tracking-wide text-cream/50">
+              {label}
+            </label>
+          )}
+          {onUseCurrentLocation && (
+            <button
+              type="button"
+              onClick={onUseCurrentLocation}
+              disabled={isLocating}
+              className="flex shrink-0 items-center gap-1 text-[11px] font-semibold text-primary transition hover:text-primary/80 hover:underline active:scale-95 disabled:opacity-50"
+            >
+              {isLocating ? (
+                <>
+                  <span className="h-2 w-2 animate-ping rounded-full bg-primary" />
+                  <span className="truncate">Đang lấy định vị GPS…</span>
+                </>
+              ) : (
+                "Vị trí hiện tại"
+              )}
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="relative flex items-center">
         <input
@@ -103,7 +112,11 @@ export function PlaceAutocompleteInput({
           }}
           onFocus={() => setIsOpen(true)}
           onBlur={() => setTimeout(() => setIsOpen(false), 200)}
-          className="w-full rounded-xl border border-ink/10 bg-black/30 px-4 py-2.5 pr-9 text-base text-cream placeholder:text-cream/30 transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-black/10 disabled:text-cream/40 sm:text-sm"
+          className={`w-full rounded-xl border border-ink/10 bg-black/30 px-4 py-2.5 pr-9 text-base text-cream placeholder:text-cream/30 transition focus:outline-none disabled:bg-black/10 disabled:text-cream/40 sm:text-sm ${
+            hideFocusRing
+              ? "focus:border-white/20 placeholder:text-cream"
+              : "focus:border-primary focus:ring-2 focus:ring-primary/30"
+          }`}
         />
 
         {query.length > 0 && !isLocating && (

@@ -19,6 +19,8 @@ import { MapStyleToggle } from "./MapStyleToggle";
 import { PlaceResult, PoiResult } from "@/lib/types";
 import { AroundSearchPanel } from "./SearchAroundPannel";
 import { useRoutePlanner } from "@/hooks/useRoutePlanner";
+import { QuickDestinationCard } from "./QuickDestinationCard";
+import { useQuickDestinationSearch } from "@/hooks/useQuickDestinationSearch ";
 
 const STORAGE_KEY_USER_GENDER = "mygomap_user_gender";
 const STORAGE_KEY_LOADER = "mygomap_user_loader";
@@ -73,6 +75,7 @@ const MapView = dynamic(
  */
 export function MapExperience() {
   const planner = useRoutePlanner();
+  const quickSearch = useQuickDestinationSearch({ planner });
   const mapRef = useRef<MapLibreMap | null>(null);
 
   // Navigation tracking hook — truyền thêm điểm đến cố định (planner.end) và
@@ -337,6 +340,13 @@ export function MapExperience() {
         onMapReady={(map) => {
           mapRef.current = map;
         }}
+      />
+
+      {/* Tìm đường nhanh: chỉ nhập "Nơi đến", điểm A luôn = vị trí GPS */}
+      <QuickDestinationCard
+        planner={planner}
+        quickSearch={quickSearch}
+        isNavigating={navigation.isNavigating}
       />
 
       {/* Navigation Controls - Hiện khi có route */}
