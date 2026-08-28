@@ -59,7 +59,7 @@ const DEFAULT_STATE: RoutePlannerState = {
   stopCount: 0,
   customStops: [],
   selectedCategories: [],
-  avoidHighways: false,
+  avoidHighways: true,
   plan: null,
   aiTip: null,
   isLoading: false,

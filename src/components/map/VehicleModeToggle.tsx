@@ -77,7 +77,7 @@ export function VehicleModeToggle({
               : clsx("bg-transparent text-cream/90", getHoverStyles()),
           )}
         >
-          <span>Xe máy</span>
+          <span>Mô tô</span>
         </button>
       </div>
     </div>

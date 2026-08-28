@@ -48,6 +48,13 @@ export function RoutePlannerPanel({
     setGender(savedGender);
   }, []);
 
+  // Thêm useEffect để tự động switch sang Mô tô (avoidHighways = true) khi mount
+  useEffect(() => {
+    if (!planner.avoidHighways) {
+      planner.setAvoidHighways(true);
+    }
+  }, []);
+
   useEffect(() => {
     if (!navigator.geolocation) return;
 
