@@ -159,6 +159,10 @@ export default function PurposePage() {
                   hoặc chậm; bạn có thể cần thực hiện lại thao tác.
                 </li>
                 <li>
+                  <strong className="text-cream">Bản đồ chưa cập nhật:</strong>{" "}
+                  Bản đồ vẫn chưa được cập nhật mới nhất theo địa lý Việt Nam.
+                </li>
+                <li>
                   <strong className="text-cream">
                     Hạn chế công cụ Tìm kiếm:
                   </strong>{" "}
@@ -171,6 +175,11 @@ export default function PurposePage() {
                   Thao tác cuộn/phóng to bản đồ chưa thật sự mượt mà và chỉ mang
                   tính tương đối, vẫn còn tình trạng giật lag trên một số thiết
                   bị.
+                </li>
+                <li>
+                  <strong className="text-cream">GPS tương đối:</strong> Hiện
+                  tại để sử dụng định vị chuẩn xác nhất bạn nên bắt đầu lộ trình
+                  khi đang đứng ở ngoài đường.
                 </li>
                 <li>
                   <strong className="text-cream">Yêu cầu đường truyền:</strong>{" "}

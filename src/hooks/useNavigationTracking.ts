@@ -93,6 +93,7 @@ interface NavigationState {
   liveRoute: RouteGeometry | null;
   /** true trong lúc đang gọi API tính lại lộ trình theo vị trí mới. */
   isRerouting: boolean;
+  isFollowing: boolean;
 }
 
 /** Ngưỡng để quyết định có nên gọi tính lại lộ trình hay không — tránh gọi
@@ -119,6 +120,7 @@ export function useNavigationTracking(
     isOffRoute: false,
     liveRoute: null,
     isRerouting: false,
+    isFollowing: true,
   });
 
   const watchIdRef = useRef<number | null>(null);
@@ -139,6 +141,20 @@ export function useNavigationTracking(
   const smoothedLonRef = useRef<number | null>(null);
   const smoothedBearingRef = useRef<number | null>(null);
   const lastCameraUpdateRef = useRef<number>(0);
+
+  // Camera có đang tự động bám theo người dùng hay không.
+  // false khi người dùng chủ động vuốt/kéo/zoom/xoay bản đồ.
+  const isFollowingRef = useRef(true);
+
+  // Đánh dấu camera đang được app điều khiển.
+  // Dùng để tránh việc easeTo/flyTo của chính app bị hiểu nhầm
+  // là thao tác người dùng.
+  const isProgrammaticCameraRef = useRef(false);
+
+  // Timer để reset cờ camera programmatic sau khi animation kết thúc.
+  const programmaticCameraTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
   // Vị trí/góc quay ĐANG HIỂN THỊ trên marker tại khung hình hiện tại — được
   // vòng lặp requestAnimationFrame cập nhật dần mỗi khung hình để "lướt" tới
@@ -181,6 +197,109 @@ export function useNavigationTracking(
   const lastRerouteAtRef = useRef(0);
   const lastReroutePosRef = useRef<{ lat: number; lon: number } | null>(null);
   const rerouteRequestIdRef = useRef(0);
+
+  /**
+   * Khi người dùng chủ động tương tác với bản đồ thì thoát chế độ
+   * camera tự bám. Marker/GPS/navigation vẫn tiếp tục hoạt động bình thường.
+   */
+  const disableAutoFollow = useCallback(() => {
+    if (isProgrammaticCameraRef.current) return;
+    if (!isFollowingRef.current) return;
+
+    isFollowingRef.current = false;
+
+    setState((prev) => ({
+      ...prev,
+      isFollowing: false,
+    }));
+  }, []);
+
+  /**
+   * Người dùng chủ động điều khiển bản đồ:
+   * - kéo
+   * - zoom
+   * - xoay
+   * - thay đổi pitch
+   *
+   * => tự động thoát chế độ "Về giữa".
+   *
+   * Chỉ bắt đầu lắng nghe khi có map.
+   */
+  useEffect(() => {
+    if (!map) return;
+
+    const handleUserGesture = () => {
+      if (isProgrammaticCameraRef.current) return;
+
+      disableAutoFollow();
+    };
+
+    map.on("dragstart", handleUserGesture);
+    map.on("zoomstart", handleUserGesture);
+    map.on("rotatestart", handleUserGesture);
+    map.on("pitchstart", handleUserGesture);
+
+    return () => {
+      map.off("dragstart", handleUserGesture);
+      map.off("zoomstart", handleUserGesture);
+      map.off("rotatestart", handleUserGesture);
+      map.off("pitchstart", handleUserGesture);
+    };
+  }, [map, disableAutoFollow]);
+
+  /**
+   * Kích hoạt lại camera auto-follow và đưa camera về vị trí hiện tại.
+   * Được gọi khi người dùng bấm nút "Về giữa".
+   */
+  const followUserLocation = useCallback(() => {
+    const location = state.userLocation;
+
+    if (!map || !location) return;
+
+    const targetLng = smoothedLonRef.current ?? location.lon;
+    const targetLat = smoothedLatRef.current ?? location.lat;
+
+    const targetBearing =
+      smoothedBearingRef.current ??
+      location.heading ??
+      currentHeadingRef.current ??
+      0;
+
+    if (!Number.isFinite(targetLng) || !Number.isFinite(targetLat)) {
+      return;
+    }
+
+    isFollowingRef.current = true;
+
+    setState((prev) => ({
+      ...prev,
+      isFollowing: true,
+    }));
+
+    isProgrammaticCameraRef.current = true;
+
+    if (programmaticCameraTimerRef.current) {
+      clearTimeout(programmaticCameraTimerRef.current);
+    }
+
+    map.easeTo({
+      center: [targetLng, targetLat],
+      zoom: 19,
+      bearing: targetBearing,
+      pitch: 80,
+      duration: 700,
+      padding: {
+        top: Math.round(screenHeight * 0.33),
+        bottom: 0,
+        left: 0,
+        right: 0,
+      },
+    });
+
+    programmaticCameraTimerRef.current = setTimeout(() => {
+      isProgrammaticCameraRef.current = false;
+    }, 800);
+  }, [map, state.userLocation]);
 
   // Khởi tạo Marker hình mũi tên điều hướng
   const getOrCreateMarker = useCallback(() => {
@@ -828,7 +947,15 @@ export function useNavigationTracking(
       (DeviceOrientationEvent as any).requestPermission().catch(console.error);
     }
 
-    setState((prev) => ({ ...prev, isNavigating: true }));
+    isFollowingRef.current = true;
+    isProgrammaticCameraRef.current = false;
+
+    setState((prev) => ({
+      ...prev,
+      isNavigating: true,
+      isFollowing: true,
+    }));
+
     isNavigatingRef.current = true;
     // Reset trạng thái tính-lại-lộ-trình mỗi lần bắt đầu navigate mới, để
     // chắc chắn có một lần tính route-từ-vị-trí-hiện-tại ngay lập tức.
@@ -844,7 +971,9 @@ export function useNavigationTracking(
 
         updateMarker(longitude, latitude, heading, accuracy, speed);
 
-        if (map) {
+        if (map && isFollowingRef.current) {
+          isProgrammaticCameraRef.current = true;
+
           map.flyTo({
             center: [longitude, latitude],
             zoom: 19,
@@ -859,6 +988,14 @@ export function useNavigationTracking(
               right: 0,
             },
           });
+
+          if (programmaticCameraTimerRef.current) {
+            clearTimeout(programmaticCameraTimerRef.current);
+          }
+
+          programmaticCameraTimerRef.current = setTimeout(() => {
+            isProgrammaticCameraRef.current = false;
+          }, 900);
         }
 
         setState((prev) => ({
@@ -908,6 +1045,7 @@ export function useNavigationTracking(
           if (
             map &&
             prev.isNavigating &&
+            isFollowingRef.current &&
             now - lastCameraUpdateRef.current > 800
           ) {
             lastCameraUpdateRef.current = now;
@@ -915,25 +1053,42 @@ export function useNavigationTracking(
             // Sử dụng vị trí đã smoothed cho camera
             const targetLng = smoothedLonRef.current ?? longitude;
             const targetLat = smoothedLatRef.current ?? latitude;
+
             const targetBearing =
               smoothedBearingRef.current ??
               heading ??
               currentHeadingRef.current ??
               0;
 
-            map.easeTo({
-              center: [targetLng, targetLat],
-              zoom: 19,
-              bearing: targetBearing,
-              pitch: 80,
-              duration: 1000, // Tăng duration lên 1000ms để mượt hơn
-              padding: {
-                top: Math.round(screenHeight * 0.33),
-                bottom: 0,
-                left: 0,
-                right: 0,
-              },
-            });
+            if (
+              Number.isFinite(targetLng) &&
+              Number.isFinite(targetLat) &&
+              Number.isFinite(targetBearing)
+            ) {
+              isProgrammaticCameraRef.current = true;
+
+              map.easeTo({
+                center: [targetLng, targetLat],
+                zoom: 19,
+                bearing: targetBearing,
+                pitch: 80,
+                duration: 750,
+                padding: {
+                  top: Math.round(screenHeight * 0.33),
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                },
+              });
+
+              if (programmaticCameraTimerRef.current) {
+                clearTimeout(programmaticCameraTimerRef.current);
+              }
+
+              programmaticCameraTimerRef.current = setTimeout(() => {
+                isProgrammaticCameraRef.current = false;
+              }, 800);
+            }
           }
 
           return {
@@ -1030,6 +1185,15 @@ export function useNavigationTracking(
     lastRerouteAtRef.current = 0;
     lastReroutePosRef.current = null;
 
+    isFollowingRef.current = false;
+
+    if (programmaticCameraTimerRef.current) {
+      clearTimeout(programmaticCameraTimerRef.current);
+      programmaticCameraTimerRef.current = null;
+    }
+
+    isProgrammaticCameraRef.current = false;
+
     setState({
       isNavigating: false,
       userLocation: null,
@@ -1039,6 +1203,7 @@ export function useNavigationTracking(
       isOffRoute: false,
       liveRoute: null,
       isRerouting: false,
+      isFollowing: false,
     });
 
     if (map) {
@@ -1061,6 +1226,9 @@ export function useNavigationTracking(
       if (animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      if (programmaticCameraTimerRef.current) {
+        clearTimeout(programmaticCameraTimerRef.current);
+      }
     };
   }, []);
 
@@ -1068,5 +1236,6 @@ export function useNavigationTracking(
     ...state,
     startNavigation,
     stopNavigation,
+    followUserLocation,
   };
 }

@@ -7,6 +7,8 @@ interface NavigationControlsProps {
   isOffRoute: boolean;
   onStartNavigation: () => void;
   onStopNavigation: () => void;
+  onFollowUserLocation: () => void;
+  isFollowing: boolean;
 }
 
 /** Formats a minute count as "X giờ Y phút" or just "Y phút" when under an hour. */
@@ -23,13 +25,43 @@ export function NavigationControls({
   isOffRoute,
   onStartNavigation,
   onStopNavigation,
+  onFollowUserLocation,
+  isFollowing,
 }: NavigationControlsProps) {
   if (isNavigating) {
     return (
-      <div className="pointer-events-auto absolute bottom-4 left-1/2 z-10 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 flex flex-col gap-2">
+      <div className="pointer-events-auto absolute bottom-4 left-1/2 z-10 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 flex flex-col items-center gap-2">
+        {/* Nút Về giữa được căn giữa bằng self-center */}
+        {isNavigating && !isFollowing && (
+          <button
+            type="button"
+            onClick={onFollowUserLocation}
+            className="flex items-center gap-2 rounded-full bg-ink/80 px-4 py-2 text-md font-bold text-green-500 shadow-xl transition hover:scale-105 active:scale-95 self-start backdrop-blur-3xl"
+            aria-label="Về giữa"
+          >
+            {/* <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4.5 w-4.5 text-primary"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 2v3M12 19v3M2 12h3M19 12h3"
+              />
+            </svg> */}
+
+            <span>Về giữa</span>
+          </button>
+        )}
+
         {/* Cảnh báo lệch đường (nếu có) */}
         {/* {isOffRoute && (
-          <div className="rounded-xl bg-red-500/90 px-3 py-1.5 text-center shadow-lg backdrop-blur-md">
+          <div className="w-full rounded-xl bg-red-500/90 px-3 py-1.5 text-center shadow-lg backdrop-blur-md">
             <p className="text-xs font-semibold text-white">
               ⚠️ Bạn đang đi chệch tuyến đường!
             </p>
@@ -37,7 +69,7 @@ export function NavigationControls({
         )} */}
 
         {/* Thanh Navigation thu gọn 1 hàng ngang */}
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-ink/85 p-3 shadow-2xl backdrop-blur-xl">
+        <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-ink/85 p-3 shadow-2xl backdrop-blur-xl">
           <div className="flex items-center gap-3 pl-2">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wide text-cream/50">
@@ -63,10 +95,7 @@ export function NavigationControls({
               </p>
               {estimatedTimeRemaining !== null ? (
                 <p className="text-xl font-semibold leading-none text-cream/90">
-                  ~{formatDuration(estimatedTimeRemaining)}{" "}
-                  {/* <span className="text-xs font-normal text-cream/60">
-                    phút
-                  </span> */}
+                  ~{formatDuration(estimatedTimeRemaining)}
                 </p>
               ) : (
                 <p className="animate-pulse text-xs text-cream/40">-- phút</p>
@@ -74,7 +103,7 @@ export function NavigationControls({
             </div>
           </div>
 
-          {/* Nút Thoát dạng tròn/gọn */}
+          {/* Nút Thoát */}
           <button
             type="button"
             onClick={onStopNavigation}

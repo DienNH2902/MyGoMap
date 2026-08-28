@@ -18,6 +18,7 @@ interface RoutePlannerPanelProps {
   planner: UseRoutePlannerReturn;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  isNavigating?: boolean;
 }
 
 export interface PoiCategoryDefinition {
@@ -33,6 +34,7 @@ export function RoutePlannerPanel({
   planner,
   isCollapsed = true,
   onToggleCollapse,
+  isNavigating = false,
 }: RoutePlannerPanelProps) {
   const [isLocatingStart, setIsLocatingStart] = useState(false);
   const [isLocatingEnd, setIsLocatingEnd] = useState(false);
@@ -155,16 +157,18 @@ export function RoutePlannerPanel({
     );
   };
 
+  if (isNavigating) return null;
+
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-2 px-4 pb-10">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center gap-2 px-4 pb-8">
       {/* Nút bấm Đóng / Mở bảng điều khiển */}
       {onToggleCollapse && (
         <button
           type="button"
           onClick={onToggleCollapse}
-          className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-ink/10 bg-ink/85 px-4 py-1.5 text-xs font-semibold text-cream shadow-md backdrop-blur-md transition-all hover:bg-ink/95 active:scale-95"
+          className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-ink/10 bg-ink/85 px-6 py-2.5 text-xs font-semibold text-cream shadow-md backdrop-blur-md transition-all hover:bg-ink/95 active:scale-95"
         >
-          <span>{isCollapsed ? "Mở bảng tìm đường" : "Thu gọn bảng"}</span>
+          <span>{isCollapsed ? "Mở bảng" : "Đóng bảng"}</span>
           <svg
             className={`h-4 w-4 transition-transform duration-200 ${
               isCollapsed ? "rotate-180" : ""

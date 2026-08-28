@@ -359,11 +359,13 @@ export function MapExperience() {
       {planner.plan?.route && (
         <NavigationControls
           isNavigating={navigation.isNavigating}
+          isFollowing={navigation.isFollowing}
           distanceToDestination={navigation.distanceToDestination}
           estimatedTimeRemaining={navigation.estimatedTimeRemaining}
           isOffRoute={navigation.isOffRoute}
           onStartNavigation={navigation.startNavigation}
           onStopNavigation={navigation.stopNavigation}
+          onFollowUserLocation={navigation.followUserLocation}
         />
       )}
 
@@ -644,6 +646,7 @@ export function MapExperience() {
           planner={planner}
           isCollapsed={isPanelCollapsed}
           onToggleCollapse={() => setIsPanelCollapsed((prev) => !prev)}
+          isNavigating={navigation.isNavigating}
         />
       </div>
     </div>
