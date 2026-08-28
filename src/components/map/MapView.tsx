@@ -116,7 +116,8 @@ function getThemeStyles(gender: GenderTheme) {
   }
 
   return {
-    routeColor: "#FF6A1A",
+    // routeColor: "#FF6A1A",
+    routeColor: "#2563EB",
     startBg: "bg-emerald-500",
     startRing: "ring-emerald-500/30",
     endBg: "bg-rose-500",
