@@ -11,6 +11,7 @@ interface QuickDestinationCardProps {
   planner: UseRoutePlannerReturn;
   quickSearch: UseQuickDestinationSearchReturn;
   isNavigating?: boolean;
+  isPanelOpen?: boolean;
 }
 
 /**
@@ -25,14 +26,15 @@ export function QuickDestinationCard({
   planner,
   quickSearch,
   isNavigating = false,
+  isPanelOpen = false,
 }: QuickDestinationCardProps) {
   const userLocation = useUserLocationBias();
 
-  if (isNavigating) return null;
+  if (isNavigating || isPanelOpen) return null;
 
   if (quickSearch.hasSearched && planner.start && planner.end) {
     return (
-      <div className="pointer-events-auto absolute left-1/2 top-4 z-40 w-[92%] max-w-xl -translate-x-1/2 rounded-2xl border border-ink/10 bg-ink/90 p-3 shadow-xl backdrop-blur-md">
+      <div className="pointer-events-auto absolute left-1/2 top-4 z-0 w-[92%] max-w-xl -translate-x-1/2 rounded-2xl border border-ink/10 bg-ink/90 p-3 shadow-xl backdrop-blur-md">
         <button
           type="button"
           onClick={quickSearch.resetSearch}

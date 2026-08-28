@@ -347,6 +347,7 @@ export function MapExperience() {
         planner={planner}
         quickSearch={quickSearch}
         isNavigating={navigation.isNavigating}
+        isPanelOpen={!isPanelCollapsed}
       />
 
       {/* Navigation Controls - Hiện khi có route */}
