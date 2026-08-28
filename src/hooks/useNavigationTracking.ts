@@ -100,6 +100,10 @@ export function useNavigationTracking(
   const userMarkerRef = useRef<Marker | null>(null);
   const userMarkerMapRef = useRef<MapLibreMap | null>(null);
   const currentHeadingRef = useRef<number>(0);
+  // true khi GPS đang di chuyển đủ nhanh để heading GPS đáng tin (xem bước 3
+  // trong updateMarker) — lúc đó la bàn không phải nguồn hướng chính. Khi
+  // false (đứng yên/đi chậm), la bàn thiết bị mới là nguồn hướng "thật".
+  const isGpsHeadingActiveRef = useRef(false);
 
   // Smoothing refs: lưu vị trí/góc quay "MỤC TIÊU" sau khi đã lọc nhiễu GPS
   // (EMA có trọng số theo độ chính xác). Đây KHÔNG phải là vị trí marker
@@ -274,6 +278,23 @@ export function useNavigationTracking(
 
       if (compassHeading !== null) {
         currentHeadingRef.current = compassHeading;
+
+        // TRƯỚC ĐÂY: chỉ set thẳng vào marker ở đây, nhưng animateMarker
+        // chạy mỗi khung hình (60fps) lại ghi đè bằng renderedBearingRef
+        // đang đuổi theo smoothedBearingRef — mà smoothedBearingRef chỉ
+        // được cập nhật trong updateMarker() (tức là theo nhịp GPS, có khi
+        // vài giây mới có 1 lần) => la bàn xoay bị "đợi" tới lần GPS tiếp
+        // theo mới thấy, gây delay hơn 2 giây như đã gặp.
+        //
+        // SỬA: khi GPS heading KHÔNG đáng tin (đứng yên/đi chậm), la bàn là
+        // nguồn hướng chính — cập nhật thẳng vào smoothedBearingRef ngay khi
+        // có sự kiện la bàn mới (nhiều lần/giây), để animateMarker (đang
+        // chạy liên tục, không phụ thuộc nhịp GPS) xoay marker theo NGAY,
+        // không phải chờ lần định vị GPS kế tiếp nữa.
+        if (!isGpsHeadingActiveRef.current) {
+          smoothedBearingRef.current = compassHeading;
+        }
+
         if (userMarkerRef.current) {
           userMarkerRef.current.setRotation(compassHeading);
         }
@@ -568,6 +589,9 @@ export function useNavigationTracking(
 
       // GPS heading chỉ đáng tin khi xe/người dùng thực sự di chuyển.
       const isMovingFastEnoughForGpsHeading = (speed ?? 0) > 0.6;
+      // Cho listener la bàn (deviceorientation) biết GPS có đang "giữ quyền"
+      // điều khiển hướng marker hay không, để tránh cả 2 nguồn giành nhau.
+      isGpsHeadingActiveRef.current = isMovingFastEnoughForGpsHeading;
 
       let effectiveHeading: number;
 
@@ -933,6 +957,7 @@ export function useNavigationTracking(
     smoothedLatRef.current = null;
     smoothedLonRef.current = null;
     smoothedBearingRef.current = null;
+    isGpsHeadingActiveRef.current = false;
     lastCameraUpdateRef.current = 0;
 
     // Dừng vòng lặp nội suy vị trí và reset các ref liên quan
