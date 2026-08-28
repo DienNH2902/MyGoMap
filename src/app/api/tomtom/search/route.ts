@@ -1,28 +1,9 @@
 import { NextResponse } from "next/server";
-
-/**
- * Proxy DÙNG CHUNG cho mọi loại tìm kiếm địa điểm/POI bằng TomTom Search API
- * (thay cho Nominatim + Overpass trước đây, vì dữ liệu POI của TomTom là cơ
- * sở dữ liệu RIÊNG của họ — không phụ thuộc vào OpenStreetMap, nên không bị
- * tình trạng thiếu/cũ dữ liệu như OSM). Dùng chung 1 route cho 3 nhu cầu:
- *
- * 1. Tìm địa chỉ tự do (searchPlaces trong nominatim.ts) — chỉ truyền `query`
- *    (+ lat/lon của người dùng để TomTom ưu tiên kết quả gần họ).
- * 2. Tìm POI quanh một điểm (findPoisAroundPoint) — truyền `query` = tên
- *    danh mục (vd "Trạm xăng") + lat/lon + radiusMeters của điểm đó.
- * 3. Tìm POI quanh từng điểm dừng khi lập lộ trình (findPoisForStops) — gọi
- *    lặp lại route này cho từng cặp (điểm dừng, danh mục).
- *
- * Giữ key ở server (không lộ ra client) và tránh lỗi CORS khi gọi thẳng từ
- * trình duyệt, giống hệt cách /api/tomtom/route đã làm cho routing.
- */
-
-interface TomTomSearchRequest {
+/** * ============================================================ * TOMTOM SEARCH PROXY * ============================================================ * * Proxy server cho TomTom Search API. * * Vai trò: * * - Giữ TOMTOM_API_KEY ở server. * - Không expose API key ra client. * - Chỉ forward một request search. * - Không tự giới hạn `limit`. * - Giữ nguyên 429 để client fallback sang Nominatim. * - Giữ nguyên lỗi 5xx. */ interface TomTomSearchRequest {
   query: string;
   lat?: number;
   lon?: number;
   radiusMeters?: number;
-  limit?: number;
   countrySet?: string;
   entityTypeSet?: string;
 }
@@ -50,87 +31,116 @@ export interface TomTomSearchApiResult {
   type?: string;
   entityType?: string;
 }
-
 export async function POST(request: Request) {
-  const apiKey = process.env.TOMTOM_API_KEY;
-
+  /** * ========================================================== * 1. API KEY * ========================================================== */ const apiKey =
+    process.env.TOMTOM_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
       { error: "Missing TOMTOM_API_KEY" },
       { status: 500 },
     );
   }
-
-  const body = (await request.json()) as TomTomSearchRequest;
-  const query = body.query?.trim();
-
-  if (!query) {
-    return NextResponse.json({ results: [] });
+  /** * ========================================================== * 2. REQUEST BODY * ========================================================== */ let body: TomTomSearchRequest;
+  try {
+    body = (await request.json()) as TomTomSearchRequest;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-
-  const url = new URL(
-    `https://api.tomtom.com/search/2/search/${encodeURIComponent(query)}.json`,
+  const query = body.query?.trim();
+  if (!query) {
+    return NextResponse.json({ results: [], provider: "tomtom" });
+  }
+  /** * ========================================================== * 3. TOMTOM URL * ========================================================== */ const url =
+    new URL(
+      `https://api.tomtom.com/search/2/search/${encodeURIComponent(query)}.json`,
+    );
+  /** * API KEY. */ url.searchParams.set("key", apiKey);
+  /** * Mặc định chỉ tìm ở Việt Nam. */ url.searchParams.set(
+    "countrySet",
+    body.countrySet ?? "VN",
   );
-
-  url.searchParams.set("key", apiKey);
-  // Mặc định giới hạn trong Việt Nam — người dùng có thể ghi đè nếu sau này
-  // cần tìm ở nước khác, nhưng toàn bộ app hiện tại chỉ phục vụ VN.
-  url.searchParams.set("countrySet", body.countrySet ?? "VN");
-  url.searchParams.set("limit", String(body.limit ?? 10));
-  url.searchParams.set("language", "vi-VN");
-  if (body.entityTypeSet) {
+  /** * Ngôn ngữ. */ url.searchParams.set("language", "vi-VN");
+  /** * ========================================================== * QUAN TRỌNG: KHÔNG SET LIMIT * ========================================================== * * Không dùng: * * url.searchParams.set("limit", ...) * * TomTom sẽ sử dụng giới hạn mặc định của API. */ /** * ========================================================== * ENTITY TYPE * ========================================================== * * Hiện tại searchPlaces() không gửi entityTypeSet. * * Giữ hỗ trợ tham số này để các API khác của Mỳ Gõ Map * vẫn có thể sử dụng route này nếu cần. */ if (
+    body.entityTypeSet
+  ) {
     url.searchParams.set("entityTypeSet", body.entityTypeSet);
   }
-
-  // Ưu tiên/giới hạn kết quả quanh một toạ độ — dùng cho cả 2 trường hợp:
-  // ưu tiên gần người dùng (searchPlaces) và tìm POI quanh 1 điểm cụ thể
-  // (findPoisAroundPoint/findPoisForStops).
-  if (typeof body.lat === "number" && typeof body.lon === "number") {
+  /** * ========================================================== * LOCATION BIAS * ========================================================== */ if (
+    typeof body.lat === "number" &&
+    typeof body.lon === "number"
+  ) {
     url.searchParams.set("lat", String(body.lat));
     url.searchParams.set("lon", String(body.lon));
   }
-
-  if (typeof body.radiusMeters === "number" && body.radiusMeters > 0) {
+  /** * ========================================================== * RADIUS * ========================================================== */ if (
+    typeof body.radiusMeters === "number" &&
+    body.radiusMeters > 0
+  ) {
     url.searchParams.set("radius", String(Math.round(body.radiusMeters)));
   }
-
-  let response: Response;
+  /** * ========================================================== * 4. CALL TOMTOM * ========================================================== */ let response: Response;
   try {
     response = await fetch(url.toString(), {
       headers: { Accept: "application/json" },
+      /** * Không cache trực tiếp ở proxy. * * Cache sẽ xử lý ở service layer sau này. */ cache:
+        "no-store",
     });
-  } catch (err) {
+  } catch (error) {
     return NextResponse.json(
-      { error: `Không gọi được TomTom Search: ${String(err)}` },
+      {
+        error: `Không gọi được TomTom Search: ${String(error)}`,
+        provider: "tomtom",
+        fallbackRecommended: true,
+      },
       { status: 502 },
     );
   }
-
-  const data = (await response
-    .json()
-    .catch(() => null)) as TomTomSearchResponse | null;
-
-  if (!response.ok || !data) {
+  /** * ========================================================== * 5. PARSE RESPONSE * ========================================================== */ const data =
+    (await response.json().catch(() => null)) as TomTomSearchResponse | null;
+  /** * ========================================================== * 6. TOMTOM 429 * ========================================================== * * Giữ nguyên 429. * * Client sẽ: * * TomTom * ↓ * 429 * ↓ * Nominatim */ if (
+    response.status === 429
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          data?.error?.description ??
+          "TomTom API đang bị giới hạn request hoặc đã hết quota.",
+        provider: "tomtom",
+        fallbackRecommended: true,
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": response.headers.get("retry-after") ?? "60" },
+      },
+    );
+  }
+  /** * ========================================================== * 7. OTHER ERRORS * ========================================================== */ if (
+    !response.ok ||
+    !data
+  ) {
     return NextResponse.json(
       {
         error:
           data?.error?.description ?? `TomTom search error ${response.status}`,
+        provider: "tomtom",
+        fallbackRecommended: response.status >= 500,
       },
-      { status: response.status === 200 ? 502 : response.status },
+      { status: response.status >= 400 ? response.status : 502 },
     );
   }
-
-  const results: TomTomSearchApiResult[] = (data.results ?? [])
-    .filter((item) => item.position)
-    .map((item) => ({
-      id: item.id,
-      name: item.poi?.name ?? null,
-      address: item.address?.freeformAddress ?? null,
-      lat: item.position!.lat,
-      lon: item.position!.lon,
-      type: item.type,
-      entityType: item.entityType,
-    }));
-
-  return NextResponse.json({ results });
+  /** * ========================================================== * 8. NORMALIZE RESULTS * ========================================================== */ const results: TomTomSearchApiResult[] =
+    (data.results ?? [])
+      .filter((item) => item.position)
+      .map((item) => ({
+        id: item.id,
+        name: item.poi?.name ?? null,
+        address: item.address?.freeformAddress ?? null,
+        lat: item.position!.lat,
+        lon: item.position!.lon,
+        type: item.type,
+        entityType: item.entityType,
+      }));
+  /** * ========================================================== * 9. RESPONSE * ========================================================== */ return NextResponse.json(
+    { results, provider: "tomtom" },
+  );
 }

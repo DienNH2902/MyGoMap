@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { searchPlaces } from "@/lib/geocoding/nominatim";
+import { useEffect, useRef, useState } from "react";
+import { searchPlaces, searchWithNominatim } from "@/lib/geocoding/nominatim";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import type { PlaceResult } from "@/lib/types";
 
@@ -13,7 +13,10 @@ interface PlaceAutocompleteInputProps {
   onUseCurrentLocation?: () => void;
   isLocating?: boolean;
   dropdownPlacement?: "top" | "bottom";
-  userLocation?: { lat: number; lon: number } | null;
+  userLocation?: {
+    lat: number;
+    lon: number;
+  } | null;
   hideFocusRing?: boolean;
 }
 
@@ -29,49 +32,273 @@ export function PlaceAutocompleteInput({
   hideFocusRing = false,
 }: PlaceAutocompleteInputProps) {
   const [query, setQuery] = useState(value?.label ?? "");
+
   const [results, setResults] = useState<PlaceResult[]>([]);
+
   const [isOpen, setIsOpen] = useState(false);
+
   const [isSearching, setIsSearching] = useState(false);
+
+  /**
+   * Debounce autocomplete = 400ms.
+   *
+   * Chỉ autocomplete bằng Nominatim.
+   * Không đụng TomTom quota.
+   */
   const debouncedQuery = useDebouncedValue(query, 400);
 
+  /**
+   * Controller của autocomplete request hiện tại.
+   *
+   * Khi user tiếp tục gõ:
+   *
+   * request cũ -> abort
+   * request mới -> chạy
+   */
+  const autocompleteControllerRef = useRef<AbortController | null>(null);
+
+  /**
+   * Controller của Search button.
+   */
+  const searchControllerRef = useRef<AbortController | null>(null);
+
+  /**
+   * Request sequence để chống response cũ ghi đè
+   * response mới.
+   */
+  const autocompleteRequestIdRef = useRef(0);
+
+  const searchRequestIdRef = useRef(0);
+
+  /**
+   * Đồng bộ input khi value bên ngoài thay đổi.
+   */
   useEffect(() => {
     setQuery(value?.label ?? "");
   }, [value]);
 
+  /**
+   * ============================================================
+   * AUTOCOMPLETE - NOMINATIM ONLY
+   * ============================================================
+   *
+   * Khi:
+   *
+   * user nhập:
+   *     "đà"
+   *
+   * đợi 400ms
+   *     ↓
+   * Nominatim
+   *
+   * Không gọi TomTom.
+   */
+
   useEffect(() => {
-    if (!isOpen) return;
+    const trimmed = debouncedQuery.trim();
+
+    /**
+     * Query quá ngắn.
+     */
+    if (trimmed.length < 2 || isLocating) {
+      autocompleteControllerRef.current?.abort();
+
+      setIsSearching(false);
+
+      if (trimmed.length < 2) {
+        setResults([]);
+        setIsOpen(false);
+      }
+
+      return;
+    }
+
+    /**
+     * Không autocomplete lại nếu query hiện tại
+     * chính là label của value đã chọn và input không
+     * thực sự thay đổi.
+     */
+    if (value && trimmed === value.label.trim()) {
+      setResults([]);
+      setIsOpen(false);
+      return;
+    }
+
+    /**
+     * Hủy request Nominatim trước đó.
+     */
+    autocompleteControllerRef.current?.abort();
+
     const controller = new AbortController();
 
-    async function runSearch() {
-      setIsSearching(true);
-      try {
-        const places = await searchPlaces(
-          debouncedQuery,
-          controller.signal,
-          userLocation,
-        );
-        setResults(places);
-      } catch (err: unknown) {
-        if (err instanceof Error && err.name === "AbortError") {
-          // Bỏ qua lỗi do người dùng gõ tiếp làm hủy request cũ
+    autocompleteControllerRef.current = controller;
+
+    const requestId = ++autocompleteRequestIdRef.current;
+
+    setIsSearching(true);
+    setIsOpen(true);
+
+    /**
+     * Không xóa results ngay.
+     *
+     * Như vậy khi user gõ:
+     *
+     * "h"
+     * "ha"
+     * "hà"
+     *
+     * dropdown không bị nhấp nháy trắng.
+     */
+
+    void searchWithNominatim(trimmed, controller.signal, userLocation)
+      .then((places) => {
+        /**
+         * Chỉ nhận response mới nhất.
+         */
+        if (requestId !== autocompleteRequestIdRef.current) {
           return;
         }
-        console.error("Lỗi tìm kiếm địa điểm:", err);
+
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        setResults(places);
+      })
+      .catch((err: unknown) => {
+        if (err instanceof Error && err.name === "AbortError") {
+          return;
+        }
+
+        console.error("Lỗi autocomplete Nominatim:", err);
+
+        if (requestId === autocompleteRequestIdRef.current) {
+          setResults([]);
+        }
+      })
+      .finally(() => {
+        if (requestId === autocompleteRequestIdRef.current) {
+          setIsSearching(false);
+        }
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, [debouncedQuery, userLocation, isLocating, value]);
+
+  /**
+   * ============================================================
+   * SEARCH BUTTON - TOMTOM
+   * ============================================================
+   *
+   * Chỉ khi:
+   *
+   * - bấm Search
+   * - Enter
+   *
+   * mới gọi searchPlaces()
+   *
+   * searchPlaces():
+   *
+   * TomTom
+   *   ↓
+   * 429 / lỗi
+   *   ↓
+   * Nominatim fallback
+   */
+
+  async function handleSearch() {
+    const trimmed = query.trim();
+
+    if (trimmed.length < 2 || isSearching || isLocating) {
+      return;
+    }
+
+    /**
+     * Hủy autocomplete Nominatim đang chạy.
+     */
+    autocompleteControllerRef.current?.abort();
+
+    /**
+     * Hủy Search trước đó nếu còn.
+     */
+    searchControllerRef.current?.abort();
+
+    const controller = new AbortController();
+
+    searchControllerRef.current = controller;
+
+    const requestId = ++searchRequestIdRef.current;
+
+    setIsSearching(true);
+    setIsOpen(true);
+
+    /**
+     * Search chính thức phải hiện kết quả mới.
+     */
+    setResults([]);
+
+    try {
+      /**
+       * QUAN TRỌNG:
+       *
+       * Đây mới là nơi gọi TomTom.
+       */
+      const places = await searchPlaces(
+        trimmed,
+        controller.signal,
+        userLocation,
+      );
+
+      if (
+        controller.signal.aborted ||
+        requestId !== searchRequestIdRef.current
+      ) {
+        return;
+      }
+
+      setResults(places);
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === "AbortError") {
+        return;
+      }
+
+      console.error("Lỗi tìm kiếm địa điểm:", err);
+
+      if (requestId === searchRequestIdRef.current) {
         setResults([]);
-      } finally {
+      }
+    } finally {
+      if (requestId === searchRequestIdRef.current) {
         setIsSearching(false);
       }
     }
+  }
 
-    void runSearch();
-    return () => controller.abort();
-  }, [debouncedQuery, isOpen, userLocation]);
+  /**
+   * ============================================================
+   * CLEANUP
+   * ============================================================
+   */
+
+  useEffect(() => {
+    return () => {
+      autocompleteControllerRef.current?.abort();
+      searchControllerRef.current?.abort();
+    };
+  }, []);
 
   const hasHeaderContent = Boolean(label) || Boolean(onUseCurrentLocation);
 
+  const canSearch = query.trim().length >= 2 && !isLocating && !isSearching;
+
   return (
     <div className="relative w-full min-w-0 flex-1 sm:min-w-[200px]">
-      {/* Chỉ render phần header khi có label HOẶC nút lấy vị trí hiện tại */}
+      {/* ======================================================
+          HEADER
+      ====================================================== */}
+
       {hasHeaderContent && (
         <div className="mb-1.5 flex items-center justify-between gap-2">
           {Boolean(label) && (
@@ -79,6 +306,7 @@ export function PlaceAutocompleteInput({
               {label}
             </label>
           )}
+
           {onUseCurrentLocation && (
             <button
               type="button"
@@ -89,6 +317,7 @@ export function PlaceAutocompleteInput({
               {isLocating ? (
                 <>
                   <span className="h-2 w-2 animate-ping rounded-full bg-primary" />
+
                   <span className="truncate">Đang lấy định vị GPS…</span>
                 </>
               ) : (
@@ -98,6 +327,10 @@ export function PlaceAutocompleteInput({
           )}
         </div>
       )}
+
+      {/* ======================================================
+          INPUT
+      ====================================================== */}
 
       <div className="relative flex items-center">
         {hideFocusRing && (
@@ -111,42 +344,127 @@ export function PlaceAutocompleteInput({
             </svg>
           </div>
         )}
+
         <input
           type="text"
           value={query}
           placeholder={isLocating ? "Đang xác định tọa độ GPS..." : placeholder}
           disabled={isLocating}
           onChange={(event) => {
-            setQuery(event.target.value);
-            setIsOpen(true);
-            if (value) onSelect(null);
+            const nextQuery = event.target.value;
+
+            setQuery(nextQuery);
+
+            /**
+             * Người dùng bắt đầu sửa lại input
+             * sau khi đã chọn địa điểm.
+             */
+            if (value) {
+              onSelect(null);
+            }
+
+            /**
+             * Mở lại autocomplete.
+             *
+             * API thật sự sẽ chỉ chạy sau debounce 400ms.
+             */
+            if (nextQuery.trim().length >= 2) {
+              setIsOpen(true);
+            } else {
+              setIsOpen(false);
+              setResults([]);
+            }
           }}
-          onFocus={() => setIsOpen(true)}
-          onBlur={() => setTimeout(() => setIsOpen(false), 200)}
-          className={`w-full rounded-xl border border-ink/10 bg-black/30 py-2.5 pr-9 text-base text-cream placeholder:text-cream/30 transition focus:outline-none disabled:bg-black/10 disabled:text-cream/40 sm:text-sm ${
+          onFocus={() => {
+            if (query.trim().length >= 2) {
+              setIsOpen(true);
+            }
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+
+              if (canSearch) {
+                void handleSearch();
+              }
+            }
+
+            if (event.key === "Escape") {
+              setIsOpen(false);
+            }
+          }}
+          className={`w-full rounded-xl border border-ink/10 bg-black/30 py-2.5 pr-20 text-base text-cream placeholder:text-cream/30 transition focus:outline-none disabled:bg-black/10 disabled:text-cream/40 sm:text-sm ${
             hideFocusRing
               ? "pl-10 focus:border-white/20 placeholder:text-teal-500"
               : "px-4 focus:border-primary focus:ring-2 focus:ring-primary/30"
           }`}
         />
 
-        {query.length > 0 && !isLocating && (
+        {/* ====================================================
+            CLEAR BUTTON
+        ==================================================== */}
+
+        {query.length > 0 && !isLocating && !isSearching && (
           <button
             type="button"
             onClick={() => {
+              autocompleteControllerRef.current?.abort();
+
               setQuery("");
-              onSelect(null);
               setResults([]);
+              setIsOpen(false);
+
+              onSelect(null);
             }}
-            className="absolute right-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-xs text-cream/60 transition hover:bg-white/20 hover:text-cream active:scale-95"
+            className="absolute right-11 flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-xs text-cream/60 transition hover:bg-white/20 hover:text-cream active:scale-95"
             aria-label="Xóa nội dung nhập"
+            title="Xóa"
           >
             ✕
           </button>
         )}
+
+        {/* ====================================================
+            SEARCH BUTTON
+        ==================================================== */}
+
+        <button
+          type="button"
+          onClick={() => {
+            if (canSearch) {
+              void handleSearch();
+            }
+          }}
+          disabled={!canSearch}
+          aria-label="Tìm kiếm"
+          title={isSearching ? "Đang tìm kiếm..." : "Tìm kiếm"}
+          className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-lg text-cream/70 transition hover:bg-white/10 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          {isSearching ? (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-cream/30 border-t-cream" />
+          ) : (
+            <svg
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="7" />
+
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+          )}
+        </button>
       </div>
 
-      {isOpen && query.length >= 2 && (
+      {/* ======================================================
+          DROPDOWN
+      ====================================================== */}
+
+      {isOpen && (
         <div
           className={`absolute left-0 right-0 z-50 w-full overflow-hidden rounded-xl border border-ink/10 bg-ink/95 shadow-2xl backdrop-blur-md ${
             dropdownPlacement === "bottom"
@@ -155,31 +473,57 @@ export function PlaceAutocompleteInput({
           }`}
         >
           <div className="max-h-56 overflow-y-auto sm:max-h-64">
+            {/* ==================================================
+                LOADING
+            ================================================== */}
+
             {isSearching && (
-              <p className="px-4 py-3 text-xs text-cream/50">Đang tìm kiếm…</p>
+              <div className="flex items-center gap-2 px-4 py-3 text-xs text-cream/50">
+                <span className="h-3 w-3 animate-spin rounded-full border border-cream/20 border-t-cream/70" />
+
+                <span>Đang tìm kiếm…</span>
+              </div>
             )}
-            {!isSearching && results.length === 0 && (
-              <p className="px-4 py-3 text-xs text-cream/50">
-                Không tìm thấy địa điểm phù hợp.
-              </p>
-            )}
-            {results.map((place) => (
-              <button
-                key={place.id}
-                type="button"
-                onClick={() => {
-                  onSelect(place);
-                  setQuery(place.label);
-                  setIsOpen(false);
-                }}
-                title={place.label}
-                className="group relative block w-full border-b border-white/5 px-4 py-3 text-left text-sm text-cream/80 transition touch-manipulation hover:bg-white/10 hover:text-white active:bg-white/15 last:border-none sm:py-2.5"
-              >
-                <span className="line-clamp-2 group-hover:line-clamp-none group-hover:whitespace-normal">
-                  {place.label}
-                </span>
-              </button>
-            ))}
+
+            {/* ==================================================
+                NO RESULT
+            ================================================== */}
+
+            {!isSearching &&
+              results.length === 0 &&
+              query.trim().length >= 2 && (
+                <p className="px-4 py-3 text-xs text-cream/50">
+                  Không tìm thấy địa điểm phù hợp.
+                </p>
+              )}
+
+            {/* ==================================================
+                RESULTS
+            ================================================== */}
+
+            {!isSearching &&
+              results.map((place) => (
+                <button
+                  key={place.id}
+                  type="button"
+                  onClick={() => {
+                    onSelect(place);
+                    setQuery(place.label);
+                    setIsOpen(false);
+
+                    /**
+                     * Hủy autocomplete sau khi chọn.
+                     */
+                    autocompleteControllerRef.current?.abort();
+                  }}
+                  title={place.label}
+                  className="group relative block w-full border-b border-white/5 px-4 py-3 text-left text-sm text-cream/80 transition touch-manipulation hover:bg-white/10 hover:text-white active:bg-white/15 last:border-none sm:py-2.5"
+                >
+                  <span className="line-clamp-2 group-hover:line-clamp-none group-hover:whitespace-normal">
+                    {place.label}
+                  </span>
+                </button>
+              ))}
           </div>
         </div>
       )}

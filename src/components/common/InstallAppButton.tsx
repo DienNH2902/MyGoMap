@@ -667,7 +667,7 @@ export function InstallAppButton() {
       >
         <DownloadIcon />
 
-        <span className="hidden sm:inline">Download</span>
+        <span className="hidden sm:inline">Tải về</span>
       </button>
 
       {/* =========================================================
