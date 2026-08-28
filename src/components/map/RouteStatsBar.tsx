@@ -45,42 +45,42 @@ export function RouteStatsBar({
     typeof route.trafficDelayMinutes === "number" &&
     route.trafficDelayMinutes > 0;
 
-    if (isNavigating) return null;
+  if (isNavigating) return null;
 
   return (
-    <div className="pointer-events-none absolute left-2 right-2 top-2 z-30 flex flex-wrap justify-end gap-1.5 sm:left-auto sm:right-4 sm:top-4 sm:flex-nowrap sm:gap-2 max-w-[calc(100vw-1rem)] sm:max-w-none">
+    <div className="pointer-events-none absolute bottom-4 left-2 right-2 z-30 flex max-w-[calc(100vw-1rem)] flex-wrap justify-end gap-1.5 sm:bottom-auto sm:left-auto sm:right-4 sm:top-4 sm:max-w-none sm:flex-nowrap sm:gap-2">
       {/* 1. Tổng quãng đường */}
-      <div className="pointer-events-auto flex-1 min-w-[100px] sm:flex-none rounded-xl sm:rounded-2xl border border-white/10 bg-ink/85 px-2.5 py-1.5 sm:px-4 sm:py-2.5 shadow-xl backdrop-blur-md transition-all">
-        <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wide text-cream/50 whitespace-nowrap">
-          Tổng quãng đường
+      <div className="pointer-events-auto min-w-[100px] flex-1 rounded-xl border border-white/10 bg-ink/85 px-2.5 py-1.5 shadow-xl backdrop-blur-md transition-all sm:min-w-0 sm:flex-none sm:rounded-2xl sm:px-4 sm:py-2.5">
+        <p className="whitespace-nowrap text-[9px] font-medium uppercase tracking-wide text-cream/50 sm:text-[10px]">
+          Quãng đường
         </p>
         <p
-          className={`font-mono text-[12px] sm:text-lg font-bold ${getValueColorClass()} whitespace-nowrap`}
+          className={`whitespace-nowrap font-mono text-[12px] font-bold sm:text-lg ${getValueColorClass()}`}
         >
           {route.distanceKm.toFixed(1)} km
         </p>
       </div>
 
       {/* 2. Thời gian ước tính */}
-      <div className="pointer-events-auto flex-1 min-w-[100px] sm:flex-none rounded-xl sm:rounded-2xl border border-white/10 bg-ink/85 px-2.5 py-1.5 sm:px-4 sm:py-2.5 shadow-xl backdrop-blur-md transition-all">
-        <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wide text-cream/50 whitespace-nowrap">
-          Thời gian ước tính
+      <div className="pointer-events-auto min-w-[100px] flex-1 rounded-xl border border-white/10 bg-ink/85 px-2.5 py-1.5 shadow-xl backdrop-blur-md transition-all sm:min-w-0 sm:flex-none sm:rounded-2xl sm:px-4 sm:py-2.5">
+        <p className="whitespace-nowrap text-[9px] font-medium uppercase tracking-wide text-cream/50 sm:text-[10px]">
+          Thời gian
         </p>
         <p
-          className={`font-mono text-[12px] sm:text-lg font-bold ${getValueColorClass()} whitespace-nowrap`}
+          className={`whitespace-nowrap font-mono text-[12px] font-bold sm:text-lg ${getValueColorClass()}`}
         >
           {formatDuration(route.durationMinutes)}
         </p>
       </div>
 
-      {/* 3. Trễ do giao thông (Chỉ hiện trên Desktop/Tablet với hidden sm:block) */}
+      {/* 3. Trễ do giao thông (Chỉ hiện trên Desktop/Tablet) */}
       {hasTrafficDelay && (
-        <div className="pointer-events-auto hidden sm:block min-w-[100px] sm:flex-none rounded-xl sm:rounded-2xl border border-white/10 bg-ink/85 px-2.5 py-1.5 sm:px-4 sm:py-2.5 shadow-xl backdrop-blur-md transition-all">
-          <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wide text-cream/50 whitespace-nowrap">
+        <div className="pointer-events-auto hidden min-w-[100px] rounded-xl border border-white/10 bg-ink/85 px-2.5 py-1.5 shadow-xl backdrop-blur-md transition-all sm:block sm:min-w-0 sm:flex-none sm:rounded-2xl sm:px-4 sm:py-2.5">
+          <p className="whitespace-nowrap text-[9px] font-medium uppercase tracking-wide text-cream/50 sm:text-[10px]">
             Trễ do giao thông
           </p>
           <p
-            className={`font-mono text-[12px] sm:text-lg font-bold ${getValueColorClass()} whitespace-nowrap`}
+            className={`whitespace-nowrap font-mono text-[12px] font-bold sm:text-lg ${getValueColorClass()}`}
           >
             {formatDuration(route.trafficDelayMinutes!)}
           </p>
@@ -88,12 +88,12 @@ export function RouteStatsBar({
       )}
 
       {/* 4. Điểm dừng */}
-      <div className="pointer-events-auto flex-1 min-w-[100px] sm:flex-none rounded-xl sm:rounded-2xl border border-white/10 bg-ink/85 px-2.5 py-1.5 sm:px-4 sm:py-2.5 shadow-xl backdrop-blur-md transition-all">
-        <p className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wide text-cream/50 whitespace-nowrap">
+      <div className="pointer-events-auto min-w-[100px] flex-1 rounded-xl border border-white/10 bg-ink/85 px-2.5 py-1.5 shadow-xl backdrop-blur-md transition-all sm:min-w-0 sm:flex-none sm:rounded-2xl sm:px-4 sm:py-2.5">
+        <p className="whitespace-nowrap text-[9px] font-medium uppercase tracking-wide text-cream/50 sm:text-[10px]">
           Điểm dừng
         </p>
         <p
-          className={`font-mono text-[12px] sm:text-lg font-bold ${getValueColorClass()} whitespace-nowrap`}
+          className={`whitespace-nowrap font-mono text-[12px] font-bold sm:text-lg ${getValueColorClass()}`}
         >
           {stops.length} điểm
         </p>
