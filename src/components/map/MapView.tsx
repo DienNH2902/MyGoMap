@@ -77,6 +77,7 @@ interface MapViewProps {
    * hành vi cũ (không navigate) giữ nguyên 100%.
    */
   isNavigating?: boolean;
+  onNavigateToMapPoint?: (place: PlaceResult) => void;
 }
 
 const POI_FOCUS_ZOOM = 16;
@@ -234,6 +235,7 @@ export function MapView({
   onOpenAroundSearchFromMap,
   onLocationError,
   onMapReady,
+  onNavigateToMapPoint,
   isNavigating = false,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -818,6 +820,7 @@ export function MapView({
       !map ||
       (!onSelectStartFromMap &&
         !onSelectEndFromMap &&
+        !onNavigateToMapPoint &&
         !onSelectCustomStopFromMap &&
         !onOpenAroundSearchFromMap)
     )
@@ -990,6 +993,28 @@ export function MapView({
         btnGroup.appendChild(btnAround);
       }
 
+      if (onNavigateToMapPoint) {
+        const btnNavigate = document.createElement("button");
+        btnNavigate.type = "button";
+        btnNavigate.textContent = "Đi đến đây";
+        btnNavigate.style.flex = "1";
+        btnNavigate.style.padding = "12px 14px";
+        btnNavigate.style.fontSize = "13px";
+        btnNavigate.style.fontWeight = "700";
+        btnNavigate.style.color = "#ffffff";
+        btnNavigate.style.backgroundColor = "#2563eb";
+        btnNavigate.style.border = "none";
+        btnNavigate.style.borderRadius = "6px";
+        btnNavigate.style.cursor = "pointer";
+
+        btnNavigate.addEventListener("click", () => {
+          onNavigateToMapPoint(place);
+          loadingPopup.remove();
+        });
+
+        btnGroup.appendChild(btnNavigate);
+      }
+
       container.appendChild(btnGroup);
       loadingPopup.setDOMContent(container);
     };
@@ -1038,6 +1063,7 @@ export function MapView({
   }, [
     onSelectStartFromMap,
     onSelectEndFromMap,
+    onNavigateToMapPoint,
     onSelectCustomStopFromMap,
     onOpenAroundSearchFromMap,
     customStops,

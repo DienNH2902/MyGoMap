@@ -337,6 +337,9 @@ export function MapExperience() {
           setAroundSearchResults([]);
           setActiveAroundPoiId(null);
         }}
+        onNavigateToMapPoint={(place) => {
+          void quickSearch.selectDestination(place);
+        }}
         onLocationError={setLocationError}
         onMapReady={(map) => {
           mapRef.current = map;
