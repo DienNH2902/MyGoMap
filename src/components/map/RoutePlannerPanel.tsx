@@ -166,7 +166,7 @@ export function RoutePlannerPanel({
         <button
           type="button"
           onClick={onToggleCollapse}
-          className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-ink/10 bg-ink/85 px-6 py-2.5 text-xs font-semibold text-cream shadow-md backdrop-blur-md transition-all hover:bg-ink/95 active:scale-95"
+          className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-ink/10 bg-ink/85 px-4 py-1.5 text-md font-bold text-cream shadow-md backdrop-blur-md transition-all hover:bg-ink/95 active:scale-95"
         >
           <span>{isCollapsed ? "Mở bảng" : "Đóng bảng"}</span>
           <svg

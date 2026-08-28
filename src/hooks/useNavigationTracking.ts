@@ -94,15 +94,26 @@ interface NavigationState {
   /** true trong lúc đang gọi API tính lại lộ trình theo vị trí mới. */
   isRerouting: boolean;
   isFollowing: boolean;
+  /**
+   * true khi người dùng đã đến điểm đích (trong ngưỡng ARRIVAL_THRESHOLD_METERS).
+   * MapExperience dựa vào field này để mở Modal "Bạn đã đến nơi!" — không dùng
+   * hệ thống `notification` chung (vốn dành cho các cảnh báo lỗi khác như mất
+   * quyền GPS), vì arrival đã có UI Modal riêng đẹp hơn ở MapExperience.tsx.
+   */
+  hasArrived: boolean;
 }
 
-/** Ngưỡng để quyết định có nên gọi tính lại lộ trình hay không — tránh gọi
- * API dồn dập mỗi lần GPS nhích vài mét. */
+interface NotificationState {
+  visible: boolean;
+  message: string;
+}
+
 const REROUTE_MIN_DISTANCE_METERS = 40;
 const REROUTE_MIN_INTERVAL_MS = 8000;
 const REROUTE_MAX_INTERVAL_MS = 25000; // vẫn làm mới định kỳ dù đứng yên
 const REROUTE_OFFROUTE_MIN_INTERVAL_MS = 4000; // đi lệch route thì ưu tiên tính lại nhanh hơn
 // Lấy chiều cao màn hình hiện tại để tính chính xác 1/3
+const ARRIVAL_THRESHOLD_METERS = 30;
 const screenHeight = typeof window !== "undefined" ? window.innerHeight : 800;
 
 export function useNavigationTracking(
@@ -121,7 +132,30 @@ export function useNavigationTracking(
     liveRoute: null,
     isRerouting: false,
     isFollowing: true,
+    hasArrived: false,
   });
+
+  // ============================================================
+  // NEW: Modal thông báo bằng Tailwind
+  // ============================================================
+  const [notification, setNotification] = useState<NotificationState>({
+    visible: false,
+    message: "",
+  });
+
+  const showNotification = useCallback((message: string) => {
+    setNotification({
+      visible: true,
+      message,
+    });
+  }, []);
+
+  const closeNotification = useCallback(() => {
+    setNotification({
+      visible: false,
+      message: "",
+    });
+  }, []);
 
   const watchIdRef = useRef<number | null>(null);
   const routeLineRef = useRef<Feature<LineString> | null>(null);
@@ -145,6 +179,10 @@ export function useNavigationTracking(
   // Camera có đang tự động bám theo người dùng hay không.
   // false khi người dùng chủ động vuốt/kéo/zoom/xoay bản đồ.
   const isFollowingRef = useRef(true);
+
+  // Đảm bảo thông báo "Bạn đã đến nơi" chỉ xuất hiện một lần
+  // trong mỗi phiên navigation.
+  const arrivalNotifiedRef = useRef(false);
 
   // Đánh dấu camera đang được app điều khiển.
   // Dùng để tránh việc easeTo/flyTo của chính app bị hiểu nhầm
@@ -578,7 +616,7 @@ export function useNavigationTracking(
       extrapolationBearingRef.current !== null &&
       msSinceLastFix < 4000 &&
       frameDtSeconds > 0 &&
-      frameDtSeconds < 0.5; // bỏ qua khung hình bất thường (tab bị ẩn/lag nặng)
+      frameDtSeconds < 0.5;
 
     if (
       canExtrapolate &&
@@ -927,15 +965,70 @@ export function useNavigationTracking(
     [performReroute],
   );
 
+  /**
+   * Kiểm tra khoảng cách trực tiếp từ vị trí GPS hiện tại tới điểm đến.
+   *
+   * Không dùng distanceToDestination của route vì route có thể đang được
+   * tính lại liên tục. Khoảng cách trực tiếp tới destination ổn định hơn
+   * để quyết định thời điểm hiển thị thông báo đã đến nơi.
+   */
+  const checkArrival = useCallback((userLat: number, userLon: number) => {
+    const dest = destinationRef.current;
+
+    if (!dest) return;
+
+    // Đã thông báo rồi thì không thông báo lại dù GPS tiếp tục gửi position.
+    if (arrivalNotifiedRef.current) return;
+
+    try {
+      const userPoint = turf.point([userLon, userLat]);
+      const destinationPoint = turf.point([dest.lon, dest.lat]);
+
+      const distanceMeters = turf.distance(userPoint, destinationPoint, {
+        units: "meters",
+      });
+
+      if (
+        Number.isFinite(distanceMeters) &&
+        distanceMeters <= ARRIVAL_THRESHOLD_METERS
+      ) {
+        arrivalNotifiedRef.current = true;
+
+        // Rung thiết bị nếu browser/device hỗ trợ.
+        if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+          try {
+            navigator.vibrate([300, 150, 300]);
+          } catch {
+            // Một số browser có thể từ chối vibration.
+          }
+        }
+
+        // Bật cờ hasArrived — MapExperience.tsx đã có sẵn Modal "Bạn đã đến
+        // nơi!" lắng nghe đúng field này để tự mở, KHÔNG dùng hệ thống
+        // notification chung (dành cho lỗi/cảnh báo khác) vì arrival đã có
+        // UI riêng đẹp hơn rồi, tránh hiện 2 thông báo chồng nhau.
+        setState((prev) => ({ ...prev, hasArrived: true }));
+      }
+    } catch (err) {
+      console.warn("Không thể kiểm tra trạng thái đã đến nơi:", err);
+    }
+  }, []);
+
   // Bắt đầu navigation tracking
   const startNavigation = useCallback(() => {
     if (!navigator.geolocation) {
-      alert("Trình duyệt không hỗ trợ GPS");
+      // ============================================================
+      // NEW: Thay alert bằng Modal Tailwind
+      // ============================================================
+      showNotification("Trình duyệt không hỗ trợ GPS");
       return;
     }
 
     if (!route) {
-      alert("Chưa có lộ trình để điều hướng");
+      // ============================================================
+      // NEW: Thay alert bằng Modal Tailwind
+      // ============================================================
+      showNotification("Chưa có lộ trình để điều hướng");
       return;
     }
 
@@ -954,6 +1047,7 @@ export function useNavigationTracking(
       ...prev,
       isNavigating: true,
       isFollowing: true,
+      hasArrived: false, // chuyến đi mới, phải reset để có thể báo "đến nơi" lại
     }));
 
     isNavigatingRef.current = true;
@@ -961,6 +1055,9 @@ export function useNavigationTracking(
     // chắc chắn có một lần tính route-từ-vị-trí-hiện-tại ngay lập tức.
     lastRerouteAtRef.current = 0;
     lastReroutePosRef.current = null;
+    // Đây là một chuyến navigation mới,
+    // cho phép hiển thị lại thông báo "Bạn đã đến nơi".
+    arrivalNotifiedRef.current = false;
 
     // Lấy vị trí ngay lập tức (fast-path)
     navigator.geolocation.getCurrentPosition(
@@ -1022,7 +1119,9 @@ export function useNavigationTracking(
         // dùng route A→B tĩnh đã lập lúc trước.
         void performReroute(latitude, longitude);
       },
-      (error) => console.warn("Lỗi lấy vị trí ban đầu:", error),
+      (error) => {
+        console.warn("Lỗi lấy vị trí ban đầu:", error);
+      },
       { enableHighAccuracy: true, timeout: 5000 },
     );
 
@@ -1038,6 +1137,8 @@ export function useNavigationTracking(
         const remaining = calculateRemainingDistance(latitude, longitude);
 
         updateMarker(longitude, latitude, heading, accuracy, speed);
+
+        checkArrival(latitude, longitude);
 
         setState((prev) => {
           // Throttle camera updates: chỉ cập nhật camera mỗi 800ms để tránh giật
@@ -1119,7 +1220,10 @@ export function useNavigationTracking(
       (error) => {
         console.error("GPS tracking error:", error);
         if (error.code === error.PERMISSION_DENIED) {
-          alert("Cần quyền truy cập vị trí để điều hướng.");
+          // ============================================================
+          // NEW: Thay alert bằng Modal Tailwind
+          // ============================================================
+          showNotification("Cần quyền truy cập vị trí để điều hướng.");
           stopNavigation();
         }
       },
@@ -1136,6 +1240,8 @@ export function useNavigationTracking(
     updateMarker,
     performReroute,
     maybeReroute,
+    checkArrival,
+    showNotification,
   ]);
 
   // Dừng navigation tracking
@@ -1194,6 +1300,8 @@ export function useNavigationTracking(
 
     isProgrammaticCameraRef.current = false;
 
+    arrivalNotifiedRef.current = false;
+
     setState({
       isNavigating: false,
       userLocation: null,
@@ -1204,6 +1312,7 @@ export function useNavigationTracking(
       liveRoute: null,
       isRerouting: false,
       isFollowing: false,
+      hasArrived: false,
     });
 
     if (map) {
@@ -1237,5 +1346,12 @@ export function useNavigationTracking(
     startNavigation,
     stopNavigation,
     followUserLocation,
+
+    // ============================================================
+    // NEW: API điều khiển Modal thông báo
+    // ============================================================
+    notification,
+    showNotification,
+    closeNotification,
   };
 }

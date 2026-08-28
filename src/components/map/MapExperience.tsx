@@ -79,6 +79,9 @@ export function MapExperience() {
   const quickSearch = useQuickDestinationSearch({ planner });
   const mapRef = useRef<MapLibreMap | null>(null);
 
+  // State quản lý Modal "Bạn đã đến nơi"
+  const [isArrivalModalOpen, setIsArrivalModalOpen] = useState(false);
+
   // Navigation tracking hook — truyền thêm điểm đến cố định (planner.end) và
   // cùng option né cao tốc/kẹt xe đã dùng để lập kế hoạch, để mỗi lần tính
   // lại lộ trình theo vị trí hiện tại vẫn tôn trọng đúng lựa chọn của người
@@ -93,6 +96,13 @@ export function MapExperience() {
       : null,
     { avoidHighways: planner.avoidHighways, useTraffic: planner.avoidTraffic },
   );
+
+  // Hiện Modal khi hook xác nhận người dùng đã đến điểm đích.
+  useEffect(() => {
+    if (navigation.hasArrived) {
+      setIsArrivalModalOpen(true);
+    }
+  }, [navigation.hasArrived]);
 
   // Tuyến đường thực sự cần vẽ lên bản đồ: khi đang dẫn đường (đã bấm "Về
   // giữa"), luôn ưu tiên lộ trình vừa được TÍNH LẠI từ vị trí hiện tại của
@@ -649,6 +659,93 @@ export function MapExperience() {
           isNavigating={navigation.isNavigating}
         />
       </div>
+
+      {/* MODAL THÔNG BÁO ĐÃ ĐẾN NƠI */}
+      {isArrivalModalOpen && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 px-5 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="arrival-modal-title"
+        >
+          <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-accent-gold/30 bg-ink shadow-2xl">
+            {/* Nút đóng */}
+            {/* <button
+              type="button"
+              onClick={() => setIsArrivalModalOpen(false)}
+              className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-cream/70 transition hover:bg-white/20 hover:text-cream active:scale-95"
+              aria-label="Đóng thông báo"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button> */}
+
+            {/* Hình mèo */}
+            <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-b from-accent-gold/10 to-transparent">
+              <Image
+                src="/assets/Mèo giảng viên.png"
+                alt="Mèo Giáo Viên Map"
+                fill
+                sizes="320px"
+                unoptimized
+                className="object-contain p-4"
+              />
+            </div>
+
+            {/* Nội dung */}
+            <div className="px-6 pb-6 pt-0 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-7 w-7 text-emerald-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+
+              <p
+                id="arrival-modal-title"
+                className="text-xl font-extrabold text-cream"
+              >
+                Bạn đã đến nơi! 🎉
+              </p>
+
+              <p className="mt-2 text-sm leading-relaxed text-cream/65">
+                Chuyến đi của bạn đã đến điểm đích. Chúc bạn có một hành trình
+                thật vui vẻ!
+              </p>
+
+              <button
+                type="button"
+                onClick={() => setIsArrivalModalOpen(false)}
+                className="mt-5 w-full rounded-2xl bg-accent-gold px-5 py-3 text-sm font-extrabold text-ink shadow-lg transition hover:brightness-110 active:scale-[0.98]"
+              >
+                Đã hiểu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
