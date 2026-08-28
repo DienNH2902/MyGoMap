@@ -78,6 +78,7 @@ interface MapViewProps {
    */
   isNavigating?: boolean;
   onNavigateToMapPoint?: (place: PlaceResult) => void;
+  isQuickSearch?: boolean;
 }
 
 const POI_FOCUS_ZOOM = 16;
@@ -237,6 +238,7 @@ export function MapView({
   onMapReady,
   onNavigateToMapPoint,
   isNavigating = false,
+  isQuickSearch = false,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -781,6 +783,7 @@ export function MapView({
     customStops,
     gender,
     isNavigating,
+    isQuickSearch,
   ]);
 
   // Marker điểm A - B
@@ -792,7 +795,11 @@ export function MapView({
     endpointMarkersRef.current = [];
 
     const endpoints: Array<{ place: PlaceResult; kind: "start" | "end" }> = [];
-    if (start) endpoints.push({ place: start, kind: "start" });
+
+    if (!isQuickSearch && start) {
+      endpoints.push({ place: start, kind: "start" });
+    }
+
     if (end) endpoints.push({ place: end, kind: "end" });
 
     endpoints.forEach(({ place, kind }) => {
@@ -810,7 +817,7 @@ export function MapView({
         .addTo(map);
       endpointMarkersRef.current.push(marker);
     });
-  }, [start, end, theme]);
+  }, [start, end, theme, isQuickSearch]);
 
   // Event Contextmenu chọn điểm trên bản đồ
   // Event Contextmenu / Long-press chọn điểm trên bản đồ

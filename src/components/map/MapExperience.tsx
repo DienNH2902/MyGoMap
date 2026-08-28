@@ -344,6 +344,7 @@ export function MapExperience() {
         onMapReady={(map) => {
           mapRef.current = map;
         }}
+        isQuickSearch={quickSearch.hasSearched}
       />
 
       {/* Tìm đường nhanh: chỉ nhập "Nơi đến", điểm A luôn = vị trí GPS */}
