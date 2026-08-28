@@ -9,6 +9,7 @@ import {
   getRouteWindowOverpassBbox,
 } from "../geo/turfHelpers";
 import type { PoiCategoryDefinition, PoiResult } from "../types";
+import type { TomTomSearchApiResult } from "@/app/api/tomtom/search/route";
 
 interface OverpassTags {
   name?: string;
@@ -206,17 +207,91 @@ async function fetchOverpassQuery(
 }
 
 /**
- * Finds nearby POIs for ALL stops in ONE Overpass request instead of one
- * request per stop. This is the key fix for the "trạm thứ 3 bị treo rồi báo
- * lỗi 429" bug: querying stops one at a time meant every extra stop added
- * another sequential HTTP round-trip (plus retry backoff), which very
- * quickly ran into Overpass's public rate limit. A single combined query —
- * one `around:` clause per (stop, category) pair, unioned together — asks
- * for everything at once and lets Overpass's server do the heavy lifting in
- * one pass, which is both faster and far less likely to be rate-limited.
+ * Gọi API proxy TomTom Search (/api/tomtom/search) để tìm POI theo tên danh
+ * mục (vd "Trạm xăng"), ưu tiên/giới hạn quanh 1 toạ độ + bán kính — dùng
+ * chung cho cả `findPoisForStops` (POI quanh từng điểm dừng khi lập lộ
+ * trình) và `findPoisAroundPoint` (tìm quanh 1 điểm bất kỳ người dùng chọn).
+ * Đây là lý do 2 hàm này KHÔNG còn phụ thuộc Overpass/OSM nữa — dữ liệu POI
+ * của TomTom là cơ sở dữ liệu riêng của họ, có thể tìm ra được những địa
+ * điểm mà OSM chưa từng được ai vẽ/tag.
  *
- * Never throws: any failure degrades to "no POIs found" for every stop
- * (see `fetchFailed`) so the route itself is never lost because of this.
+ * Không throw: mọi lỗi mạng/HTTP đều trả về `null`, để bên gọi tự quyết định
+ * coi là "không tìm thấy" hay "fetch thất bại".
+ */
+async function fetchTomTomPois(
+  categoryQuery: string,
+  center: { lat: number; lon: number },
+  radiusMeters: number,
+  limit: number,
+  signal?: AbortSignal,
+): Promise<TomTomSearchApiResult[] | null> {
+  try {
+    const response = await fetch("/api/tomtom/search", {
+      method: "POST",
+      signal,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: categoryQuery,
+        lat: center.lat,
+        lon: center.lon,
+        radiusMeters,
+        limit,
+      }),
+    });
+
+    if (!response.ok) return null;
+
+    const data = (await response.json()) as {
+      results?: TomTomSearchApiResult[];
+    };
+    return data.results ?? [];
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Chạy nhiều task bất đồng bộ với giới hạn số lượng chạy song song cùng lúc
+ * — cần thiết vì `findPoisForStops` có thể gọi TomTom hàng chục lần (mỗi cặp
+ * điểm-dừng × danh-mục là 1 lần gọi), trong khi TomTom free tier giới hạn
+ * QPS khá thấp (~5 request/giây) trên gói self-serve. Bắn tất cả cùng lúc dễ
+ * dính 429; giới hạn còn 4 luồng song song giúp an toàn hơn nhiều mà vẫn
+ * nhanh hơn hẳn so với gọi tuần tự từng cái một.
+ */
+async function runWithConcurrencyLimit<T>(
+  tasks: Array<() => Promise<T>>,
+  concurrency: number,
+): Promise<T[]> {
+  const results: T[] = new Array(tasks.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < tasks.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+
+      const task = tasks[currentIndex];
+      if (!task) continue;
+
+      results[currentIndex] = await task();
+    }
+  }
+
+  const workerCount = Math.min(concurrency, tasks.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+
+  return results;
+}
+
+/**
+ * Finds nearby POIs for every stop by calling TomTom Search once per (stop,
+ * category) pair — chạy song song có giới hạn (xem `runWithConcurrencyLimit`)
+ * thay vì 1 query Overpass gộp như trước, vì TomTom Search không hỗ trợ gộp
+ * nhiều truy vấn khác nhau vào 1 request như Overpass.
+ *
+ * `fetchFailed` chỉ true khi TẤT CẢ các cặp (điểm dừng, danh mục) đều lỗi —
+ * nếu chỉ một vài cặp lỗi (vd 429 thoáng qua) trong khi số còn lại vẫn có
+ * kết quả, coi đó là thành công một phần thay vì làm mất luôn cả chuyến đi.
  */
 export async function findPoisForStops(
   points: StopQueryPoint[],
@@ -232,64 +307,46 @@ export async function findPoisForStops(
     return { resultsByStop, fetchFailed: false };
   }
 
-  // One `around:` clause per (stop, category) combination, all unioned into
-  // a single query. Overpass automatically de-duplicates a node that matches
-  // more than one clause (e.g. it's near two different stops), so we never
-  // pay for the same element twice.
-  const clauses: string[] = [];
+  const jobs: Array<{
+    point: StopQueryPoint;
+    category: PoiCategoryDefinition;
+  }> = [];
   for (const point of points) {
     for (const category of categories) {
-      clauses.push(
-        `node["${category.osmKey}"="${category.osmValue}"](around:${POI_SEARCH_RADIUS_METERS},${point.lat},${point.lon})${VIETNAM_AREA_FILTER};`,
-      );
+      jobs.push({ point, category });
     }
   }
 
-  const query = `[out:json][timeout:25];${VIETNAM_AREA_SETUP}(${clauses.join("\n")});out center tags;`;
+  let failedCount = 0;
 
-  const data = await fetchOverpassQuery(query, signal);
-  if (!data) {
-    return { resultsByStop, fetchFailed: true };
-  }
+  const jobResults = await runWithConcurrencyLimit(
+    jobs.map(({ point, category }) => async () => {
+      const items = await fetchTomTomPois(
+        category.label,
+        point,
+        POI_SEARCH_RADIUS_METERS,
+        MAX_POIS_PER_CATEGORY_PER_STOP,
+        signal,
+      );
 
-  // Pre-compute each element's coordinates once (nodes have lat/lon directly,
-  // ways/relations only carry a `center` when queried with `out center`).
-  const elementsWithCoords = data.elements
-    .map((element) => {
-      const lat = element.lat ?? element.center?.lat;
-      const lon = element.lon ?? element.center?.lon;
-      if (lat === undefined || lon === undefined) return null;
-      return { element, lat, lon };
-    })
-    .filter(
-      (
-        entry,
-      ): entry is { element: OverpassElement; lat: number; lon: number } =>
-        entry !== null,
-    );
+      if (items === null) {
+        failedCount += 1;
+        return { point, category, matches: [] as PoiResult[] };
+      }
 
-  // For each stop and category, re-filter the shared result set by actual
-  // distance to THAT stop (an element can appear in the union because it's
-  // near stop A without necessarily being within radius of stop B).
-  for (const point of points) {
-    const categoryResults: Record<string, PoiResult[]> = {};
-
-    for (const category of categories) {
-      const matches = elementsWithCoords
-        .filter(
-          ({ element }) =>
-            element.tags?.[category.osmKey] === category.osmValue,
-        )
+      const matches: PoiResult[] = items
         .map(
-          ({ element, lat, lon }): PoiResult => ({
-            id: `${category.id}-${element.type}-${element.id}`,
-            name: element.tags?.name ?? category.label,
+          (item): PoiResult => ({
+            id: `${category.id}-tomtom-${item.id}`,
+            name: item.name ?? category.label,
             category: category.id,
-            lon,
-            lat,
-            address: buildAddress(element.tags),
-            imageUrl: resolveImageUrl(element.tags),
-            distanceFromStopKm: distanceBetweenKm(point, { lon, lat }),
+            lon: item.lon,
+            lat: item.lat,
+            address: item.address ?? undefined,
+            distanceFromStopKm: distanceBetweenKm(point, {
+              lon: item.lon,
+              lat: item.lat,
+            }),
           }),
         )
         .filter(
@@ -298,13 +355,20 @@ export async function findPoisForStops(
         .sort((a, b) => a.distanceFromStopKm - b.distanceFromStopKm)
         .slice(0, MAX_POIS_PER_CATEGORY_PER_STOP);
 
-      categoryResults[category.id] = matches;
-    }
+      return { point, category, matches };
+    }),
+    4,
+  );
 
+  for (const { point, category, matches } of jobResults) {
+    const categoryResults = resultsByStop.get(point.stopId) ?? {};
+    categoryResults[category.id] = matches;
     resultsByStop.set(point.stopId, categoryResults);
   }
 
-  return { resultsByStop, fetchFailed: false };
+  const fetchFailed = failedCount > 0 && failedCount === jobs.length;
+
+  return { resultsByStop, fetchFailed };
 }
 
 export interface AroundSearchInput {
@@ -328,38 +392,33 @@ export async function findPoisAroundPoint({
 }> {
   const safeRadiusMeters = Math.max(50, Math.min(10000, radiusMeters));
 
-  const query = `[out:json][timeout:25];${VIETNAM_AREA_SETUP}(
-node["${category.osmKey}"="${category.osmValue}"](around:${safeRadiusMeters},${center.lat},${center.lon})${VIETNAM_AREA_FILTER};
-way["${category.osmKey}"="${category.osmValue}"](around:${safeRadiusMeters},${center.lat},${center.lon})${VIETNAM_AREA_FILTER};
-relation["${category.osmKey}"="${category.osmValue}"](around:${safeRadiusMeters},${center.lat},${center.lon})${VIETNAM_AREA_FILTER};
-);out center tags;`;
+  const items = await fetchTomTomPois(
+    category.label,
+    center,
+    safeRadiusMeters,
+    30,
+    signal,
+  );
 
-  const data = await fetchOverpassQuery(query, signal);
-
-  if (!data) {
+  if (items === null) {
     return { pois: [], fetchFailed: true };
   }
 
-  const pois = data.elements
-    .map((element): PoiResult | null => {
-      const lat = element.lat ?? element.center?.lat;
-      const lon = element.lon ?? element.center?.lon;
-
-      if (lat === undefined || lon === undefined) return null;
-      if (element.tags?.[category.osmKey] !== category.osmValue) return null;
-
-      return {
-        id: `around-${category.id}-${element.type}-${element.id}`,
-        name: element.tags?.name ?? category.label,
+  const pois = items
+    .map(
+      (item): PoiResult => ({
+        id: `around-${category.id}-tomtom-${item.id}`,
+        name: item.name ?? category.label,
         category: category.id,
-        lon,
-        lat,
-        address: buildAddress(element.tags),
-        imageUrl: resolveImageUrl(element.tags),
-        distanceFromStopKm: distanceBetweenKm(center, { lon, lat }),
-      };
-    })
-    .filter((poi): poi is PoiResult => poi !== null)
+        lon: item.lon,
+        lat: item.lat,
+        address: item.address ?? undefined,
+        distanceFromStopKm: distanceBetweenKm(center, {
+          lon: item.lon,
+          lat: item.lat,
+        }),
+      }),
+    )
     .filter((poi) => poi.distanceFromStopKm * 1000 <= safeRadiusMeters)
     .sort((a, b) => a.distanceFromStopKm - b.distanceFromStopKm)
     .slice(0, 30);
