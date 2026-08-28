@@ -28,6 +28,12 @@ const STORAGE_KEY_LOADER = "mygomap_user_loader";
 
 type GenderTheme = "nam" | "nu" | "khac";
 
+function isMobileDevice(): boolean {
+  if (typeof window === "undefined") return false;
+
+  return window.matchMedia("(max-width: 767px)").matches;
+}
+
 function getCatImageByGender(gender: GenderTheme): string {
   switch (gender) {
     case "nu":
@@ -61,11 +67,11 @@ const MapView = dynamic(
     })),
   {
     ssr: false,
-    loading: () => (
-      <div className="absolute inset-0 flex items-center justify-center bg-surface-muted z-50 whitespace-pre-line">
-        <OwlLoadingSpinner label="Xong rồi!" />
-      </div>
-    ),
+    // loading: () => (
+    //   <div className="absolute inset-0 flex items-center justify-center bg-surface-muted z-50 whitespace-pre-line">
+    //     <OwlLoadingSpinner label="Xong rồi!" />
+    //   </div>
+    // ),
   },
 );
 
@@ -115,6 +121,9 @@ export function MapExperience() {
     : (planner.plan?.route ?? null);
 
   const [isDelaying, setIsDelaying] = useState<boolean>(() => {
+    // Mobile: vào map ngay, không loader, không kiểm tra localStorage
+    if (isMobileDevice()) return false;
+
     if (typeof window === "undefined") return false;
     const load = localStorage.getItem(STORAGE_KEY_LOADER);
     // Nếu đã có flag "true" thì KHÔNG delay nữa (isDelaying = false)
@@ -189,6 +198,10 @@ export function MapExperience() {
   }, [isDelaying]);
 
   useEffect(() => {
+    if (isMobileDevice()) {
+      return;
+    }
+    
     const savedGender =
       (localStorage.getItem(STORAGE_KEY_USER_GENDER) as GenderTheme) || "nam";
     setGender(savedGender);

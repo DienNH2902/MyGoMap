@@ -3,6 +3,7 @@ import { Be_Vietnam_Pro, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { ServiceWorkerRegistration } from "@/components/common/ServiceWorkerRegistration";
+import { MobileRedirect } from "@/components/common/MobileRedirect";
 
 // Be Vietnam Pro: full Vietnamese diacritic support, used for both headings and body text.
 const beVietnamPro = Be_Vietnam_Pro({
@@ -79,6 +80,7 @@ export default function RootLayout({
       className={`${beVietnamPro.variable} ${jetBrainsMono.variable}`}
     >
       <body className="bg-surface font-display text-ink antialiased">
+        <MobileRedirect />
         <ServiceWorkerRegistration />
         <Header />
         {children}
