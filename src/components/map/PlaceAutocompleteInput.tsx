@@ -114,7 +114,7 @@ export function PlaceAutocompleteInput({
           onBlur={() => setTimeout(() => setIsOpen(false), 200)}
           className={`w-full rounded-xl border border-ink/10 bg-black/30 px-4 py-2.5 pr-9 text-base text-cream placeholder:text-cream/30 transition focus:outline-none disabled:bg-black/10 disabled:text-cream/40 sm:text-sm ${
             hideFocusRing
-              ? "focus:border-white/20 placeholder:text-cream"
+              ? "focus:border-white/20 placeholder:text-teal-500"
               : "focus:border-primary focus:ring-2 focus:ring-primary/30"
           }`}
         />

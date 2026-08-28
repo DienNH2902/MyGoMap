@@ -21,6 +21,7 @@ import { AroundSearchPanel } from "./SearchAroundPannel";
 import { useRoutePlanner } from "@/hooks/useRoutePlanner";
 import { QuickDestinationCard } from "./QuickDestinationCard";
 import { useQuickDestinationSearch } from "@/hooks/useQuickDestinationSearch ";
+import clsx from "clsx";
 
 const STORAGE_KEY_USER_GENDER = "mygomap_user_gender";
 const STORAGE_KEY_LOADER = "mygomap_user_loader";
@@ -368,40 +369,44 @@ export function MapExperience() {
       </div>
 
       {/* MAP STYLE TOGGLE - MOBILE PANEL KÉO RA KÉO VÀO */}
-      <div
-        className={`fixed top-[calc(var(--header-h)+4rem)] right-0 z-40 transition-transform duration-300 md:hidden ${
-          isMobileStyleOpen
-            ? "translate-x-0"
-            : "translate-x-[calc(100%-2.75rem)]"
-        }`}
-      >
-        <div className="flex items-start">
-          <button
-            type="button"
-            onClick={() => setIsMobileStyleOpen((prev) => !prev)}
-            className="flex h-11 w-11 items-center justify-center rounded-l-2xl border-y border-l border-white/20 bg-ink/90 text-accent-gold shadow-2xl backdrop-blur-md"
-            aria-label="Đổi kiểu bản đồ"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
+      {isPanelCollapsed && (
+        <div
+          className={clsx(
+            "fixed top-[calc(var(--header-h)+10rem)] right-0 z-40 transition-transform duration-300 md:hidden",
+            isMobileStyleOpen
+              ? "translate-x-0"
+              : "translate-x-[calc(100%-2.75rem)]",
+          )}
+        >
+          <div className="flex items-start">
+            <button
+              type="button"
+              onClick={() => setIsMobileStyleOpen((prev) => !prev)}
+              className="flex h-11 w-11 items-center justify-center rounded-l-2xl border-y border-l border-white/20 bg-ink/90 text-accent-gold shadow-2xl backdrop-blur-md"
+              aria-label="Đổi kiểu bản đồ"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-              />
-            </svg>
-          </button>
-          <div className="rounded-l-none rounded-r-2xl border border-white/20 bg-ink/90 p-2 shadow-2xl backdrop-blur-md">
-            <MapStyleToggle value={mapStyleId} onChange={setMapStyleId} />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                />
+              </svg>
+            </button>
+
+            <div className="rounded-r-2xl border-y border-r border-white/20 bg-ink/90 p-2 shadow-2xl backdrop-blur-md">
+              <MapStyleToggle value={mapStyleId} onChange={setMapStyleId} />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {aroundSearchCenter && (
         <AroundSearchPanel
@@ -469,6 +474,7 @@ export function MapExperience() {
           route={planner.plan.route}
           stops={planner.plan.stops}
           isNavigating={navigation.isNavigating}
+          isPanelOpen={!isPanelCollapsed}
         />
       )}
 
@@ -610,6 +616,17 @@ export function MapExperience() {
           <AiAssistantPanel tripContext={tripContext} />
         </div>
       )}
+
+      {/* OVERLAY LÀM MỜ BẢN ĐỒ KHI PANEL MỞ TRÊN MOBILE */}
+      <div
+        onClick={() => setIsPanelCollapsed(true)}
+        className={`fixed inset-0 z-20 bg-black/40 backdrop-blur-sm transition-opacity duration-300 md:hidden ${
+          !isPanelCollapsed
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden="true"
+      />
 
       {/* ROUTE PLANNER PANEL - DESKTOP HOẶC BOTTOM DRAWER SLIDE TRÊN MOBILE */}
       <div

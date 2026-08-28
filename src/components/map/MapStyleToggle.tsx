@@ -14,6 +14,7 @@ const STORAGE_KEY_GENDER = "mygomap_user_gender";
 interface MapStyleToggleProps {
   value: MapStyleId;
   onChange: (styleId: MapStyleId) => void;
+  isPanelOpen?: boolean,
 }
 
 const STYLE_IDS: MapStyleId[] = [
@@ -25,7 +26,7 @@ const STYLE_IDS: MapStyleId[] = [
   "openStreet",
 ];
 
-export function MapStyleToggle({ value, onChange }: MapStyleToggleProps) {
+export function MapStyleToggle({ value, onChange, isPanelOpen = false, }: MapStyleToggleProps) {
   const [gender, setGender] = useState<GenderTheme>("nam");
 
   useEffect(() => {
@@ -49,6 +50,8 @@ export function MapStyleToggle({ value, onChange }: MapStyleToggleProps) {
     if (gender === "khac") return "hover:bg-purple-50 hover:text-purple-500";
     return "hover:bg-slate-100 hover:text-slate-900";
   };
+
+  if (isPanelOpen) return null;
 
   return (
     <div className="pointer-events-auto relative md:absolute md:left-4 md:top-4 z-30 rounded-2xl border border-ink/10 bg-ink/85 p-2 shadow-xl backdrop-blur-md max-w-full">

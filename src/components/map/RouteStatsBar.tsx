@@ -10,6 +10,7 @@ interface RouteStatsBarProps {
   route: RouteGeometry;
   stops: RouteStop[];
   isNavigating?: boolean;
+  isPanelOpen?: boolean;
 }
 
 /** Formats a minute count as "X giờ Y phút" or just "Y phút" when under an hour. */
@@ -24,6 +25,7 @@ export function RouteStatsBar({
   route,
   stops,
   isNavigating = false,
+  isPanelOpen = false,
 }: RouteStatsBarProps) {
   const [gender, setGender] = useState<GenderTheme>("nam");
 
@@ -45,7 +47,7 @@ export function RouteStatsBar({
     typeof route.trafficDelayMinutes === "number" &&
     route.trafficDelayMinutes > 0;
 
-  if (isNavigating) return null;
+  if (isNavigating || isPanelOpen) return null;
 
   return (
     <div className="pointer-events-none absolute bottom-4 left-2 right-2 z-30 flex max-w-[calc(100vw-1rem)] flex-wrap justify-end gap-1.5 sm:bottom-auto sm:left-auto sm:right-4 sm:top-4 sm:max-w-none sm:flex-nowrap sm:gap-2">
