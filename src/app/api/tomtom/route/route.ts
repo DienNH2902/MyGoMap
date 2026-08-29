@@ -73,26 +73,12 @@ export async function POST(request: Request) {
   url.searchParams.set("routeRepresentation", "polyline");
   url.searchParams.set("computeTravelTimeFor", "all");
   url.searchParams.set("sectionType", "traffic");
-  // Gộp tất cả điều kiện "avoid" vào một mảng rồi set 1 lần (TomTom nhận
-  // nhiều giá trị cách nhau bởi dấu phẩy trong cùng 1 tham số "avoid").
-  const avoidValues: string[] = [];
+  
   if (body.avoidHighways) {
     // CHỈ né cao tốc. KHÔNG né "tollRoads" nữa — trạm thu phí BOT trên quốc
     // lộ thường (không phải cao tốc) vẫn hợp lệ và cần thiết cho xe máy đi
     // qua bình thường; né tollRoads sẽ chặn nhầm cả những trạm đó.
-    avoidValues.push("motorways");
-  }
-  // Việt Nam hình chữ S rất hẹp ở một số đoạn miền Trung (Quảng Bình, Quảng
-  // Trị...), nơi đường trong nước chạy sát biên giới Lào. Khi định tuyến
-  // (đặc biệt lúc né cao tốc cho xe máy) trên quãng đường dài xuyên nhiều
-  // tỉnh, thuật toán có thể "cắt" một đoạn ngắn qua bên kia biên giới rồi
-  // quay lại nếu đồ thị routing coi đoạn đó rẻ hơn — gây ra tình trạng route
-  // TPHCM → Hà Nội bị vẽ lẹm ra nước ngoài. App này chỉ phục vụ di chuyển
-  // trong nước Việt Nam, nên LUÔN chặn băng qua biên giới quốc gia, áp dụng
-  // cho cả ô tô lẫn xe máy — không chỉ riêng lúc avoidHighways.
-  avoidValues.push("borderCrossings");
-  if (avoidValues.length > 0) {
-    url.searchParams.set("avoid", avoidValues.join(","));
+    url.searchParams.append("avoid", "motorways");
   }
 
   const response = await fetch(url.toString(), {
