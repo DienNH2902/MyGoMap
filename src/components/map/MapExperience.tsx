@@ -165,7 +165,7 @@ export function MapExperience() {
     null,
   );
 
-  const [mapStyleId, setMapStyleId] = useState<MapStyleId>("street");
+  const [mapStyleId, setMapStyleId] = useState<MapStyleId>("standard");
 
   // State kéo/mở Map Style Panel trên Mobile
   const [isMobileStyleOpen, setIsMobileStyleOpen] = useState(false);
