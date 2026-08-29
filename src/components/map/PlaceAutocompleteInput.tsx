@@ -45,7 +45,7 @@ export function PlaceAutocompleteInput({
    * Chỉ autocomplete bằng Nominatim.
    * Không đụng TomTom quota.
    */
-  const debouncedQuery = useDebouncedValue(query, 1200);
+  const debouncedQuery = useDebouncedValue(query, 400);
 
   /**
    * Controller của autocomplete request hiện tại.
