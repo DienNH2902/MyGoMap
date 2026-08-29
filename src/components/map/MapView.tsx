@@ -481,9 +481,102 @@ export function MapView({
     };
 
     const applyRoute = () => {
-      clearSegmentLayers();
-
       const coords = route?.coordinates ?? [];
+
+      if (
+        isNavigating &&
+        coords.length > 1 &&
+        activeSegmentLayersRef.current.length > 0
+      ) {
+        const breakPoints: [number, number][] = [];
+
+        if (start && Number.isFinite(start.lon) && Number.isFinite(start.lat)) {
+          breakPoints.push([start.lon, start.lat]);
+        }
+
+        stops
+          .filter((stop) => stop.source !== "interval")
+          .forEach((stop) => {
+            if (Number.isFinite(stop.lon) && Number.isFinite(stop.lat)) {
+              breakPoints.push([stop.lon, stop.lat]);
+            }
+          });
+
+        customStops.forEach((stop) => {
+          if (Number.isFinite(stop.lon) && Number.isFinite(stop.lat)) {
+            breakPoints.push([stop.lon, stop.lat]);
+          }
+        });
+
+        if (end && Number.isFinite(end.lon) && Number.isFinite(end.lat)) {
+          breakPoints.push([end.lon, end.lat]);
+        }
+
+        if (breakPoints.length > 1) {
+          const findClosestIndex = (pt: [number, number]): number => {
+            let minDistanceSq = Infinity;
+            let closestIndex = 0;
+
+            for (let i = 0; i < coords.length; i++) {
+              const coord = coords[i];
+              if (!coord) continue;
+
+              const dx = coord[0] - pt[0];
+              const dy = coord[1] - pt[1];
+              const distSq = dx * dx + dy * dy;
+
+              if (distSq < minDistanceSq) {
+                minDistanceSq = distSq;
+                closestIndex = i;
+              }
+            }
+
+            return closestIndex;
+          };
+
+          const breakIndices = breakPoints
+            .map(findClosestIndex)
+            .sort((a, b) => a - b);
+
+          const uniqueIndices = Array.from(new Set(breakIndices));
+          const expectedSegmentCount = uniqueIndices.length - 1;
+
+          if (
+            expectedSegmentCount === activeSegmentLayersRef.current.length &&
+            uniqueIndices.length > 1
+          ) {
+            for (let i = 0; i < expectedSegmentCount; i++) {
+              const startIdx = uniqueIndices[i];
+              const endIdx = uniqueIndices[i + 1];
+
+              if (startIdx === undefined || endIdx === undefined) continue;
+
+              const segmentCoords = coords.slice(startIdx, endIdx + 1);
+              if (segmentCoords.length < 2) continue;
+
+              const segmentSourceId = `mygomap-live-route-seg-source-${i}`;
+              const source = map.getSource(segmentSourceId);
+
+              if (source && "setData" in source) {
+                const segGeojson: GeoJSON.Feature<GeoJSON.LineString> = {
+                  type: "Feature",
+                  properties: {},
+                  geometry: {
+                    type: "LineString",
+                    coordinates: segmentCoords,
+                  },
+                };
+
+                (source as GeoJSONSource).setData(segGeojson);
+              }
+            }
+
+            return;
+          }
+        }
+      }
+
+      clearSegmentLayers();
 
       // Thu thập tất cả điểm dừng theo thứ tự tuyến đường
       const breakPoints: [number, number][] = [];
@@ -1036,7 +1129,7 @@ export function MapView({
           "transform 0.15s ease, " +
           "box-shadow 0.15s ease, " +
           "filter 0.15s ease";
-          
+
         btnNavigate.style.textRendering = "optimizeLegibility";
 
         btnNavigate.addEventListener("mouseenter", () => {
