@@ -517,9 +517,8 @@ function getNavigationCamera(complexity: number): NavigationCameraOptions {
    * 42–78 thay vì 55–80 cho pitch) để sự thay đổi rõ ràng, cảm nhận được
    * khi lái thật, thay vì gần như không đổi như trước.
    */
-  const zoom = 17.2 + safeComplexity * 2.6;
-
-  const pitch = 78 - safeComplexity * 36;
+  const zoom = 17.2 + safeComplexity * 2.8;
+  const pitch = 78 - safeComplexity * 46;
 
   return {
     zoom,
@@ -768,7 +767,7 @@ export function useNavigationTracking(
     programmaticCameraTimerRef.current = setTimeout(() => {
       isProgrammaticCameraRef.current = false;
     }, 800);
-  }, [map, state.userLocation, getCameraForCurrentRoute,]);
+  }, [map, state.userLocation, getCameraForCurrentRoute]);
 
   // Khởi tạo Marker hình mũi tên điều hướng
   const getOrCreateMarker = useCallback(() => {
