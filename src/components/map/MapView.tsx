@@ -1004,15 +1004,64 @@ export function MapView({
         const btnNavigate = document.createElement("button");
         btnNavigate.type = "button";
         btnNavigate.textContent = "Đi đến đây";
-        btnNavigate.style.flex = "1";
-        btnNavigate.style.padding = "12px 14px";
-        btnNavigate.style.fontSize = "13px";
-        btnNavigate.style.fontWeight = "700";
+
+        btnNavigate.style.width = "100%";
+        btnNavigate.style.padding = "14px 16px";
+        btnNavigate.style.marginTop = "4px";
+
+        // Font hỗ trợ tiếng Việt đầy đủ
+        btnNavigate.style.fontFamily =
+          'Inter, "Segoe UI", Roboto, Arial, sans-serif';
+
+        btnNavigate.style.fontSize = "14px";
+        btnNavigate.style.fontWeight = "800";
+        btnNavigate.style.letterSpacing = "0.1px";
+        btnNavigate.style.lineHeight = "1.4";
+
         btnNavigate.style.color = "#ffffff";
-        btnNavigate.style.backgroundColor = "#2563eb";
-        btnNavigate.style.border = "none";
-        btnNavigate.style.borderRadius = "6px";
+
+        // Gradient đặc biệt nhất
+        btnNavigate.style.background =
+          "linear-gradient(135deg, #2563eb 0%, #4f46e5 50%, #7c3aed 100%)";
+
+        btnNavigate.style.border = "1px solid rgba(255, 255, 255, 0.25)";
+        btnNavigate.style.borderRadius = "10px";
         btnNavigate.style.cursor = "pointer";
+
+        btnNavigate.style.boxShadow =
+          "0 6px 18px rgba(79, 70, 229, 0.40), " +
+          "inset 0 1px 0 rgba(255, 255, 255, 0.20)";
+
+        btnNavigate.style.transition =
+          "transform 0.15s ease, " +
+          "box-shadow 0.15s ease, " +
+          "filter 0.15s ease";
+          
+        btnNavigate.style.textRendering = "optimizeLegibility";
+
+        btnNavigate.addEventListener("mouseenter", () => {
+          btnNavigate.style.filter = "brightness(1.08)";
+          btnNavigate.style.transform = "translateY(-1px)";
+          btnNavigate.style.boxShadow =
+            "0 8px 22px rgba(79, 70, 229, 0.50), " +
+            "inset 0 1px 0 rgba(255, 255, 255, 0.25)";
+        });
+
+        btnNavigate.addEventListener("mouseleave", () => {
+          btnNavigate.style.filter = "brightness(1)";
+          btnNavigate.style.transform = "translateY(0)";
+          btnNavigate.style.boxShadow =
+            "0 6px 18px rgba(79, 70, 229, 0.40), " +
+            "inset 0 1px 0 rgba(255, 255, 255, 0.20)";
+        });
+
+        btnNavigate.addEventListener("mousedown", () => {
+          btnNavigate.style.transform = "scale(0.98)";
+        });
+
+        btnNavigate.addEventListener("mouseup", () => {
+          btnNavigate.style.transform = "translateY(-1px)";
+        });
 
         btnNavigate.addEventListener("click", () => {
           onNavigateToMapPoint(place);
