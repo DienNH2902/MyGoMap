@@ -108,10 +108,32 @@ interface NotificationState {
   message: string;
 }
 
-const REROUTE_MIN_DISTANCE_METERS = 40;
-const REROUTE_MIN_INTERVAL_MS = 8000;
-const REROUTE_MAX_INTERVAL_MS = 25000; // vẫn làm mới định kỳ dù đứng yên
-const REROUTE_OFFROUTE_MIN_INTERVAL_MS = 4000; // đi lệch route thì ưu tiên tính lại nhanh hơn
+/**
+ * TRƯỚC ĐÂY: reroute (gọi API TomTom) còn bị kích hoạt theo THỜI GIAN
+ * (mỗi 25s dù đứng yên) và theo KHOẢNG CÁCH ĐÃ ĐI (mỗi 40m nếu đã qua ≥8s)
+ * — với xe máy đi ~20km/h, 40m chỉ mất ~7s, nghĩa là lúc đang lái BÌNH
+ * THƯỜNG (không hề đi lạc) vẫn gọi API gần như liên tục mỗi 8 giây suốt
+ * chuyến đi. Một chuyến 3-4 tiếng tốn ~1500-1800 request chỉ để "đi đúng
+ * đường" — đây là nguyên nhân chính hết quota nhanh, không phải vì tracking
+ * thật sự cần gọi API nhiều đến vậy.
+ *
+ * SỬA: việc "bám theo vị trí hiện tại" đã được làm HOÀN TOÀN Ở CLIENT bằng
+ * cách cắt (turf.lineSlice) đoạn còn lại từ tuyến đã cache trong
+ * `routeLineRef` — xem `calculateRemainingDistance` và `buildTrimmedLiveRoute`
+ * — không tốn request nào. Vì vậy giờ CHỈ còn duy nhất 1 lý do chính đáng để
+ * gọi lại API: người dùng THẬT SỰ đi lệch khỏi tuyến đã cache (rẽ nhầm,
+ * không phải nhiễu GPS thoáng qua). 2 hằng số dưới đây thay thế toàn bộ
+ * REROUTE_MIN_DISTANCE_METERS/REROUTE_MIN_INTERVAL_MS/REROUTE_MAX_INTERVAL_MS
+ * cũ.
+ */
+// Phải lệch tuyến (isOffRoute=true, tức cách tuyến cache >100m — xem
+// calculateRemainingDistance) LIÊN TỤC ít nhất chừng này ms mới coi là đi
+// lạc thật, không phải 1 lần định vị nhiễu/GPS nhảy vọt thoáng qua.
+const OFFROUTE_CONFIRM_MS = 3000;
+// Sau khi đã reroute vì lệch tuyến, chờ tối thiểu chừng này trước khi cho
+// phép reroute lần nữa (dù vẫn đang lệch) — tránh gọi API dồn dập nếu tuyến
+// mới trả về cũng chưa khớp ngay lập tức với vị trí GPS đang nhảy.
+const OFFROUTE_COOLDOWN_MS = 15000;
 // Lấy chiều cao màn hình hiện tại để tính chính xác 1/3
 const ARRIVAL_THRESHOLD_METERS = 30;
 const screenHeight = typeof window !== "undefined" ? window.innerHeight : 800;
@@ -233,7 +255,12 @@ export function useNavigationTracking(
   routeOptionsRef.current = routeOptions;
   const isFetchingRouteRef = useRef(false);
   const lastRerouteAtRef = useRef(0);
-  const lastReroutePosRef = useRef<{ lat: number; lon: number } | null>(null);
+  // Mốc thời gian (ms) từ lúc GPS BẮT ĐẦU báo isOffRoute=true liên tục;
+  // null nghĩa là hiện đang trên tuyến (on-route). Dùng để yêu cầu lệch
+  // tuyến "đủ lâu" (OFFROUTE_CONFIRM_MS) trước khi thật sự gọi API reroute
+  // — chỉ 1 lần định vị nhiễu văng ra ngoài 100m rồi quay lại ngay không nên
+  // tốn 1 request.
+  const offRouteSinceRef = useRef<number | null>(null);
   const rerouteRequestIdRef = useRef(0);
 
   /**
@@ -915,7 +942,11 @@ export function useNavigationTracking(
 
         routeLineRef.current = turf.lineString(newRoute.coordinates);
         lastRerouteAtRef.current = Date.now();
-        lastReroutePosRef.current = { lat: userLat, lon: userLon };
+        // Tuyến mới vừa lấy về được coi là "đang bám sát" vị trí hiện tại —
+        // reset lại bộ đếm lệch tuyến để không vô tình gọi reroute lần nữa
+        // ngay lập tức nếu điểm định vị kế tiếp vẫn tạm thời cách tuyến mới
+        // một chút trong lúc GPS ổn định lại.
+        offRouteSinceRef.current = null;
 
         setState((prev) => ({
           ...prev,
@@ -934,29 +965,45 @@ export function useNavigationTracking(
     [],
   );
 
-  /** Quyết định xem thời điểm này có nên gọi tính lại lộ trình hay không,
-   * dựa trên khoảng cách đã di chuyển kể từ lần tính trước, thời gian đã
-   * trôi qua, và việc có đang đi lệch tuyến hay không. */
+  /**
+   * Quyết định xem có nên gọi lại API tính tuyến hay không. TRƯỚC ĐÂY hàm
+   * này còn tính cả "đã đi được bao nhiêu mét" và "đã qua bao lâu" để làm
+   * mới tuyến định kỳ dù người dùng vẫn đang đi đúng đường — đó chính là
+   * nguồn tốn quota chính (xem giải thích ở OFFROUTE_CONFIRM_MS phía trên).
+   *
+   * GIỜ: lý do DUY NHẤT để gọi lại API là người dùng thật sự đi lệch khỏi
+   * tuyến đã cache (`isOffRoute`, tính hoàn toàn ở client trong
+   * calculateRemainingDistance). Yêu cầu lệch tuyến LIÊN TỤC ít nhất
+   * OFFROUTE_CONFIRM_MS trước khi coi là thật, tránh việc 1 lần định vị GPS
+   * nhảy vọt thoáng qua (rồi tự về đúng ngay fix kế tiếp) làm tốn 1 request.
+   * Sau khi đã reroute, phải chờ thêm OFFROUTE_COOLDOWN_MS mới cho phép
+   * reroute tiếp, dù vẫn đang báo lệch tuyến.
+   */
   const maybeReroute = useCallback(
     (userLat: number, userLon: number, isOffRoute: boolean) => {
       if (!destinationRef.current) return;
 
       const now = Date.now();
-      const lastPos = lastReroutePosRef.current;
-      const movedMeters = lastPos
-        ? turf.distance(
-            turf.point([userLon, userLat]),
-            turf.point([lastPos.lon, lastPos.lat]),
-            { units: "meters" },
-          )
-        : Infinity;
-      const timeSinceLast = now - lastRerouteAtRef.current;
+
+      if (!isOffRoute) {
+        // Đang trên tuyến (hoặc đã tự quay lại được) — không có gì để làm.
+        offRouteSinceRef.current = null;
+        return;
+      }
+
+      if (offRouteSinceRef.current === null) {
+        // Vừa mới bắt đầu lệch — ghi nhận mốc thời gian, CHƯA reroute vội,
+        // chờ xem có thật sự tiếp tục lệch ở lần định vị kế tiếp không.
+        offRouteSinceRef.current = now;
+        return;
+      }
+
+      const offRouteDurationMs = now - offRouteSinceRef.current;
+      const timeSinceLastReroute = now - lastRerouteAtRef.current;
 
       const shouldReroute =
-        (movedMeters >= REROUTE_MIN_DISTANCE_METERS &&
-          timeSinceLast >= REROUTE_MIN_INTERVAL_MS) ||
-        (isOffRoute && timeSinceLast >= REROUTE_OFFROUTE_MIN_INTERVAL_MS) ||
-        timeSinceLast >= REROUTE_MAX_INTERVAL_MS;
+        offRouteDurationMs >= OFFROUTE_CONFIRM_MS &&
+        timeSinceLastReroute >= OFFROUTE_COOLDOWN_MS;
 
       if (shouldReroute) {
         void performReroute(userLat, userLon);
@@ -1051,10 +1098,9 @@ export function useNavigationTracking(
     }));
 
     isNavigatingRef.current = true;
-    // Reset trạng thái tính-lại-lộ-trình mỗi lần bắt đầu navigate mới, để
-    // chắc chắn có một lần tính route-từ-vị-trí-hiện-tại ngay lập tức.
+    // Reset trạng thái tính-lại-lộ-trình mỗi lần bắt đầu navigate mới.
     lastRerouteAtRef.current = 0;
-    lastReroutePosRef.current = null;
+    offRouteSinceRef.current = null;
     // Đây là một chuyến navigation mới,
     // cho phép hiển thị lại thông báo "Bạn đã đến nơi".
     arrivalNotifiedRef.current = false;
@@ -1115,9 +1161,18 @@ export function useNavigationTracking(
           ),
         }));
 
-        // Tính ngay lộ trình THẬT từ vị trí hiện tại → điểm đến, thay vì chỉ
-        // dùng route A→B tĩnh đã lập lúc trước.
-        void performReroute(latitude, longitude);
+        // TRƯỚC ĐÂY: luôn gọi performReroute() ngay ở đây, tốn 1 request
+        // API bắt buộc mỗi lần bấm "Bắt đầu" dẫn đường — dù vị trí GPS hiện
+        // tại gần như luôn trùng khớp với tuyến đã lập kế hoạch (route prop
+        // đã được cache sẵn vào routeLineRef từ trước rồi, xem effect "Khởi
+        // tạo route line từ Turf.js"). buildTrimmedLiveRoute ở trên đã dùng
+        // ngay tuyến cache đó để hiển thị liveRoute, không cần chờ API.
+        //
+        // GIỜ: chỉ gọi API nếu vị trí GPS thực tế đã lệch khỏi tuyến cache
+        // ngay từ đầu (isOffRoute=true) — dùng chung cơ chế xác nhận/cooldown
+        // với maybeReroute() để tránh gọi API dư thừa trong trường hợp bình
+        // thường (đứng đúng ngay điểm bắt đầu tuyến).
+        maybeReroute(latitude, longitude, remaining?.isOffRoute ?? false);
       },
       (error) => {
         console.warn("Lỗi lấy vị trí ban đầu:", error);
@@ -1289,7 +1344,7 @@ export function useNavigationTracking(
     rerouteRequestIdRef.current += 1;
     isFetchingRouteRef.current = false;
     lastRerouteAtRef.current = 0;
-    lastReroutePosRef.current = null;
+    offRouteSinceRef.current = null;
 
     isFollowingRef.current = false;
 
