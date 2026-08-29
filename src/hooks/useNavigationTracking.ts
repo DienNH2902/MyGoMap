@@ -138,6 +138,395 @@ const OFFROUTE_COOLDOWN_MS = 15000;
 const ARRIVAL_THRESHOLD_METERS = 30;
 const screenHeight = typeof window !== "undefined" ? window.innerHeight : 800;
 
+interface NavigationCameraOptions {
+  zoom: number;
+  pitch: number;
+}
+
+interface LocalRouteComplexity {
+  /**
+   * Khoảng route được phân tích phía trước người dùng.
+   * Không phải tổng quãng đường còn lại.
+   */
+  lookAheadMeters: number;
+
+  /**
+   * Số lần rẽ đáng kể trong đoạn phía trước.
+   */
+  turnCount: number;
+
+  /**
+   * Mức độ thay đổi hướng trung bình.
+   */
+  turnSeverity: number;
+
+  /**
+   * Mức độ phức tạp tổng thể:
+   * 0 = rất thẳng
+   * 1 = cực kỳ nhiều rẽ
+   */
+  complexity: number;
+}
+
+/**
+ * Phân tích ĐOẠN ĐƯỜNG PHÍA TRƯỚC người dùng.
+ *
+ * Quan trọng:
+ * - KHÔNG dựa vào tổng distanceToDestination.
+ * - Chỉ xét một cửa sổ route ở phía trước.
+ * - Đường càng nhiều lần rẽ -> complexity càng cao.
+ * - Đường càng thẳng -> complexity càng thấp.
+ *
+ * Điều này giúp camera phản ứng đúng với:
+ *
+ * A ======================== B
+ *             ↓
+ *       đường thẳng dài
+ *
+ * hoặc:
+ *
+ * A ===┐
+ *     └===┐
+ *         └===┐
+ *             └=== B
+ *
+ * dù tổng quãng đường của hai trường hợp có thể giống nhau.
+ */
+function normalizeAngle(angle: number): number {
+  let result = angle;
+
+  while (result > 180) result -= 360;
+  while (result < -180) result += 360;
+
+  return result;
+}
+
+function getBearingDifference(bearingA: number, bearingB: number): number {
+  return Math.abs(normalizeAngle(bearingB - bearingA));
+}
+
+/**
+ * Chuyển một `Position` từ geojson (kiểu `number[]`, độ dài không cố định
+ * vì geojson cho phép có thêm cao độ) sang tuple `[number, number]` tường
+ * minh. Cần thiết vì `sampled` được khai báo là `[number, number][]` —
+ * TypeScript không tự suy ra một `Position` bất kỳ luôn đúng 2 phần tử, dù
+ * runtime ở đây luôn đúng như vậy (route 2D, không có cao độ).
+ */
+function toLonLatTuple(
+  position: GeoJSON.Position | undefined,
+): [number, number] | null {
+  if (!position) return null;
+
+  const lon = position[0];
+  const lat = position[1];
+
+  if (typeof lon !== "number" || typeof lat !== "number") return null;
+
+  return [lon, lat];
+}
+
+/**
+ * Phân tích độ phức tạp của ĐOẠN ROUTE SẮP ĐI TỚI.
+ *
+ * Không quan tâm route còn tổng cộng bao nhiêu km.
+ */
+function analyzeLocalRouteComplexity(
+  routeLine: Feature<LineString> | null,
+  userLon: number,
+  userLat: number,
+): LocalRouteComplexity {
+  if (!routeLine || routeLine.geometry.coordinates.length < 2) {
+    return {
+      lookAheadMeters: 0,
+      turnCount: 0,
+      turnSeverity: 0,
+      complexity: 0,
+    };
+  }
+
+  try {
+    const userPoint = turf.point([userLon, userLat]);
+
+    const nearest = turf.nearestPointOnLine(routeLine, userPoint);
+
+    /**
+     * distAlong là khoảng cách từ đầu route tới vị trí
+     * hiện tại trên route.
+     */
+    const distAlongKm =
+      typeof nearest.properties.location === "number"
+        ? nearest.properties.location
+        : 0;
+
+    const totalKm = turf.length(routeLine, {
+      units: "kilometers",
+    });
+
+    if (!Number.isFinite(totalKm) || totalKm <= 0) {
+      return {
+        lookAheadMeters: 0,
+        turnCount: 0,
+        turnSeverity: 0,
+        complexity: 0,
+      };
+    }
+
+    /**
+     * Chỉ nhìn tối đa 1.2km phía trước.
+     *
+     * Đây là điểm quan trọng:
+     *
+     * route 100km -> vẫn chỉ phân tích 1.2km trước mặt.
+     * route 3km   -> cũng chỉ phân tích 1.2km trước mặt.
+     */
+    const lookAheadKm = Math.min(1.2, Math.max(0, totalKm - distAlongKm));
+
+    if (lookAheadKm < 0.05) {
+      return {
+        lookAheadMeters: lookAheadKm * 1000,
+        turnCount: 0,
+        turnSeverity: 0,
+        complexity: 0,
+      };
+    }
+
+    /**
+     * lineSliceAlong cho phép lấy chính xác đoạn:
+     *
+     * current position
+     *        ↓
+     *        |------ 1.2km ------|
+     *
+     * thay vì lấy từ đầu route.
+     */
+    const localRoute = turf.lineSliceAlong(
+      routeLine,
+      distAlongKm,
+      Math.min(distAlongKm + lookAheadKm, totalKm),
+      {
+        units: "kilometers",
+      },
+    );
+
+    const coordinates = localRoute.geometry.coordinates;
+
+    if (coordinates.length < 3) {
+      return {
+        lookAheadMeters: lookAheadKm * 1000,
+        turnCount: 0,
+        turnSeverity: 0,
+        complexity: 0,
+      };
+    }
+
+    // FIX: coordinates[0] là `Position | undefined` (độ dài không cố định)
+    // — chuyển qua toLonLatTuple để có tuple [number, number] chuẩn, dùng
+    // được cho mảng sampled bên dưới.
+    const firstCoordinate = toLonLatTuple(coordinates[0]);
+    if (!firstCoordinate) {
+      return {
+        lookAheadMeters: lookAheadKm * 1000,
+        turnCount: 0,
+        turnSeverity: 0,
+        complexity: 0,
+      };
+    }
+
+    /**
+     * Route geometry có thể chứa hàng trăm điểm rất gần nhau.
+     *
+     * Ta lấy sample mỗi khoảng 30m để:
+     * - không đếm một góc đường thành nhiều lần rẽ
+     * - vẫn phát hiện được các đoạn rẽ trong đô thị.
+     */
+    const sampled: [number, number][] = [];
+
+    let accumulatedMeters = 0;
+    let previous = firstCoordinate;
+
+    sampled.push(previous);
+
+    for (let i = 1; i < coordinates.length; i++) {
+      // FIX: coordinates[i] cũng là `Position | undefined` với độ dài không
+      // cố định — chuyển qua toLonLatTuple, bỏ qua nếu không hợp lệ.
+      const current = toLonLatTuple(coordinates[i]);
+      if (!current) continue;
+
+      const segmentMeters = turf.distance(
+        turf.point(previous),
+        turf.point(current),
+        {
+          units: "meters",
+        },
+      );
+
+      accumulatedMeters += segmentMeters;
+
+      if (accumulatedMeters >= 30) {
+        sampled.push(current);
+        previous = current;
+        accumulatedMeters = 0;
+      }
+    }
+
+    /**
+     * Đảm bảo lấy cả điểm cuối.
+     */
+    // FIX: cùng lý do — chuyển qua toLonLatTuple trước khi so sánh/push vào
+    // sampled (giữ nguyên điều kiện so sánh cũ).
+    const lastCoordinate = toLonLatTuple(coordinates[coordinates.length - 1]);
+
+    if (
+      lastCoordinate &&
+      (sampled.length === 0 || sampled[sampled.length - 1] !== lastCoordinate)
+    ) {
+      sampled.push(lastCoordinate);
+    }
+
+    if (sampled.length < 3) {
+      return {
+        lookAheadMeters: lookAheadKm * 1000,
+        turnCount: 0,
+        turnSeverity: 0,
+        complexity: 0,
+      };
+    }
+
+    /**
+     * Tính bearing của từng đoạn sample.
+     */
+    const bearings: number[] = [];
+
+    for (let i = 1; i < sampled.length; i++) {
+      const from = sampled[i - 1];
+      const to = sampled[i];
+      // FIX: sampled[i-1]/sampled[i] cũng là `[number, number] | undefined`
+      // theo kiểu — bỏ qua cặp điểm này nếu thiếu, không ảnh hưởng các cặp
+      // còn lại.
+      if (!from || !to) continue;
+
+      const bearing = turf.bearing(turf.point(from), turf.point(to));
+
+      if (Number.isFinite(bearing)) {
+        bearings.push(bearing);
+      }
+    }
+
+    if (bearings.length < 2) {
+      return {
+        lookAheadMeters: lookAheadKm * 1000,
+        turnCount: 0,
+        turnSeverity: 0,
+        complexity: 0,
+      };
+    }
+
+    let turnCount = 0;
+    let totalTurnSeverity = 0;
+
+    for (let i = 1; i < bearings.length; i++) {
+      const previousBearing = bearings[i - 1];
+      const currentBearing = bearings[i];
+      // FIX: bearings[i-1]/bearings[i] cũng là `number | undefined` theo
+      // kiểu — bỏ qua cặp này nếu thiếu.
+      if (previousBearing === undefined || currentBearing === undefined) {
+        continue;
+      }
+
+      const diff = getBearingDifference(previousBearing, currentBearing);
+
+      /**
+       * Dưới 30°:
+       * coi là đường cong nhẹ, KHÔNG tính là rẽ.
+       */
+      if (diff < 30) {
+        continue;
+      }
+
+      turnCount++;
+
+      /**
+       * 30° -> 0
+       * 60° -> 0.5
+       * 90° -> 1
+       * 120°+ -> 1
+       */
+      const severity = Math.min(1, Math.max(0, (diff - 30) / 60));
+
+      totalTurnSeverity += severity;
+    }
+
+    /**
+     * Số lần rẽ:
+     *
+     * 0 lần  -> 0
+     * 1 lần  -> 0.25
+     * 2 lần  -> 0.5
+     * 3 lần  -> 0.75
+     * >=4    -> 1
+     */
+    const turnComplexity = Math.min(1, turnCount / 4);
+
+    const turnSeverity =
+      turnCount > 0 ? Math.min(1, totalTurnSeverity / turnCount) : 0;
+
+    /**
+     * Độ phức tạp tổng:
+     *
+     * 65% số lần rẽ
+     * 35% độ gắt của rẽ.
+     */
+    const complexity = Math.min(1, turnComplexity * 0.65 + turnSeverity * 0.35);
+
+    return {
+      lookAheadMeters: lookAheadKm * 1000,
+      turnCount,
+      turnSeverity,
+      complexity,
+    };
+  } catch (error) {
+    console.warn("Failed to analyze local route complexity:", error);
+
+    return {
+      lookAheadMeters: 0,
+      turnCount: 0,
+      turnSeverity: 0,
+      complexity: 0,
+    };
+  }
+}
+
+function getNavigationCamera(complexity: number): NavigationCameraOptions {
+  const safeComplexity = Math.max(0, Math.min(1, complexity));
+
+  /**
+   * Hiệu chỉnh lại theo đúng cách Google Maps đổi camera khi dẫn đường,
+   * dựa trên độ phức tạp CỤC BỘ phía trước (analyzeLocalRouteComplexity,
+   * chỉ nhìn ~1.2km trước mặt — không liên quan tổng quãng đường dài hay
+   * ngắn), nên trong 1 chuyến đi dài, mỗi đoạn thẳng/đoạn nhiều khúc cua sẽ
+   * tự có camera riêng phù hợp:
+   *
+   * - Đoạn THẲNG, nhìn xa được (complexity ~0): zoom RA XA hơn (zoom thấp,
+   *   17.2) + pitch NGHIÊNG SÂU hơn (pitch cao, 78) để thấy một đoạn đường
+   *   dài phía trước, giống cảm giác "lướt" trên cao tốc/đường trường.
+   * - Đoạn HẺM NGẮN / NHIỀU KHÚC CUA LIÊN TIẾP (complexity ~1): zoom LẠI
+   *   GẦN hơn (zoom cao, 19.8) + pitch NGẢ GẦN VỀ NHÌN THẲNG XUỐNG hơn
+   *   (pitch thấp, 42) để thấy rõ từng khúc cua sắp tới.
+   *
+   * Biên độ được nới rộng hơn bản cũ (17.2–19.8 thay vì 19–20.3 cho zoom,
+   * 42–78 thay vì 55–80 cho pitch) để sự thay đổi rõ ràng, cảm nhận được
+   * khi lái thật, thay vì gần như không đổi như trước.
+   */
+  const zoom = 17.2 + safeComplexity * 2.6;
+
+  const pitch = 78 - safeComplexity * 36;
+
+  return {
+    zoom,
+    pitch,
+  };
+}
+
 export function useNavigationTracking(
   map: MapLibreMap | null,
   route: RouteGeometry | null,
@@ -312,6 +701,19 @@ export function useNavigationTracking(
     };
   }, [map, disableAutoFollow]);
 
+  const getCameraForCurrentRoute = useCallback(
+    (userLon: number, userLat: number) => {
+      const complexity = analyzeLocalRouteComplexity(
+        routeLineRef.current,
+        userLon,
+        userLat,
+      );
+
+      return getNavigationCamera(complexity.complexity);
+    },
+    [],
+  );
+
   /**
    * Kích hoạt lại camera auto-follow và đưa camera về vị trí hiện tại.
    * Được gọi khi người dùng bấm nút "Về giữa".
@@ -347,11 +749,13 @@ export function useNavigationTracking(
       clearTimeout(programmaticCameraTimerRef.current);
     }
 
+    const camera = getCameraForCurrentRoute(targetLng, targetLat);
+
     map.easeTo({
       center: [targetLng, targetLat],
-      zoom: 19,
+      zoom: camera.zoom,
       bearing: targetBearing,
-      pitch: 80,
+      pitch: camera.pitch,
       duration: 700,
       padding: {
         top: Math.round(screenHeight * 0.33),
@@ -364,7 +768,7 @@ export function useNavigationTracking(
     programmaticCameraTimerRef.current = setTimeout(() => {
       isProgrammaticCameraRef.current = false;
     }, 800);
-  }, [map, state.userLocation]);
+  }, [map, state.userLocation, getCameraForCurrentRoute,]);
 
   // Khởi tạo Marker hình mũi tên điều hướng
   const getOrCreateMarker = useCallback(() => {
@@ -1117,13 +1521,14 @@ export function useNavigationTracking(
         if (map && isFollowingRef.current) {
           isProgrammaticCameraRef.current = true;
 
+          const camera = getCameraForCurrentRoute(longitude, latitude);
+
           map.flyTo({
             center: [longitude, latitude],
-            zoom: 19,
-            pitch: 80,
+            zoom: camera.zoom,
+            pitch: camera.pitch,
             bearing: heading ?? currentHeadingRef.current ?? 0,
             duration: 800,
-            // Đẩy điểm center xuống 1/3 phía dưới màn hình
             padding: {
               top: Math.round(screenHeight * 0.33),
               bottom: 0,
@@ -1223,11 +1628,13 @@ export function useNavigationTracking(
             ) {
               isProgrammaticCameraRef.current = true;
 
+              const camera = getCameraForCurrentRoute(targetLng, targetLat);
+
               map.easeTo({
                 center: [targetLng, targetLat],
-                zoom: 19,
+                zoom: camera.zoom,
                 bearing: targetBearing,
-                pitch: 80,
+                pitch: camera.pitch,
                 duration: 750,
                 padding: {
                   top: Math.round(screenHeight * 0.33),
@@ -1297,6 +1704,7 @@ export function useNavigationTracking(
     maybeReroute,
     checkArrival,
     showNotification,
+    getCameraForCurrentRoute,
   ]);
 
   // Dừng navigation tracking
