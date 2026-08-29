@@ -1,10 +1,14 @@
 "use client";
 
+import { useRef } from "react";
+
 interface NavigationControlsProps {
   isNavigating: boolean;
   distanceToDestination: number | null; // km
   estimatedTimeRemaining: number | null; // phút
   isOffRoute: boolean;
+  /** true trong lúc đang gọi API tính lại lộ trình theo vị trí mới — xem useNavigationTracking. */
+  isRerouting: boolean;
   onStartNavigation: () => void;
   onStopNavigation: () => void;
   onFollowUserLocation: () => void;
@@ -18,16 +22,52 @@ function formatDuration(minutes: number): string {
   return hours === 0 ? `${mins} phút` : `${hours}h ${mins}p`;
 }
 
+/**
+ * Nút bấm dùng chung cho khu vực điều hướng — xử lý sự kiện ở CẢ onClick lẫn
+ * onTouchEnd (bắn thẳng, không qua độ trễ ~300ms trình duyệt dùng để phân
+ * biệt tap thường với double-tap-zoom). Đây là fix cho lỗi phải bấm 2-3 lần
+ * mới ăn trên mobile: nút nằm trong khối có backdrop-blur-xl, lần chạm đầu
+ * tiên trên iOS Safari thường bị "nuốt" để trình duyệt dựng lớp compositing
+ * cho hiệu ứng blur, chỉ lần chạm thứ 2 mới thực sự bắn ra click. Dùng
+ * touchHandledRef để đảm bảo onTouchEnd + onClick không cùng gọi handler 2
+ * lần khi cả hai sự kiện đều được trình duyệt bắn ra bình thường.
+ */
+function useReliableTap(handler: () => void) {
+  const touchHandledRef = useRef(false);
+
+  return {
+    onTouchEnd: (e: React.TouchEvent) => {
+      e.preventDefault();
+      touchHandledRef.current = true;
+      handler();
+      // Reset ngay sau 1 khung hình, để lần bấm kế tiếp (kể cả bằng chuột
+      // trên desktop test) không bị chặn nhầm.
+      requestAnimationFrame(() => {
+        touchHandledRef.current = false;
+      });
+    },
+    onClick: () => {
+      if (touchHandledRef.current) return;
+      handler();
+    },
+  };
+}
+
 export function NavigationControls({
   isNavigating,
   distanceToDestination,
   estimatedTimeRemaining,
   isOffRoute,
+  isRerouting,
   onStartNavigation,
   onStopNavigation,
   onFollowUserLocation,
   isFollowing,
 }: NavigationControlsProps) {
+  const stopTapHandlers = useReliableTap(onStopNavigation);
+  const followTapHandlers = useReliableTap(onFollowUserLocation);
+  const startTapHandlers = useReliableTap(onStartNavigation);
+
   if (isNavigating) {
     return (
       <div className="pointer-events-auto absolute bottom-4 left-1/2 z-10 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 flex flex-col items-center gap-2">
@@ -35,38 +75,69 @@ export function NavigationControls({
         {isNavigating && !isFollowing && (
           <button
             type="button"
-            onClick={onFollowUserLocation}
-            className="flex items-center gap-2 rounded-full bg-ink/80 px-4 py-2 text-md font-bold text-green-500 shadow-xl transition hover:scale-105 active:scale-95 self-start backdrop-blur-3xl"
+            {...followTapHandlers}
+            className="touch-manipulation flex items-center gap-2 rounded-full bg-ink/80 px-4 py-2 text-md font-bold text-green-500 shadow-xl transition hover:scale-105 active:scale-95 self-start backdrop-blur-3xl"
+            style={{ WebkitTapHighlightColor: "transparent" }}
             aria-label="Về giữa"
           >
-            {/* <svg
+            <span>Về giữa</span>
+          </button>
+        )}
+
+        {/* Cảnh báo lệch đường — 2 trạng thái: vừa lệch (đang đếm 3s để xác
+            nhận không phải nhiễu GPS thoáng qua, xem OFFROUTE_CONFIRM_MS
+            trong useNavigationTracking) và đang thực sự gọi API tính lại
+            tuyến (isRerouting). */}
+        {isOffRoute && !isRerouting && (
+          <div className="flex w-full items-center gap-2 rounded-xl bg-red-500/90 px-3.5 py-2 shadow-lg backdrop-blur-md animate-in fade-in slide-in-from-bottom-1">
+            <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-4.5 w-4.5 text-primary"
+              className="h-4 w-4 shrink-0 text-white"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth={2.5}
             >
-              <circle cx="12" cy="12" r="3" />
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M12 2v3M12 19v3M2 12h3M19 12h3"
+                d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
               />
-            </svg> */}
-
-            <span>Về giữa</span>
-          </button>
-        )}
-
-        {/* Cảnh báo lệch đường (nếu có) */}
-        {/* {isOffRoute && (
-          <div className="w-full rounded-xl bg-red-500/90 px-3 py-1.5 text-center shadow-lg backdrop-blur-md">
+            </svg>
             <p className="text-xs font-semibold text-white">
-              ⚠️ Bạn đang đi chệch tuyến đường!
+              Bạn đang đi chệch tuyến đường! Cập nhật tuyến đường mới sau 3
+              giây...
             </p>
           </div>
-        )} */}
+        )}
+
+        {isRerouting && (
+          <div className="flex w-full items-center gap-2 rounded-xl bg-amber-500/90 px-3.5 py-2 shadow-lg backdrop-blur-md animate-in fade-in slide-in-from-bottom-1">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 shrink-0 animate-spin text-white"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="3"
+              />
+              <path
+                className="opacity-90"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z"
+              />
+            </svg>
+            <p className="text-xs font-semibold text-white">
+              Đang cập nhật tuyến đường mới...
+            </p>
+          </div>
+        )}
 
         {/* Thanh Navigation thu gọn 1 hàng ngang */}
         <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-ink/85 p-3 shadow-2xl backdrop-blur-xl">
@@ -103,11 +174,16 @@ export function NavigationControls({
             </div>
           </div>
 
-          {/* Nút Thoát */}
+          {/* Nút Thoát — xem useReliableTap ở trên: xử lý ngay ở onTouchEnd
+              thay vì chỉ chờ onClick, fix lỗi phải bấm 2-3 lần mới ăn trên
+              mobile (backdrop-blur-xl trên khối cha khiến lần chạm đầu tiên
+              trên iOS Safari thường bị dùng để dựng lớp compositing thay vì
+              bắn click). */}
           <button
             type="button"
-            onClick={onStopNavigation}
-            className="flex h-10 items-center gap-1.5 rounded-xl bg-red-500 px-4 text-xs font-semibold text-white shadow-md transition hover:bg-red-600 active:scale-95 shrink-0"
+            {...stopTapHandlers}
+            className="touch-manipulation flex h-11 items-center gap-1.5 rounded-xl bg-red-500 px-4 text-xs font-semibold text-white shadow-md transition hover:bg-red-600 active:scale-95 shrink-0"
+            style={{ WebkitTapHighlightColor: "transparent" }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -135,8 +211,9 @@ export function NavigationControls({
     <div className="pointer-events-auto absolute bottom-32 left-1/2 z-0 -translate-x-1/2">
       <button
         type="button"
-        onClick={onStartNavigation}
-        className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-xl transition hover:opacity-90 active:scale-95"
+        {...startTapHandlers}
+        className="touch-manipulation flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-xl transition hover:opacity-90 active:scale-95"
+        style={{ WebkitTapHighlightColor: "transparent" }}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

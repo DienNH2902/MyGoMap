@@ -386,6 +386,7 @@ export function MapExperience() {
           distanceToDestination={navigation.distanceToDestination}
           estimatedTimeRemaining={navigation.estimatedTimeRemaining}
           isOffRoute={navigation.isOffRoute}
+          isRerouting={navigation.isRerouting}
           onStartNavigation={navigation.startNavigation}
           onStopNavigation={navigation.stopNavigation}
           onFollowUserLocation={navigation.followUserLocation}
