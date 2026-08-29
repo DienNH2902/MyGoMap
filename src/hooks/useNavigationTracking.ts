@@ -136,6 +136,16 @@ const OFFROUTE_CONFIRM_MS = 3000;
 const OFFROUTE_COOLDOWN_MS = 15000;
 // Lấy chiều cao màn hình hiện tại để tính chính xác 1/3
 const ARRIVAL_THRESHOLD_METERS = 30;
+
+// Khi đang chỉ đường, mũi tên chỉ "bám" (snap) vào tuyến nếu GPS lệch khỏi
+// tuyến KHÔNG QUÁ ngưỡng này — đủ để che các trường hợp GPS đô thị lệch vào
+// công trình/vỉa hè cạnh đường (thường vài mét đến ~30m), nhưng không đủ để
+// che trường hợp rẽ nhầm sang một đường khác hẳn (khi đó nên hiển thị đúng
+// vị trí GPS thật, không ép về tuyến cũ đã sai). Cố tình để nhỏ hơn ngưỡng
+// isOffRoute (100m, xem calculateRemainingDistance) — off-route thật sự thì
+// không nên snap.
+const MAX_SNAP_TO_ROUTE_METERS = 35;
+
 const screenHeight = typeof window !== "undefined" ? window.innerHeight : 800;
 
 interface NavigationCameraOptions {
@@ -524,6 +534,43 @@ function getNavigationCamera(complexity: number): NavigationCameraOptions {
     zoom,
     pitch,
   };
+}
+
+/**
+ * Khi đang CHỈ ĐƯỜNG (turn-by-turn), mũi tên định vị nên "bám" theo đúng
+ * tuyến đường đang đi thay vì hiển thị y nguyên tọa độ GPS thô — vì GPS đô
+ * thị có thể lệch vài chục mét (ví dụ báo mũi tên nằm trong một công
+ * trình/tòa nhà cạnh đường), điều này vô lý khi đang dẫn đường trên một con
+ * đường cụ thể. Chỉ áp dụng "bám đường" khi độ lệch còn trong ngưỡng hợp lý
+ * (MAX_SNAP_TO_ROUTE_METERS) — nếu lệch xa hơn (ví dụ rẽ nhầm sang đường
+ * khác hẳn), snap về tuyến CŨ sẽ hiển thị SAI vị trí thật, nên lúc đó ưu
+ * tiên hiển thị đúng tọa độ GPS thô cho tới khi performReroute() tính xong
+ * tuyến mới khớp với vị trí thực.
+ *
+ * Hàm này CHỈ ảnh hưởng tới vị trí hiển thị của mũi tên trong chế độ chỉ
+ * đường (hook này chỉ chạy khi đang navigate) — không ảnh hưởng tới chấm
+ * định vị GPS thông thường của MapLibre GeolocateControl khi KHÔNG chỉ
+ * đường, vốn nằm hoàn toàn ở MapView.tsx và luôn hiển thị đúng tọa độ GPS
+ * thật.
+ */
+function resolveNavigationMarkerPosition(
+  rawLng: number,
+  rawLat: number,
+  nearestPointOnRoute: [number, number] | null,
+  distanceFromRouteMeters: number | null,
+): { lng: number; lat: number } {
+  if (
+    nearestPointOnRoute &&
+    distanceFromRouteMeters !== null &&
+    distanceFromRouteMeters <= MAX_SNAP_TO_ROUTE_METERS
+  ) {
+    const [snappedLng, snappedLat] = nearestPointOnRoute;
+    if (Number.isFinite(snappedLng) && Number.isFinite(snappedLat)) {
+      return { lng: snappedLng, lat: snappedLat };
+    }
+  }
+
+  return { lng: rawLng, lat: rawLat };
 }
 
 export function useNavigationTracking(
@@ -990,6 +1037,10 @@ export function useNavigationTracking(
             number,
           ],
           isOffRoute,
+          // Trả thêm khoảng cách thô (mét) từ GPS tới tuyến — dùng để quyết
+          // định có nên "bám" mũi tên vào tuyến hay không, xem
+          // resolveNavigationMarkerPosition().
+          distanceFromRouteMeters: distanceFromRoute,
           // Toạ độ đoạn đường CÒN LẠI (đã cắt sẵn từ vị trí hiện tại tới
           // đích) — dùng để cập nhật line hiển thị ngay mỗi lần có GPS mới,
           // không cần đợi API reroute.
@@ -1515,15 +1566,35 @@ export function useNavigationTracking(
           position.coords;
         const remaining = calculateRemainingDistance(latitude, longitude);
 
-        updateMarker(longitude, latitude, heading, accuracy, speed);
+        // Bám mũi tên vào tuyến (nếu độ lệch còn hợp lý) — xem
+        // resolveNavigationMarkerPosition(). Chỉ ảnh hưởng vị trí HIỂN THỊ
+        // của mũi tên, mọi tính toán khác (checkArrival, maybeReroute) vẫn
+        // dùng đúng tọa độ GPS thô latitude/longitude như cũ.
+        const markerPosition = resolveNavigationMarkerPosition(
+          longitude,
+          latitude,
+          remaining?.nearestPointOnRoute ?? null,
+          remaining?.distanceFromRouteMeters ?? null,
+        );
+
+        updateMarker(
+          markerPosition.lng,
+          markerPosition.lat,
+          heading,
+          accuracy,
+          speed,
+        );
 
         if (map && isFollowingRef.current) {
           isProgrammaticCameraRef.current = true;
 
-          const camera = getCameraForCurrentRoute(longitude, latitude);
+          const camera = getCameraForCurrentRoute(
+            markerPosition.lng,
+            markerPosition.lat,
+          );
 
           map.flyTo({
-            center: [longitude, latitude],
+            center: [markerPosition.lng, markerPosition.lat],
             zoom: camera.zoom,
             pitch: camera.pitch,
             bearing: heading ?? currentHeadingRef.current ?? 0,
@@ -1595,7 +1666,23 @@ export function useNavigationTracking(
           position.coords;
         const remaining = calculateRemainingDistance(latitude, longitude);
 
-        updateMarker(longitude, latitude, heading, accuracy, speed);
+        // Bám mũi tên vào tuyến (nếu độ lệch còn hợp lý) — xem
+        // resolveNavigationMarkerPosition(). checkArrival/maybeReroute bên
+        // dưới vẫn dùng đúng tọa độ GPS thô latitude/longitude, không đổi.
+        const markerPosition = resolveNavigationMarkerPosition(
+          longitude,
+          latitude,
+          remaining?.nearestPointOnRoute ?? null,
+          remaining?.distanceFromRouteMeters ?? null,
+        );
+
+        updateMarker(
+          markerPosition.lng,
+          markerPosition.lat,
+          heading,
+          accuracy,
+          speed,
+        );
 
         checkArrival(latitude, longitude);
 
@@ -1611,8 +1698,12 @@ export function useNavigationTracking(
             lastCameraUpdateRef.current = now;
 
             // Sử dụng vị trí đã smoothed cho camera
-            const targetLng = smoothedLonRef.current ?? longitude;
-            const targetLat = smoothedLatRef.current ?? latitude;
+            // Sử dụng vị trí đã smoothed cho camera — vì updateMarker() vừa
+            // gọi ở trên nhận markerPosition (đã snap vào tuyến nếu hợp lý)
+            // làm input, nên smoothedLonRef/LatRef giờ cũng tự động phản
+            // ánh vị trí đã snap, không cần sửa gì thêm ở đây.
+            const targetLng = smoothedLonRef.current ?? markerPosition.lng;
+            const targetLat = smoothedLatRef.current ?? markerPosition.lat;
 
             const targetBearing =
               smoothedBearingRef.current ??
