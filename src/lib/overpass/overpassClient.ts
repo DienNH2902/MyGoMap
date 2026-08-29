@@ -299,6 +299,7 @@ export async function findPoisForStops(
   signal?: AbortSignal,
 ): Promise<PoiSearchResult> {
   const resultsByStop = new Map<string, Record<string, PoiResult[]>>();
+
   for (const point of points) {
     resultsByStop.set(point.stopId, {});
   }
@@ -307,45 +308,84 @@ export async function findPoisForStops(
     return { resultsByStop, fetchFailed: false };
   }
 
-  const jobs: Array<{
-    point: StopQueryPoint;
-    category: PoiCategoryDefinition;
-  }> = [];
+  // One `around:` clause per (stop, category) combination, all unioned into
+  // a single query. Overpass automatically de-duplicates a node that matches
+  // more than one clause (e.g. it's near two different stops), so we never
+  // pay for the same element twice.
+  const clauses: string[] = [];
+
   for (const point of points) {
     for (const category of categories) {
-      jobs.push({ point, category });
+      clauses.push(
+        `node["${category.osmKey}"="${category.osmValue}"](around:${POI_SEARCH_RADIUS_METERS},${point.lat},${point.lon})${VIETNAM_AREA_FILTER};`,
+      );
     }
   }
 
-  let failedCount = 0;
+  const query = `[out:json][timeout:25];${VIETNAM_AREA_SETUP}(${clauses.join(
+    "\n",
+  )});out center tags;`;
 
-  const jobResults = await runWithConcurrencyLimit(
-    jobs.map(({ point, category }) => async () => {
-      const items = await fetchTomTomPois(
-        category.label,
-        point,
-        POI_SEARCH_RADIUS_METERS,
-        MAX_POIS_PER_CATEGORY_PER_STOP,
-        signal,
-      );
+  const data = await fetchOverpassQuery(query, signal);
 
-      if (items === null) {
-        failedCount += 1;
-        return { point, category, matches: [] as PoiResult[] };
+  if (!data) {
+    return {
+      resultsByStop,
+      fetchFailed: true,
+    };
+  }
+
+  // Pre-compute each element's coordinates once (nodes have lat/lon directly,
+  // ways/relations only carry a `center` when queried with `out center`).
+  const elementsWithCoords = data.elements
+    .map((element) => {
+      const lat = element.lat ?? element.center?.lat;
+      const lon = element.lon ?? element.center?.lon;
+
+      if (lat === undefined || lon === undefined) {
+        return null;
       }
 
-      const matches: PoiResult[] = items
+      return {
+        element,
+        lat,
+        lon,
+      };
+    })
+    .filter(
+      (
+        entry,
+      ): entry is {
+        element: OverpassElement;
+        lat: number;
+        lon: number;
+      } => entry !== null,
+    );
+
+  // For each stop and category, re-filter the shared result set by actual
+  // distance to THAT stop (an element can appear in the union because it's
+  // near stop A without necessarily being within radius of stop B).
+  for (const point of points) {
+    const categoryResults: Record<string, PoiResult[]> = {};
+
+    for (const category of categories) {
+      const matches = elementsWithCoords
+        .filter(
+          ({ element }) =>
+            element.tags?.[category.osmKey] === category.osmValue,
+        )
         .map(
-          (item): PoiResult => ({
-            id: `${category.id}-tomtom-${item.id}`,
-            name: item.name ?? category.label,
+          ({ element, lat, lon }): PoiResult => ({
+            id: `${category.id}-${element.type}-${element.id}`,
+            name: element.tags?.name ?? category.label,
             category: category.id,
-            lon: item.lon,
-            lat: item.lat,
-            address: item.address ?? undefined,
+            lon,
+            lat,
+            address: buildAddress(element.tags),
+            imageUrl: resolveImageUrl(element.tags),
             distanceFromStopKm: distanceBetweenKm(point, {
-              lon: item.lon,
-              lat: item.lat,
+              lon,
+              lat,
             }),
           }),
         )
@@ -355,20 +395,16 @@ export async function findPoisForStops(
         .sort((a, b) => a.distanceFromStopKm - b.distanceFromStopKm)
         .slice(0, MAX_POIS_PER_CATEGORY_PER_STOP);
 
-      return { point, category, matches };
-    }),
-    4,
-  );
+      categoryResults[category.id] = matches;
+    }
 
-  for (const { point, category, matches } of jobResults) {
-    const categoryResults = resultsByStop.get(point.stopId) ?? {};
-    categoryResults[category.id] = matches;
     resultsByStop.set(point.stopId, categoryResults);
   }
 
-  const fetchFailed = failedCount > 0 && failedCount === jobs.length;
-
-  return { resultsByStop, fetchFailed };
+  return {
+    resultsByStop,
+    fetchFailed: false,
+  };
 }
 
 export interface AroundSearchInput {

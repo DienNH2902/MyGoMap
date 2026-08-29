@@ -45,7 +45,7 @@ export function PlaceAutocompleteInput({
    * Chỉ autocomplete bằng Nominatim.
    * Không đụng TomTom quota.
    */
-  const debouncedQuery = useDebouncedValue(query, 400);
+  const debouncedQuery = useDebouncedValue(query, 1200);
 
   /**
    * Controller của autocomplete request hiện tại.
@@ -69,6 +69,17 @@ export function PlaceAutocompleteInput({
   const autocompleteRequestIdRef = useRef(0);
 
   const searchRequestIdRef = useRef(0);
+
+  /**
+   * Đánh dấu user vừa chọn một suggestion.
+   *
+   * Khi true:
+   * - Không chạy lại autocomplete
+   * - Không mở dropdown lại
+   *
+   * Reset về false khi user thực sự gõ nội dung mới.
+   */
+  const justSelectedPlaceRef = useRef(false);
 
   /**
    * Đồng bộ input khi value bên ngoài thay đổi.
@@ -98,7 +109,29 @@ export function PlaceAutocompleteInput({
     const trimmed = debouncedQuery.trim();
 
     /**
-     * Query quá ngắn.
+     * ============================================================
+     * USER VỪA CHỌN SUGGESTION
+     * ============================================================
+     *
+     * Đây là trường hợp quan trọng nhất.
+     *
+     * setQuery(place.label) sẽ làm effect chạy lại.
+     * Nhưng đó không phải là user đang gõ query mới.
+     *
+     * Vì vậy phải bỏ qua effect này hoàn toàn.
+     */
+    if (justSelectedPlaceRef.current) {
+      autocompleteControllerRef.current?.abort();
+
+      setIsSearching(false);
+      setResults([]);
+      setIsOpen(false);
+
+      return;
+    }
+
+    /**
+     * Query quá ngắn hoặc đang lấy GPS.
      */
     if (trimmed.length < 2 || isLocating) {
       autocompleteControllerRef.current?.abort();
@@ -115,12 +148,15 @@ export function PlaceAutocompleteInput({
 
     /**
      * Không autocomplete lại nếu query hiện tại
-     * chính là label của value đã chọn và input không
-     * thực sự thay đổi.
+     * chính là label của value đã chọn.
      */
     if (value && trimmed === value.label.trim()) {
+      autocompleteControllerRef.current?.abort();
+
+      setIsSearching(false);
       setResults([]);
       setIsOpen(false);
+
       return;
     }
 
@@ -163,6 +199,16 @@ export function PlaceAutocompleteInput({
           return;
         }
 
+        /**
+         * Trong lúc request chạy, user có thể đã chọn
+         * một suggestion khác.
+         *
+         * Không cho response cũ mở dropdown lại.
+         */
+        if (justSelectedPlaceRef.current) {
+          return;
+        }
+
         setResults(places);
       })
       .catch((err: unknown) => {
@@ -172,7 +218,10 @@ export function PlaceAutocompleteInput({
 
         console.error("Lỗi autocomplete Nominatim:", err);
 
-        if (requestId === autocompleteRequestIdRef.current) {
+        if (
+          requestId === autocompleteRequestIdRef.current &&
+          !justSelectedPlaceRef.current
+        ) {
           setResults([]);
         }
       })
@@ -353,6 +402,13 @@ export function PlaceAutocompleteInput({
           onChange={(event) => {
             const nextQuery = event.target.value;
 
+            /**
+             * User thực sự bắt đầu chỉnh sửa input.
+             *
+             * Cho phép autocomplete hoạt động trở lại.
+             */
+            justSelectedPlaceRef.current = false;
+
             setQuery(nextQuery);
 
             /**
@@ -366,11 +422,13 @@ export function PlaceAutocompleteInput({
             /**
              * Mở lại autocomplete.
              *
-             * API thật sự sẽ chỉ chạy sau debounce 400ms.
+             * API thật sự chỉ chạy sau debounce.
              */
             if (nextQuery.trim().length >= 2) {
               setIsOpen(true);
             } else {
+              autocompleteControllerRef.current?.abort();
+
               setIsOpen(false);
               setResults([]);
             }
@@ -507,14 +565,37 @@ export function PlaceAutocompleteInput({
                   key={place.id}
                   type="button"
                   onClick={() => {
-                    onSelect(place);
-                    setQuery(place.label);
+                    /**
+                     * Đánh dấu trước khi thay đổi state/props.
+                     *
+                     * Điều này ngăn useEffect autocomplete chạy lại
+                     * sau khi setQuery() / onSelect().
+                     */
+                    justSelectedPlaceRef.current = true;
+
+                    /**
+                     * Hủy request autocomplete ngay lập tức.
+                     */
+                    autocompleteControllerRef.current?.abort();
+
+                    /**
+                     * Tăng request id để mọi response cũ
+                     * trở thành stale.
+                     */
+                    autocompleteRequestIdRef.current += 1;
+
+                    /**
+                     * Tắt UI ngay.
+                     */
+                    setIsSearching(false);
+                    setResults([]);
                     setIsOpen(false);
 
                     /**
-                     * Hủy autocomplete sau khi chọn.
+                     * Cập nhật giá trị được chọn.
                      */
-                    autocompleteControllerRef.current?.abort();
+                    setQuery(place.label);
+                    onSelect(place);
                   }}
                   title={place.label}
                   className="group relative block w-full border-b border-white/5 px-4 py-3 text-left text-sm text-cream/80 transition touch-manipulation hover:bg-white/10 hover:text-white active:bg-white/15 last:border-none sm:py-2.5"

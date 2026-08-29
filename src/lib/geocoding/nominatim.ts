@@ -1,5 +1,6 @@
-import type { PlaceResult } from "../types";
 import type { TomTomSearchApiResult } from "@/app/api/tomtom/search/route";
+import { NOMINATIM_SEARCH_URL } from "../constants";
+import type { PlaceResult } from "../types";
 
 export type UserLocationBias = {
   lat: number;
@@ -49,11 +50,67 @@ interface NominatimReverseResponse {
 
 /**
  * ============================================================
- * CONSTANTS
+ * NOMINATIM REQUEST CONTROL
  * ============================================================
+ *
+ * Public Nominatim không dành cho autocomplete tốc độ cao.
+ *
+ * Giữ khoảng cách tối thiểu giữa các request để tránh:
+ *
+ *   ERR_CONNECTION_RESET
+ *   429
+ *   connection dropped
+ *
+ * Đây là client-side guard, không thay thế rate-limit phía server.
  */
 
-const NOMINATIM_SEARCH_URL = "https://nominatim.openstreetmap.org/search";
+const NOMINATIM_MIN_REQUEST_INTERVAL_MS = 1100;
+
+let lastNominatimRequestAt = 0;
+
+let nominatimRequestQueue: Promise<void> = Promise.resolve();
+
+async function waitForNominatimSlot(signal?: AbortSignal): Promise<void> {
+  const run = async () => {
+    if (signal?.aborted) {
+      throw new DOMException("Search aborted", "AbortError");
+    }
+
+    const now = Date.now();
+
+    const elapsed = now - lastNominatimRequestAt;
+
+    const waitMs = Math.max(0, NOMINATIM_MIN_REQUEST_INTERVAL_MS - elapsed);
+
+    if (waitMs > 0) {
+      await new Promise<void>((resolve, reject) => {
+        const timeout = window.setTimeout(resolve, waitMs);
+
+        const onAbort = () => {
+          window.clearTimeout(timeout);
+          reject(new DOMException("Search aborted", "AbortError"));
+        };
+
+        signal?.addEventListener("abort", onAbort, { once: true });
+      });
+    }
+
+    if (signal?.aborted) {
+      throw new DOMException("Search aborted", "AbortError");
+    }
+
+    lastNominatimRequestAt = Date.now();
+  };
+
+  const next = nominatimRequestQueue.then(run, run);
+
+  nominatimRequestQueue = next.then(
+    () => undefined,
+    () => undefined,
+  );
+
+  await next;
+}
 
 /**
  * ============================================================
@@ -86,7 +143,7 @@ function getDistance(
 
 /**
  * ============================================================
- * ADMINISTRATIVE PRIORITY - NOMINATIM
+ * ADMINISTRATIVE PRIORITY
  * ============================================================
  *
  * Số càng nhỏ => càng được đưa lên đầu.
@@ -109,9 +166,7 @@ function getNominatimAdministrativePriority(item: NominatimItem): number {
   const itemClass = item.class?.toLowerCase() ?? "";
 
   /**
-   * ----------------------------------------------------------
-   * 1. TỈNH / THÀNH PHỐ
-   * ----------------------------------------------------------
+   * Tỉnh / thành phố
    */
 
   if (
@@ -127,9 +182,7 @@ function getNominatimAdministrativePriority(item: NominatimItem): number {
   }
 
   /**
-   * ----------------------------------------------------------
-   * 2. QUẬN / HUYỆN / THỊ XÃ
-   * ----------------------------------------------------------
+   * Quận / huyện / thị xã
    */
 
   if (
@@ -144,18 +197,8 @@ function getNominatimAdministrativePriority(item: NominatimItem): number {
   }
 
   /**
-   * ----------------------------------------------------------
-   * 3. PHƯỜNG / XÃ / THỊ TRẤN
-   * ----------------------------------------------------------
-   *
-   * Nominatim có thể trả:
-   * - suburb
-   * - village
-   * - town
-   * - administrative
-   * tùy dữ liệu OSM.
+   * Phường / xã / thị trấn
    */
-
   if (
     type === "suburb" ||
     type === "village" ||
@@ -167,9 +210,7 @@ function getNominatimAdministrativePriority(item: NominatimItem): number {
   }
 
   /**
-   * ----------------------------------------------------------
-   * 4. KHU PHỐ / NEIGHBOURHOOD
-   * ----------------------------------------------------------
+   * Khu phố / neighbourhood
    */
 
   if (type === "neighbourhood" || type === "residential") {
@@ -177,13 +218,7 @@ function getNominatimAdministrativePriority(item: NominatimItem): number {
   }
 
   /**
-   * ----------------------------------------------------------
-   * 5. ADMINISTRATIVE GENERIC
-   * ----------------------------------------------------------
-   *
-   * Một số địa danh Việt Nam được Nominatim trả về là
-   * class=boundary + type=administrative nhưng không có
-   * type cụ thể.
+   * Administrative generic
    */
 
   if (itemClass === "boundary" && type === "administrative") {
@@ -191,10 +226,6 @@ function getNominatimAdministrativePriority(item: NominatimItem): number {
   }
 
   return Number.POSITIVE_INFINITY;
-}
-
-function isNominatimAdministrative(item: NominatimItem): boolean {
-  return getNominatimAdministrativePriority(item) !== Number.POSITIVE_INFINITY;
 }
 
 /**
@@ -214,7 +245,7 @@ function toNominatimPlaceResult(item: NominatimItem): PlaceResult {
 
 /**
  * ============================================================
- * SORT NOMINATIM RESULTS
+ * SORT
  * ============================================================
  *
  * Quy tắc:
@@ -293,18 +324,17 @@ function sortNominatimResults(
  *
  * Dùng cho:
  *
- * - autocomplete khi người dùng đang nhập
- * - fallback khi TomTom hết quota / lỗi
+ * - autocomplete
+ * - fallback khi TomTom lỗi / hết quota
  *
- * QUAN TRỌNG:
+ * KHÔNG gọi TomTom.
  *
- * - Không gọi TomTom.
- * - Không dùng debounce bên trong service.
- * - Component tự debounce 400ms.
- * - Không slice kết quả.
+ * Quan trọng:
  *
- * Nominatim vẫn có giới hạn thực tế của public service/API,
- * nhưng phía application KHÔNG tự cắt danh sách kết quả.
+ * - debounce nằm ở component
+ * - service tự rate-limit tối thiểu ~1.1s
+ * - giới hạn 5 kết quả giống implementation cũ
+ * - dùng format=json giống implementation cũ
  */
 
 export async function searchWithNominatim(
@@ -318,37 +348,186 @@ export async function searchWithNominatim(
     return [];
   }
 
+  await waitForNominatimSlot(signal);
+
+  if (signal?.aborted) {
+    throw new DOMException("Search aborted", "AbortError");
+  }
+
   const url = new URL(NOMINATIM_SEARCH_URL);
 
-  url.searchParams.set("q", trimmed);
-  url.searchParams.set("format", "jsonv2");
+  /**
+   * ============================================================
+   * QUERY
+   * ============================================================
+   *
+   * Giữ cách query cũ:
+   *
+   *   cafe
+   *   cafe*
+   *
+   * Cách này đang hoạt động tốt với Nominatim của bạn.
+   */
+  url.searchParams.set("q", `${trimmed}*`);
+
+  /**
+   * ============================================================
+   * FORMAT
+   * ============================================================
+   */
+  url.searchParams.set("format", "json");
+
+  /**
+   * ============================================================
+   * VIỆT NAM
+   * ============================================================
+   */
   url.searchParams.set("countrycodes", "vn");
+
+  /**
+   * ============================================================
+   * LANGUAGE
+   * ============================================================
+   */
   url.searchParams.set("accept-language", "vi");
 
   /**
-   * Không set limit.
+   * ============================================================
+   * RESULT LIMIT
+   * ============================================================
    *
-   * Frontend cũng không slice kết quả.
+   * Public Nominatim không nên trả quá nhiều kết quả.
+   *
+   * 5 kết quả là đủ cho dropdown.
    */
+  // url.searchParams.set("limit", "5");
+
+  /**
+   * ============================================================
+   * CẬP NHẬT: TĂNG SỐ ỨNG VIÊN CHO TỪ KHOÁ CHUNG (vd: "cafe")
+   * ============================================================
+   *
+   * Nominatim mặc định chỉ trả về khoảng 10 kết quả có "importance"
+   * cao nhất trên TOÀN QUỐC. Với từ khoá chung như "cafe", "quán ăn"...,
+   * các quán nổi tiếng / nhiều dữ liệu OSM ở tỉnh khác dễ chiếm hết
+   * 10 suất đó, khiến quán thực sự ở gần user còn chưa kịp có mặt
+   * trong danh sách để sortNominatimResults() phía dưới sắp xếp lại —
+   * dù logic sort theo khoảng cách bên dưới vốn đã đúng.
+   *
+   * Tăng limit lên để có đủ ứng viên gần user lọt vào danh sách, rồi
+   * sortNominatimResults() sẽ xếp:
+   *
+   *   - Tên tỉnh / thành phố / quận huyện / phường xã (administrative)
+   *     -> luôn lên đầu, bất kể khoảng cách.
+   *   - Còn lại (cafe, quán ăn, ATM...)
+   *     -> ưu tiên theo khoảng cách tới user, thay vì các quán ở
+   *        tỉnh khác dù "nổi tiếng" hơn trên Nominatim.
+   */
+  url.searchParams.set("limit", "20");
+
+  /**
+   * ============================================================
+   * LOCATION BIAS
+   * ============================================================
+   *
+   * Đây là phần quan trọng.
+   *
+   * Nếu userLocation tồn tại:
+   *
+   *      user
+   *        ↓
+   *      tạo bounding box ~30 km
+   *        ↓
+   *      Nominatim ưu tiên khu vực này
+   *
+   * Ví dụ user ở TP.HCM:
+   *
+   *      cafe
+   *
+   * sẽ ưu tiên:
+   *
+   *      Cafe gần user
+   *      ↓
+   *      Cafe trong TP.HCM
+   *      ↓
+   *      các kết quả VN khác nếu cần
+   *
+   * bounded=0 rất quan trọng:
+   *
+   * - 0 = ưu tiên viewbox nhưng KHÔNG giới hạn tuyệt đối
+   * - nếu không có kết quả gần user, Nominatim vẫn được phép
+   *   tìm ở nơi khác.
+   */
+
+  if (userLocation) {
+    /**
+     * Khoảng cách tìm kiếm ưu tiên: ~30 km.
+     *
+     * 1 độ latitude ≈ 111 km.
+     *
+     * Latitude:
+     *   30 / 111 ≈ 0.27°
+     *
+     * Longitude phụ thuộc latitude.
+     * Việt Nam nằm khoảng 8-23°N nên dùng công thức
+     * cos(latitude) để tính chính xác hơn.
+     */
+    const radiusKm = 30;
+
+    const latDelta = radiusKm / 111;
+
+    const latRadians = (userLocation.lat * Math.PI) / 180;
+
+    const kmPerLongitudeDegree = 111 * Math.cos(latRadians);
+
+    const lonDelta = radiusKm / Math.max(kmPerLongitudeDegree, 1);
+
+    const left = userLocation.lon - lonDelta;
+    const right = userLocation.lon + lonDelta;
+    const top = userLocation.lat + latDelta;
+    const bottom = userLocation.lat - latDelta;
+
+    /**
+     * Nominatim viewbox:
+     *
+     * left,top,right,bottom
+     */
+    url.searchParams.set("viewbox", `${left},${top},${right},${bottom}`);
+
+    /**
+     * Không ép bounded.
+     *
+     * Nominatim sẽ ưu tiên viewbox nhưng vẫn có thể
+     * tìm ngoài khu vực nếu cần.
+     */
+    url.searchParams.set("bounded", "0");
+  }
+
   let response: Response;
 
   try {
     response = await fetch(url.toString(), {
+      method: "GET",
       signal,
       headers: {
         Accept: "application/json",
         "User-Agent": "MyGoMapApp/1.0",
       },
+      cache: "no-store",
     });
-  } catch {
+  } catch (error) {
     if (signal?.aborted) {
       throw new DOMException("Search aborted", "AbortError");
     }
+
+    console.warn("Nominatim network error:", error);
 
     return [];
   }
 
   if (!response.ok) {
+    console.warn(`Nominatim returned HTTP ${response.status}`);
+
     return [];
   }
 
@@ -361,7 +540,9 @@ export async function searchWithNominatim(
   }
 
   /**
-   * Loại bỏ các tọa độ không hợp lệ.
+   * ============================================================
+   * VALID COORDINATES
+   * ============================================================
    */
   const validItems = items.filter((item) => {
     const lat = Number(item.lat);
@@ -370,6 +551,20 @@ export async function searchWithNominatim(
     return Number.isFinite(lat) && Number.isFinite(lon);
   });
 
+  /**
+   * ============================================================
+   * FINAL SORT
+   * ============================================================
+   *
+   * Viewbox giúp Nominatim ưu tiên khu vực user.
+   *
+   * Sort tiếp lần nữa ở client để đảm bảo:
+   *
+   * 1. Administrative priority
+   * 2. Khoảng cách tới user
+   *
+   * được áp dụng nhất quán.
+   */
   const sortedItems = sortNominatimResults(validItems, userLocation);
 
   return sortedItems.map(toNominatimPlaceResult);
@@ -380,21 +575,12 @@ export async function searchWithNominatim(
  * TOMTOM REQUEST
  * ============================================================
  *
- * CHỈ gọi khi:
+ * CHỈ gọi khi user:
  *
- * - người dùng bấm Search
- * - hoặc Enter
+ * - click Search
+ * - Enter
  *
- * KHÔNG được gọi trong autocomplete.
- *
- * Chỉ 1 request TomTom.
- *
- * Nếu:
- * - 429
- * - 5xx
- * - network error
- *
- * => searchPlaces() fallback Nominatim.
+ * Autocomplete KHÔNG đi qua đây.
  */
 
 async function searchTomTom(
@@ -534,13 +720,6 @@ function getTomTomAdministrativePriority(entityType?: string): number {
   }
 }
 
-function isTomTomAdministrative(item: TomTomSearchApiResult): boolean {
-  return (
-    getTomTomAdministrativePriority(item.entityType) !==
-    Number.POSITIVE_INFINITY
-  );
-}
-
 /**
  * ============================================================
  * TOMTOM RESULT -> PlaceResult
@@ -561,7 +740,7 @@ function toTomTomPlaceResult(item: TomTomSearchApiResult): PlaceResult {
 
 /**
  * ============================================================
- * SORT TOMTOM RESULTS
+ * SORT TOMTOM
  * ============================================================
  */
 
@@ -616,27 +795,17 @@ function sortTomTomResults(
  * MAIN SEARCH
  * ============================================================
  *
- * Đây là SEARCH CHÍNH khi:
+ * Search button:
  *
- *      [ Search ]
- *          ↓
- *      TomTom
- *          ↓
- *       thành công
- *          ↓
- *      trả kết quả
+ *     TomTom
+ *        ↓
+ *     success
+ *        ↓
+ *     results
  *
- * Nếu TomTom:
+ * TomTom lỗi / 429:
  *
- *      429 / 5xx / network
- *          ↓
- *      Nominatim
- *
- * QUAN TRỌNG:
- *
- * searchPlaces() KHÔNG được dùng cho autocomplete.
- *
- * Autocomplete phải gọi trực tiếp searchWithNominatim().
+ *     Nominatim
  */
 
 export async function searchPlaces(
@@ -651,17 +820,14 @@ export async function searchPlaces(
   }
 
   /**
-   * ----------------------------------------------------------
-   * 1. TOMTOM
-   * ----------------------------------------------------------
+   * Search chính thức mới gọi TomTom.
    */
 
   const tomTomSearch = await searchTomTom(trimmed, signal, userLocation);
 
   /**
-   * ----------------------------------------------------------
-   * 2. TOMTOM FAIL -> NOMINATIM
-   * ----------------------------------------------------------
+   * TomTom lỗi / 429 / network
+   * -> Nominatim fallback.
    */
 
   if (!tomTomSearch.ok) {
@@ -669,14 +835,10 @@ export async function searchPlaces(
   }
 
   /**
-   * ----------------------------------------------------------
-   * 3. TOMTOM KHÔNG CÓ RESULT
-   * ----------------------------------------------------------
+   * TomTom hoạt động nhưng không có kết quả.
    *
-   * Không coi empty result là hết quota.
-   *
-   * TomTom hoạt động bình thường nhưng không tìm thấy
-   * => trả [].
+   * Không cần gọi Nominatim lần nữa vì đây không phải
+   * lỗi/quota.
    */
 
   if (tomTomSearch.results.length === 0) {
@@ -704,10 +866,6 @@ export async function searchPlaces(
  * ============================================================
  * REVERSE GEOCODING
  * ============================================================
- *
- * Vẫn dùng Nominatim.
- *
- * Không liên quan TomTom Search quota.
  */
 
 export async function reverseGeocode(
@@ -715,23 +873,28 @@ export async function reverseGeocode(
   lon: number,
   signal?: AbortSignal,
 ): Promise<string | null> {
+  /**
+   * Reverse geocoding cũng phải tôn trọng rate limit
+   * của public Nominatim.
+   */
+  await waitForNominatimSlot(signal);
+
   const url = new URL("https://nominatim.openstreetmap.org/reverse");
 
   url.searchParams.set("lat", String(lat));
-
   url.searchParams.set("lon", String(lon));
-
-  url.searchParams.set("format", "jsonv2");
-
+  url.searchParams.set("format", "json");
   url.searchParams.set("accept-language", "vi");
 
   try {
     const response = await fetch(url.toString(), {
+      method: "GET",
       signal,
       headers: {
         Accept: "application/json",
         "User-Agent": "MyGoMapApp/1.0",
       },
+      cache: "no-store",
     });
 
     if (!response.ok) {
