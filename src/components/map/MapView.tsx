@@ -79,6 +79,18 @@ interface MapViewProps {
   isNavigating?: boolean;
   onNavigateToMapPoint?: (place: PlaceResult) => void;
   isQuickSearch?: boolean;
+  /**
+   * true trong lúc đang cố gắng TỰ ĐỘNG RESUME dẫn đường sau khi PWA bị tải
+   * lại giữa chừng (xem MapExperience.tsx). Trong khoảng thời gian này,
+   * route "mới xuất hiện" (do vừa được khôi phục từ localStorage) KHÔNG
+   * được coi là route mới thật sự cần fitBounds — nếu không, fitBounds sẽ
+   * bắn ra sự kiện zoomstart và bị useNavigationTracking hiểu nhầm là người
+   * dùng tự kéo/zoom bản đồ, tắt mất auto-follow ngay khi vừa resume xong.
+   * Được MapExperience điều khiển tường minh (không chỉ dựa vào đọc lại
+   * localStorage ở đây) để tránh lệch nhịp với thời điểm startNavigation()
+   * thực sự được gọi.
+   */
+  preventAutoFitBounds?: boolean;
 }
 
 const POI_FOCUS_ZOOM = 16;
@@ -239,6 +251,7 @@ export function MapView({
   onNavigateToMapPoint,
   isNavigating = false,
   isQuickSearch = false,
+  preventAutoFitBounds = false,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -848,7 +861,53 @@ export function MapView({
       // Nếu chỉ thêm customStops mà hình dáng tuyến đường chính không đổi thì bỏ qua zoom
       const currentCoordsString = JSON.stringify(route?.coordinates ?? []);
 
-      if (route && route.coordinates.length > 0) {
+      const hasPersistedNavigationSession = (() => {
+        if (typeof window === "undefined") return false;
+
+        try {
+          const raw = window.localStorage.getItem(
+            "mygomap_navigation_session_v1",
+          );
+          if (!raw) return false;
+
+          const parsed = JSON.parse(raw) as {
+            isNavigating?: boolean;
+            updatedAt?: number;
+          };
+
+          if (
+            parsed.isNavigating !== true ||
+            typeof parsed.updatedAt !== "number" ||
+            Date.now() - parsed.updatedAt > 6 * 60 * 60 * 1000
+          ) {
+            return false;
+          }
+
+          return true;
+        } catch {
+          return false;
+        }
+      })();
+
+      // FIX: đúng như doc comment của prop `isNavigating` ở trên (map KHÔNG
+      // được tự ý fitBounds/zoom trong lúc đang dẫn đường vì camera lúc này
+      // do useNavigationTracking chủ động điều khiển theo GPS) — nhưng điều
+      // kiện dưới đây trước đây thiếu guard `!isNavigating`, nên vẫn có thể
+      // fitBounds đúng 1 lần khi route MỚI xuất hiện trong lúc isNavigating
+      // còn đang chuyển từ false -> true (ví dụ: tự động resume navigation
+      // sau khi PWA bị tải lại giữa chừng — xem MapExperience.tsx). fitBounds
+      // đó bắn ra sự kiện zoomstart, bị useNavigationTracking hiểu nhầm là
+      // người dùng tự kéo/zoom bản đồ nên tắt mất auto-follow ("Về giữa")
+      // ngay sau khi vừa bật lại — đây chính là lý do "chỉ đường đúng nhưng
+      // không tự về giữa" sau khi resume. Thêm `!isNavigating` để khớp đúng
+      // với ý định ban đầu đã ghi trong doc comment của prop này.
+      if (
+        !isNavigating &&
+        !preventAutoFitBounds &&
+        !hasPersistedNavigationSession &&
+        route &&
+        route.coordinates.length > 0
+      ) {
         if (previousRouteCoordsRef.current !== currentCoordsString) {
           previousRouteCoordsRef.current = currentCoordsString;
 
@@ -861,6 +920,12 @@ export function MapView({
             map.fitBounds(bounds, { padding: 80, duration: 800 });
           }
         }
+      } else if (route && route.coordinates.length > 0) {
+        // Đang navigate HOẶC đang trong lúc chặn fitBounds để resume: không
+        // fitBounds, nhưng vẫn phải cập nhật previousRouteCoordsRef — lý do
+        // xem comment gốc phía trên (tránh fitBounds "trễ" ngay khi resume
+        // xong / khi bỏ chặn).
+        previousRouteCoordsRef.current = currentCoordsString;
       }
     };
 
@@ -877,6 +942,7 @@ export function MapView({
     gender,
     isNavigating,
     isQuickSearch,
+    preventAutoFitBounds,
   ]);
 
   // Marker điểm A - B

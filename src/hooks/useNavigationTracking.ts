@@ -154,6 +154,124 @@ const ARRIVAL_THRESHOLD_METERS = 30;
 // không nên snap.
 const MAX_SNAP_TO_ROUTE_METERS = 35;
 
+/**
+ * ============================================================
+ * PERSIST TRẠNG THÁI "ĐANG DẪN ĐƯỜNG" QUA localStorage
+ * ============================================================
+ * PWA trên iOS Safari (và một số Android) bị hệ điều hành kill tiến trình
+ * sau một khoảng chạy nền/khoá màn hình nhất định (quan sát thực tế: khoảng
+ * 15 phút), khiến trang tự tải lại từ đầu — không phải reload chủ động của
+ * người dùng. Khi đó hook này mount lại HOÀN TOÀN MỚI, isNavigating luôn
+ * bắt đầu lại từ false, và React tự nó không có cách nào "nhớ" được là
+ * trước đó đang dẫn đường giữa chừng.
+ *
+ * Giải pháp: lưu một cờ nhỏ ra NGOÀI React (localStorage) mỗi khi
+ * startNavigation()/stopNavigation() được gọi. Lúc hook mount lại (trang
+ * tải lại), đọc cờ này MỘT LẦN DUY NHẤT để biết "trước khi bị tải lại có
+ * đang dẫn đường hay không", trả ra ngoài qua `wasNavigatingBeforeReload`
+ * để component cha (MapExperience) tự gọi lại startNavigation() ngay khi lộ
+ * trình (được useRoutePlanner.ts khôi phục riêng) đã sẵn sàng trở lại — coi
+ * như người dùng chưa từng bị gián đoạn.
+ *
+ * CHỈ lưu trạng thái nhỏ gồm đang dẫn đường + đang "Về giữa" + mốc thời gian
+ * ở đây — KHÔNG lưu toạ độ/lộ trình, vì lộ trình tĩnh (route/plan) đã được
+ * useRoutePlanner.ts lưu riêng rồi;
+ * navigation hook chỉ cần biết "có nên tự bấm Bắt đầu lại hay không". Phiên
+ * cũ hơn NAVIGATION_SESSION_STORAGE_MAX_AGE_MS bị bỏ qua, tránh việc mở lại
+ * app sau nhiều giờ không dùng mà vẫn tự động bật dẫn đường.
+ */
+const NAVIGATION_SESSION_STORAGE_KEY = "mygomap_navigation_session_v1";
+const NAVIGATION_SESSION_STORAGE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 giờ
+
+interface PersistedNavigationSession {
+  isNavigating: boolean;
+  isFollowing: boolean;
+  updatedAt: number;
+  /** Camera lúc lưu — dùng để "Về giữa" sau resume trả về ĐÚNG zoom/pitch/
+   *  bearing như trước khi bị tải lại, thay vì tính lại từ đầu với tốc độ
+   *  mặc định = 0 (khiến camera nhảy về preset "đứng yên" dù trước đó đang
+   *  chạy tốc độ cao). */
+  lastZoom?: number;
+  lastPitch?: number;
+  lastBearing?: number;
+  lastSpeedKmh?: number;
+}
+
+function loadPersistedNavigationSession(): PersistedNavigationSession | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(NAVIGATION_SESSION_STORAGE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as Partial<PersistedNavigationSession>;
+
+    if (
+      typeof parsed.updatedAt !== "number" ||
+      Date.now() - parsed.updatedAt > NAVIGATION_SESSION_STORAGE_MAX_AGE_MS
+    ) {
+      window.localStorage.removeItem(NAVIGATION_SESSION_STORAGE_KEY);
+      return null;
+    }
+
+    return {
+      isNavigating: parsed.isNavigating === true,
+      isFollowing: parsed.isFollowing !== false,
+      updatedAt: parsed.updatedAt,
+      lastZoom:
+        typeof parsed.lastZoom === "number" ? parsed.lastZoom : undefined,
+      lastPitch:
+        typeof parsed.lastPitch === "number" ? parsed.lastPitch : undefined,
+      lastBearing:
+        typeof parsed.lastBearing === "number" ? parsed.lastBearing : undefined,
+      lastSpeedKmh:
+        typeof parsed.lastSpeedKmh === "number"
+          ? parsed.lastSpeedKmh
+          : undefined,
+    };
+  } catch (err) {
+    console.warn("Không đọc được phiên dẫn đường đã lưu:", err);
+    return null;
+  }
+}
+
+function savePersistedNavigationSession(
+  isNavigating: boolean,
+  isFollowing = true,
+  camera?: {
+    zoom?: number;
+    pitch?: number;
+    bearing?: number;
+    speedKmh?: number;
+  },
+): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    if (!isNavigating) {
+      window.localStorage.removeItem(NAVIGATION_SESSION_STORAGE_KEY);
+      return;
+    }
+
+    const payload: PersistedNavigationSession = {
+      isNavigating: true,
+      isFollowing,
+      updatedAt: Date.now(),
+      lastZoom: camera?.zoom,
+      lastPitch: camera?.pitch,
+      lastBearing: camera?.bearing,
+      lastSpeedKmh: camera?.speedKmh,
+    };
+
+    window.localStorage.setItem(
+      NAVIGATION_SESSION_STORAGE_KEY,
+      JSON.stringify(payload),
+    );
+  } catch (err) {
+    console.warn("Không lưu được phiên dẫn đường:", err);
+  }
+}
+
 const screenHeight = typeof window !== "undefined" ? window.innerHeight : 800;
 
 interface NavigationCameraOptions {
@@ -690,6 +808,43 @@ export function useNavigationTracking(
     speedKmh: null,
   });
 
+  // Trạng thái "đang dẫn đường lúc trang bị tải lại" + "đang Về giữa" — chỉ
+  // đọc DUY NHẤT MỘT LẦN lúc mount (xem giải thích ở
+  // loadPersistedNavigationSession phía trên).
+  // MapExperience dựa vào cờ này để tự động gọi lại startNavigation() khi
+  // lộ trình đã được khôi phục xong, không cần người dùng bấm lại từ đầu.
+  const [persistedNavigationSession] =
+    useState<PersistedNavigationSession | null>(() =>
+      loadPersistedNavigationSession(),
+    );
+  const wasNavigatingBeforeReload =
+    persistedNavigationSession?.isNavigating ?? false;
+  const wasFollowingBeforeReload =
+    persistedNavigationSession?.isFollowing ?? true;
+  const shouldResumeFollowingRef = useRef(wasNavigatingBeforeReload);
+
+  // Camera (zoom/pitch/bearing/tốc độ) tại thời điểm phiên trước bị lưu —
+  // CHỈ dùng đúng MỘT LẦN cho lần "về giữa" đầu tiên ngay sau khi resume,
+  // để tránh camera nhảy về preset "đứng yên" (tốc độ mặc định = 0) rồi
+  // mới từ từ "leo" lên đúng zoom/pitch như trước reload. Sau lần dùng đầu
+  // tiên, bị xoá để các lần cập nhật camera tiếp theo quay lại tính động
+  // theo tốc độ thực tế như bình thường.
+  const resumedCameraRef = useRef<{
+    zoom?: number;
+    pitch?: number;
+    bearing?: number;
+    speedKmh?: number;
+  } | null>(
+    wasNavigatingBeforeReload
+      ? {
+          zoom: persistedNavigationSession?.lastZoom,
+          pitch: persistedNavigationSession?.lastPitch,
+          bearing: persistedNavigationSession?.lastBearing,
+          speedKmh: persistedNavigationSession?.lastSpeedKmh,
+        }
+      : null,
+  );
+
   // ============================================================
   // NEW: Modal thông báo bằng Tailwind
   // ============================================================
@@ -815,7 +970,16 @@ export function useNavigationTracking(
       ...prev,
       isFollowing: false,
     }));
-  }, []);
+
+    if (isNavigatingRef.current) {
+      savePersistedNavigationSession(true, false, {
+        zoom: map?.getZoom(),
+        pitch: map?.getPitch(),
+        bearing: map?.getBearing(),
+        speedKmh: smoothedSpeedKmhRef.current ?? undefined,
+      });
+    }
+  }, [map]);
 
   /**
    * Người dùng chủ động điều khiển bản đồ:
@@ -902,6 +1066,15 @@ export function useNavigationTracking(
     }
 
     const camera = getCameraForCurrentRoute(targetLng, targetLat);
+
+    if (isNavigatingRef.current) {
+      savePersistedNavigationSession(true, true, {
+        zoom: camera.zoom,
+        pitch: camera.pitch,
+        bearing: targetBearing,
+        speedKmh: smoothedSpeedKmhRef.current ?? undefined,
+      });
+    }
 
     map.easeTo({
       center: [targetLng, targetLat],
@@ -1666,15 +1839,25 @@ export function useNavigationTracking(
       (DeviceOrientationEvent as any).requestPermission().catch(console.error);
     }
 
-    isFollowingRef.current = true;
+    const shouldFollow = shouldResumeFollowingRef.current
+      ? wasFollowingBeforeReload
+      : true;
+    shouldResumeFollowingRef.current = false;
+
+    isFollowingRef.current = shouldFollow;
     isProgrammaticCameraRef.current = false;
 
     setState((prev) => ({
       ...prev,
       isNavigating: true,
-      isFollowing: true,
+      isFollowing: shouldFollow,
       hasArrived: false, // chuyến đi mới, phải reset để có thể báo "đến nơi" lại
     }));
+
+    // Đánh dấu ra localStorage là đang dẫn đường — xem giải thích ở
+    // savePersistedNavigationSession phía trên (dùng để tự động resume nếu
+    // PWA bị hệ điều hành kill và trang tải lại giữa chừng).
+    savePersistedNavigationSession(true, shouldFollow);
 
     isNavigatingRef.current = true;
     // Reset trạng thái tính-lại-lộ-trình mỗi lần bắt đầu navigate mới.
@@ -1713,16 +1896,39 @@ export function useNavigationTracking(
         if (map && isFollowingRef.current) {
           isProgrammaticCameraRef.current = true;
 
-          const camera = getCameraForCurrentRoute(
+          const computedCamera = getCameraForCurrentRoute(
             markerPosition.lng,
             markerPosition.lat,
           );
+
+          // Nếu đây là lần "về giữa" ĐẦU TIÊN sau khi resume dẫn đường (PWA
+          // bị tải lại giữa chừng), ưu tiên dùng đúng zoom/pitch/bearing/tốc
+          // độ đã lưu trước reload — không tính lại từ tốc độ mặc định = 0
+          // (khiến camera nhảy về preset "đứng yên" rồi mới từ từ leo lên
+          // đúng mức cũ, tạo cảm giác "về giữa" bị sai/lệch so với trước).
+          const resumed = resumedCameraRef.current;
+          const camera = resumed
+            ? {
+                zoom: resumed.zoom ?? computedCamera.zoom,
+                pitch: resumed.pitch ?? computedCamera.pitch,
+              }
+            : computedCamera;
+          const bearing =
+            resumed?.bearing ?? heading ?? currentHeadingRef.current ?? 0;
+
+          if (resumed?.speedKmh != null) {
+            smoothedSpeedKmhRef.current = resumed.speedKmh;
+          }
+          // Chỉ dùng camera đã lưu đúng MỘT LẦN — các lần cập nhật camera
+          // tiếp theo (trong watchPosition) quay lại tính động theo tốc độ
+          // GPS thực tế như bình thường.
+          resumedCameraRef.current = null;
 
           map.flyTo({
             center: [markerPosition.lng, markerPosition.lat],
             zoom: camera.zoom,
             pitch: camera.pitch,
-            bearing: heading ?? currentHeadingRef.current ?? 0,
+            bearing,
             duration: 800,
             padding: {
               top: Math.round(screenHeight * 0.33),
@@ -1846,6 +2052,13 @@ export function useNavigationTracking(
 
               const camera = getCameraForCurrentRoute(targetLng, targetLat);
 
+              savePersistedNavigationSession(true, true, {
+                zoom: camera.zoom,
+                pitch: camera.pitch,
+                bearing: targetBearing,
+                speedKmh: smoothedSpeedKmhRef.current ?? undefined,
+              });
+
               map.easeTo({
                 center: [targetLng, targetLat],
                 zoom: camera.zoom,
@@ -1922,6 +2135,7 @@ export function useNavigationTracking(
     checkArrival,
     showNotification,
     getCameraForCurrentRoute,
+    wasFollowingBeforeReload,
   ]);
 
   // Dừng navigation tracking
@@ -1983,6 +2197,10 @@ export function useNavigationTracking(
 
     arrivalNotifiedRef.current = false;
 
+    // Đã dừng dẫn đường chủ động — xoá cờ đã lưu để lần tải trang sau KHÔNG
+    // tự động resume phiên này nữa.
+    savePersistedNavigationSession(false);
+
     setState({
       isNavigating: false,
       userLocation: null,
@@ -2028,6 +2246,10 @@ export function useNavigationTracking(
     startNavigation,
     stopNavigation,
     followUserLocation,
+    // Cờ đọc 1 lần lúc mount — xem loadPersistedNavigationSession phía trên.
+    // true nghĩa là trang vừa bị tải lại (PWA bị kill...) trong lúc đang
+    // dẫn đường; MapExperience dùng cờ này để tự gọi lại startNavigation().
+    wasNavigatingBeforeReload,
 
     // ============================================================
     // NEW: API điều khiển Modal thông báo

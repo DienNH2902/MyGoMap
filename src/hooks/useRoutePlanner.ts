@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   fetchDrivingRoute,
   RoutingError,
@@ -90,6 +90,122 @@ interface RoutePlannerState {
 }
 
 /**
+ * ============================================================
+ * PERSIST KẾ HOẠCH CHUYẾN ĐI VÀO localStorage
+ * ============================================================
+ * PWA trên iOS Safari (và một số Android) bị hệ điều hành kill tiến trình
+ * sau một khoảng chạy nền/khoá màn hình nhất định (quan sát thực tế: khoảng
+ * 15 phút) — trang tự tải lại từ đầu, không phải reload chủ động của người
+ * dùng, và mất sạch state đang có trong React: đang đi chỉ đường giữa
+ * chừng thì mất hết điểm đi/đến, lộ trình, phải tìm và chỉ đường lại từ
+ * đầu, rất bất tiện.
+ *
+ * Để sống sót qua lần "tải lại" đó, mọi lần các field TĨNH dưới đây đổi
+ * (điểm đi/đến, chế độ điểm dừng, danh mục đã chọn, lộ trình đã tính...)
+ * đều được lưu ngay vào localStorage; khi hook này mount lại (trang tải lại
+ * lần nữa), state khởi tạo sẽ đọc lại từ đó thay vì DEFAULT_STATE — coi như
+ * chưa từng bị gián đoạn.
+ *
+ * CHỈ lưu những field có thể khôi phục nguyên trạng. Các field mang tính
+ * "đang xử lý của phiên hiện tại" (isLoading, error, poiWarning, aiTip,
+ * activeStopId, activePoiId) KHÔNG được lưu — lưu lại chúng sẽ gây hiển thị
+ * sai khi mở lại app (ví dụ thấy "Đang tính..." mãi không hết, hoặc một
+ * lỗi cũ không còn ý nghĩa).
+ *
+ * Dữ liệu cũ hơn ROUTE_PLANNER_STORAGE_MAX_AGE_MS bị bỏ qua và xoá — tránh
+ * việc mở app sau nhiều giờ không dùng mà vẫn bị khôi phục một chuyến đi cũ
+ * đã hết ý nghĩa.
+ */
+const ROUTE_PLANNER_STORAGE_KEY = "mygomap_route_planner_v1";
+const ROUTE_PLANNER_STORAGE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 giờ
+
+interface PersistedRoutePlannerPayload {
+  updatedAt: number;
+  start: PlaceResult | null;
+  end: PlaceResult | null;
+  stopMode: StopMode;
+  stopCount: number;
+  customStops: PlaceResult[];
+  selectedCategories: PoiCategoryId[];
+  avoidHighways: boolean;
+  avoidTraffic: boolean;
+  plan: TripPlan | null;
+}
+
+function loadPersistedRoutePlannerState(): Partial<RoutePlannerState> | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(ROUTE_PLANNER_STORAGE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as Partial<PersistedRoutePlannerPayload>;
+
+    if (
+      typeof parsed.updatedAt !== "number" ||
+      Date.now() - parsed.updatedAt > ROUTE_PLANNER_STORAGE_MAX_AGE_MS
+    ) {
+      window.localStorage.removeItem(ROUTE_PLANNER_STORAGE_KEY);
+      return null;
+    }
+
+    return {
+      start: parsed.start ?? null,
+      end: parsed.end ?? null,
+      stopMode: parsed.stopMode ?? "auto",
+      stopCount: parsed.stopCount ?? 0,
+      customStops: parsed.customStops ?? [],
+      selectedCategories: parsed.selectedCategories ?? [],
+      avoidHighways: parsed.avoidHighways ?? true,
+      avoidTraffic: parsed.avoidTraffic ?? false,
+      plan: parsed.plan ?? null,
+    };
+  } catch (err) {
+    console.warn("Không đọc được kế hoạch chuyến đi đã lưu:", err);
+    return null;
+  }
+}
+
+function savePersistedRoutePlannerState(state: RoutePlannerState): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    const payload: PersistedRoutePlannerPayload = {
+      updatedAt: Date.now(),
+      start: state.start,
+      end: state.end,
+      stopMode: state.stopMode,
+      stopCount: state.stopCount,
+      customStops: state.customStops,
+      selectedCategories: state.selectedCategories,
+      avoidHighways: state.avoidHighways,
+      avoidTraffic: state.avoidTraffic,
+      plan: state.plan,
+    };
+
+    window.localStorage.setItem(
+      ROUTE_PLANNER_STORAGE_KEY,
+      JSON.stringify(payload),
+    );
+  } catch (err) {
+    // Bỏ qua lỗi ghi (ví dụ hết quota localStorage) — persistence chỉ là
+    // lớp "tiện lợi thêm", không được phép làm hỏng flow chính nếu ghi thất
+    // bại.
+    console.warn("Không lưu được kế hoạch chuyến đi:", err);
+  }
+}
+
+function clearPersistedRoutePlannerState(): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.removeItem(ROUTE_PLANNER_STORAGE_KEY);
+  } catch (err) {
+    console.warn("Không xoá được kế hoạch chuyến đi đã lưu:", err);
+  }
+}
+
+/**
  * Owns the full trip-planning flow used by the /map page:
  * 1. Get a driving route between start and end from OpenRouteService, kept
  *    strictly inside Vietnam (see `avoid_borders` in openRouteService.ts).
@@ -106,7 +222,28 @@ interface RoutePlannerState {
  * throwing away the entire result.
  */
 export function useRoutePlanner() {
-  const [state, setState] = useState<RoutePlannerState>(DEFAULT_STATE);
+  const [state, setState] = useState<RoutePlannerState>(() => {
+    const persisted = loadPersistedRoutePlannerState();
+    return persisted ? { ...DEFAULT_STATE, ...persisted } : DEFAULT_STATE;
+  });
+
+  // Tự động lưu lại kế hoạch chuyến đi vào localStorage mỗi khi các field
+  // "có thể khôi phục" thay đổi — xem giải thích ở
+  // savePersistedRoutePlannerState phía trên. Không debounce vì
+  // JSON.stringify + localStorage.setItem cho vài KB dữ liệu là rất rẻ.
+  useEffect(() => {
+    savePersistedRoutePlannerState(state);
+  }, [
+    state.start,
+    state.end,
+    state.stopMode,
+    state.stopCount,
+    state.customStops,
+    state.selectedCategories,
+    state.avoidHighways,
+    state.avoidTraffic,
+    state.plan,
+  ]);
 
   const setAvoidTraffic = useCallback((avoidTraffic: boolean) => {
     setState((prev) => ({ ...prev, avoidTraffic }));
@@ -211,7 +348,10 @@ export function useRoutePlanner() {
     setState((prev) => ({ ...prev, activePoiId: id }));
   }, []);
 
-  const reset = useCallback(() => setState(DEFAULT_STATE), []);
+  const reset = useCallback(() => {
+    clearPersistedRoutePlannerState();
+    setState(DEFAULT_STATE);
+  }, []);
 
   const planTrip = useCallback(async () => {
     const {

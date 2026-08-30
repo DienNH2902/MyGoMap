@@ -84,6 +84,25 @@ export function MapExperience() {
   const planner = useRoutePlanner();
   const quickSearch = useQuickDestinationSearch({ planner });
   const mapRef = useRef<MapLibreMap | null>(null);
+  // true khi bản đồ MapLibre đã sẵn sàng (đã bắn onMapReady) — dùng làm điều
+  // kiện để tự động resume navigation sau khi trang bị tải lại (xem effect
+  // "TỰ ĐỘNG RESUME DẪN ĐƯỜNG" bên dưới). mapRef tự nó là ref nên thay đổi
+  // không kích hoạt re-render; cần state riêng này để effect phản ứng được
+  // đúng lúc bản đồ vừa xong.
+  const [isMapReady, setIsMapReady] = useState(false);
+  // Đảm bảo chỉ thử tự động resume navigation ĐÚNG MỘT LẦN sau mỗi lần app
+  // mở lại — tránh gọi lặp startNavigation() nếu effect chạy lại nhiều lần
+  // trong lúc chờ đủ điều kiện (bản đồ sẵn sàng + lộ trình khôi phục xong).
+  const hasAttemptedNavigationResumeRef = useRef(false);
+
+  // Chặn MapView tự fitBounds-về-full-tuyến trong lúc đang cố resume dẫn
+  // đường sau reload. Dùng STATE (không phải chỉ đọc localStorage trong
+  // MapView) để đồng bộ chính xác với thời điểm startNavigation() thực sự
+  // được gọi ở component này — tránh khe hở timing giữa "route vừa khôi
+  // phục xong" và "isNavigating chuyển true".
+  const [fitBoundsSuppressed, setFitBoundsSuppressed] = useState(
+    () => false, // sẽ được bật ngay bên dưới nếu phát hiện có phiên cần resume
+  );
 
   // State quản lý Modal "Bạn đã đến nơi"
   const [isArrivalModalOpen, setIsArrivalModalOpen] = useState(false);
@@ -109,6 +128,48 @@ export function MapExperience() {
       setIsArrivalModalOpen(true);
     }
   }, [navigation.hasArrived]);
+
+  // Bật cờ chặn fitBounds NGAY khi biết có phiên dẫn đường cần resume — làm
+  // ở effect riêng (chạy sớm, không phụ thuộc isMapReady/plan.route) để cờ
+  // có hiệu lực từ khung hình đầu tiên MapView vẽ route đã khôi phục.
+  useEffect(() => {
+    if (!navigation.wasNavigatingBeforeReload) return;
+
+    setFitBoundsSuppressed(true);
+
+    // An toàn: nếu vì lý do gì đó (không xin được GPS, route không khôi
+    // phục được...) mà resume không bao giờ xảy ra, đừng khoá fitBounds
+    // vĩnh viễn cho các tuyến MỚI người dùng tự lập sau này trong cùng
+    // phiên — tự bỏ chặn sau một khoảng thời gian hợp lý.
+    const safetyTimer = setTimeout(() => {
+      setFitBoundsSuppressed(false);
+    }, 8000);
+
+    return () => clearTimeout(safetyTimer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigation.wasNavigatingBeforeReload]);
+
+  useEffect(() => {
+    if (hasAttemptedNavigationResumeRef.current) return;
+    if (!navigation.wasNavigatingBeforeReload) return;
+    if (navigation.isNavigating) return;
+    if (!isMapReady || !mapRef.current) return;
+    if (!planner.plan?.route) return;
+
+    hasAttemptedNavigationResumeRef.current = true;
+    navigation.startNavigation();
+    // startNavigation() sẽ tự dùng camera đã lưu (zoom/pitch/bearing/tốc
+    // độ) để "về giữa" đúng như trước lúc reload — xem useNavigationTracking.
+    // Sau khi đã thực sự bắt đầu, guard `!isNavigating` trong MapView đã đủ
+    // để chặn fitBounds, nên có thể bỏ cờ suppress ngay tại đây.
+    setFitBoundsSuppressed(false);
+  }, [
+    navigation.wasNavigatingBeforeReload,
+    navigation.isNavigating,
+    navigation.startNavigation,
+    isMapReady,
+    planner.plan?.route,
+  ]);
 
   // Tuyến đường thực sự cần vẽ lên bản đồ: khi đang dẫn đường (đã bấm "Về
   // giữa"), luôn ưu tiên lộ trình vừa được TÍNH LẠI từ vị trí hiện tại của
@@ -366,8 +427,10 @@ export function MapExperience() {
         onLocationError={setLocationError}
         onMapReady={(map) => {
           mapRef.current = map;
+          setIsMapReady(true);
         }}
         isQuickSearch={quickSearch.hasSearched}
+        preventAutoFitBounds={fitBoundsSuppressed}
       />
 
       {/* Tìm đường nhanh: chỉ nhập "Nơi đến", điểm A luôn = vị trí GPS */}
