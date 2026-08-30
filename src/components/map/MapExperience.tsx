@@ -393,6 +393,24 @@ export function MapExperience() {
         />
       )}
 
+      {/* HIỂN THỊ TỐC ĐỘ HIỆN TẠI (km/h) KHI ĐANG DẪN ĐƯỜNG — cùng nguồn dữ
+          liệu (đã làm mượt) với tốc độ dùng để tính camera zoom/pitch trong
+          useNavigationTracking, nên số hiển thị luôn khớp với cảm giác
+          camera đang "phản ứng" theo tốc độ thực tế. */}
+      {navigation.isNavigating && navigation.speedKmh !== null && (
+        <div
+          className="pointer-events-none fixed bottom-[calc(var(--safe-bottom)+5.5rem)] right-2 top-[130px] z-40 flex h-16 w-16 flex-col items-center justify-center rounded-full border-2 border-accent-gold/40 bg-ink/90 shadow-2xl backdrop-blur-md md:bottom-6"
+          aria-label="Tốc độ hiện tại"
+        >
+          <span className="text-xl font-extrabold leading-none text-cream">
+            {Math.round(navigation.speedKmh)}
+          </span>
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-cream/60">
+            km/h
+          </span>
+        </div>
+      )}
+
       {/* MAP STYLE TOGGLE - DESKTOP CHUẨN */}
       <div className="hidden md:block">
         <MapStyleToggle value={mapStyleId} onChange={setMapStyleId} />

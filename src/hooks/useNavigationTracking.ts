@@ -95,6 +95,14 @@ interface NavigationState {
   isRerouting: boolean;
   isFollowing: boolean;
   /**
+   * Tốc độ hiện tại của người dùng, tính bằng km/h, đã được làm mượt (EMA)
+   * cùng nguồn với tốc độ dùng để tính camera zoom/pitch (xem
+   * smoothedSpeedKmhRef / getNavigationCamera) — để UI hiển thị tốc độ luôn
+   * khớp với những gì camera đang "phản ứng". null khi chưa có tín hiệu GPS
+   * nào hoặc GPS không báo speed.
+   */
+  speedKmh: number | null;
+  /**
    * true khi người dùng đã đến điểm đích (trong ngưỡng ARRIVAL_THRESHOLD_METERS).
    * MapExperience dựa vào field này để mở Modal "Bạn đã đến nơi!" — không dùng
    * hệ thống `notification` chung (vốn dành cho các cảnh báo lỗi khác như mất
@@ -506,29 +514,118 @@ function analyzeLocalRouteComplexity(
   }
 }
 
-function getNavigationCamera(complexity: number): NavigationCameraOptions {
+interface SpeedCameraKeyframe {
+  /** Tốc độ mốc, đơn vị km/h. */
+  speedKmh: number;
+  zoom: number;
+  pitch: number;
+}
+
+/**
+ * Các mốc (tốc độ -> zoom/pitch NỀN) lấy theo đúng hành vi quan sát được khi
+ * dùng Google Maps thực tế khi dẫn đường ô tô/xe máy — TỐC ĐỘ hiện tại mới
+ * là yếu tố chính quyết định camera, không phải độ cong đường:
+ *
+ * Tốc độ           Zoom    Pitch
+ * ≤15 km/h         19.3    45°   (đứng yên/hẻm/bãi đỗ — nhìn gần thẳng xuống)
+ * ~30 km/h         18.3    55°   (phố đông — zoom vừa)
+ * ~60 km/h         17.2    62°   (đường lớn/tỉnh lộ — bắt đầu kéo xa)
+ * ~90 km/h         16.2    65°   (quốc lộ nhanh — xa hơn nữa)
+ * ≥120 km/h        15.3    66°   (cao tốc — xa nhất, nghiêng sâu để thấy xa)
+ */
+const SPEED_CAMERA_KEYFRAMES: SpeedCameraKeyframe[] = [
+  { speedKmh: 15, zoom: 19.3, pitch: 45 },
+  { speedKmh: 30, zoom: 18.3, pitch: 55 },
+  { speedKmh: 60, zoom: 17.2, pitch: 62 },
+  { speedKmh: 90, zoom: 16.2, pitch: 65 },
+  { speedKmh: 120, zoom: 15.3, pitch: 66 },
+];
+
+/**
+ * Nội suy tuyến tính zoom/pitch NỀN theo tốc độ hiện tại giữa các mốc trong
+ * SPEED_CAMERA_KEYFRAMES. Tốc độ ≤ mốc đầu tiên (15 km/h) hoặc ≥ mốc cuối
+ * (120 km/h) thì giữ nguyên giá trị ở 2 đầu bảng (clamp), không ngoại suy
+ * vượt ra ngoài phạm vi đã quan sát được.
+ */
+function interpolateSpeedCamera(speedKmh: number): {
+  zoom: number;
+  pitch: number;
+} {
+  const safeSpeed = Math.max(0, speedKmh);
+
+  const first = SPEED_CAMERA_KEYFRAMES[0];
+  const last = SPEED_CAMERA_KEYFRAMES[SPEED_CAMERA_KEYFRAMES.length - 1];
+
+  // FIX: với tsconfig bật `noUncheckedIndexedAccess`, truy cập mảng theo
+  // index luôn trả về kiểu `T | undefined` dù mảng là const cố định và
+  // luôn có phần tử — cần guard tường minh trước khi dùng, tương tự cách
+  // toLonLatTuple()/các đoạn dùng `sampled[i]` ở trên đã xử lý.
+  if (!first || !last) {
+    return { zoom: 17.2, pitch: 62 };
+  }
+
+  if (safeSpeed <= first.speedKmh) {
+    return { zoom: first.zoom, pitch: first.pitch };
+  }
+
+  if (safeSpeed >= last.speedKmh) {
+    return { zoom: last.zoom, pitch: last.pitch };
+  }
+
+  for (let i = 1; i < SPEED_CAMERA_KEYFRAMES.length; i++) {
+    const prev = SPEED_CAMERA_KEYFRAMES[i - 1];
+    const curr = SPEED_CAMERA_KEYFRAMES[i];
+
+    if (!prev || !curr) continue;
+
+    if (safeSpeed <= curr.speedKmh) {
+      const ratio =
+        (safeSpeed - prev.speedKmh) / (curr.speedKmh - prev.speedKmh);
+
+      return {
+        zoom: prev.zoom + (curr.zoom - prev.zoom) * ratio,
+        pitch: prev.pitch + (curr.pitch - prev.pitch) * ratio,
+      };
+    }
+  }
+
+  // Không bao giờ tới đây (đã clamp 2 đầu ở trên) — chỉ để TypeScript yên
+  // tâm là luôn có giá trị trả về.
+  return { zoom: last.zoom, pitch: last.pitch };
+}
+
+function getNavigationCamera(
+  speedKmh: number,
+  complexity: number,
+): NavigationCameraOptions {
   const safeComplexity = Math.max(0, Math.min(1, complexity));
 
   /**
-   * Hiệu chỉnh lại theo đúng cách Google Maps đổi camera khi dẫn đường,
-   * dựa trên độ phức tạp CỤC BỘ phía trước (analyzeLocalRouteComplexity,
-   * chỉ nhìn ~1.2km trước mặt — không liên quan tổng quãng đường dài hay
-   * ngắn), nên trong 1 chuyến đi dài, mỗi đoạn thẳng/đoạn nhiều khúc cua sẽ
-   * tự có camera riêng phù hợp:
+   * Đúng như cách mọi hệ thống dẫn đường ô tô làm: TỐC ĐỘ hiện tại quyết
+   * định camera NỀN (bảng SPEED_CAMERA_KEYFRAMES ở trên) — đi càng nhanh,
+   * camera càng zoom xa + nghiêng sâu để thấy đường dài phía trước; đi
+   * chậm/đứng yên thì camera zoom gần + nhìn gần như thẳng xuống.
    *
-   * - Đoạn THẲNG, nhìn xa được (complexity ~0): zoom RA XA hơn (zoom thấp,
-   *   17.2) + pitch NGHIÊNG SÂU hơn (pitch cao, 78) để thấy một đoạn đường
-   *   dài phía trước, giống cảm giác "lướt" trên cao tốc/đường trường.
-   * - Đoạn HẺM NGẮN / NHIỀU KHÚC CUA LIÊN TIẾP (complexity ~1): zoom LẠI
-   *   GẦN hơn (zoom cao, 19.8) + pitch NGẢ GẦN VỀ NHÌN THẲNG XUỐNG hơn
-   *   (pitch thấp, 42) để thấy rõ từng khúc cua sắp tới.
-   *
-   * Biên độ được nới rộng hơn bản cũ (17.2–19.8 thay vì 19–20.3 cho zoom,
-   * 42–78 thay vì 55–80 cho pitch) để sự thay đổi rõ ràng, cảm nhận được
-   * khi lái thật, thay vì gần như không đổi như trước.
+   * Độ phức tạp CỤC BỘ phía trước (analyzeLocalRouteComplexity, chỉ nhìn
+   * ~1.2km trước mặt) không còn là yếu tố chính, mà chỉ là một LỚP CỘNG
+   * THÊM chồng lên trên nền theo tốc độ: khi sắp tới khúc cua/giao lộ phức
+   * tạp, zoom thêm một chút + pitch phẳng thêm một chút so với mức nền,
+   * bất kể đang đi tốc độ nào — giống hệt cách Google Maps zoom thêm ngay
+   * trước ngã rẽ dù đang chạy tốc độ cao trên quốc lộ.
    */
-  const zoom = 17.2 + safeComplexity * 2.8;
-  const pitch = 78 - safeComplexity * 46;
+  const baseline = interpolateSpeedCamera(speedKmh);
+
+  const COMPLEXITY_ZOOM_BOOST = 0.9;
+  const COMPLEXITY_PITCH_FLATTEN = 10;
+
+  const zoom = Math.min(
+    19.8,
+    baseline.zoom + safeComplexity * COMPLEXITY_ZOOM_BOOST,
+  );
+  const pitch = Math.max(
+    40,
+    baseline.pitch - safeComplexity * COMPLEXITY_PITCH_FLATTEN,
+  );
 
   return {
     zoom,
@@ -590,6 +687,7 @@ export function useNavigationTracking(
     isRerouting: false,
     isFollowing: true,
     hasArrived: false,
+    speedKmh: null,
   });
 
   // ============================================================
@@ -632,6 +730,11 @@ export function useNavigationTracking(
   const smoothedLonRef = useRef<number | null>(null);
   const smoothedBearingRef = useRef<number | null>(null);
   const lastCameraUpdateRef = useRef<number>(0);
+  // Tốc độ hiện tại (km/h) đã làm mượt bằng EMA từ speed GPS (m/s) — dùng
+  // làm trục CHÍNH để tính camera zoom/pitch (xem getNavigationCamera) và
+  // cũng là nguồn duy nhất cho speedKmh hiển thị lên UI, để camera và số
+  // hiển thị luôn khớp nhau, không lệch pha.
+  const smoothedSpeedKmhRef = useRef<number | null>(null);
 
   // Camera có đang tự động bám theo người dùng hay không.
   // false khi người dùng chủ động vuốt/kéo/zoom/xoay bản đồ.
@@ -755,7 +858,10 @@ export function useNavigationTracking(
         userLat,
       );
 
-      return getNavigationCamera(complexity.complexity);
+      return getNavigationCamera(
+        smoothedSpeedKmhRef.current ?? 0,
+        complexity.complexity,
+      );
     },
     [],
   );
@@ -1255,6 +1361,25 @@ export function useNavigationTracking(
       }
 
       // ============================================================
+      // 2b. XÁC ĐỊNH & LÀM MƯỢT TỐC ĐỘ (km/h)
+      // ============================================================
+      // speed từ Geolocation API là m/s (hoặc null nếu thiết bị không hỗ
+      // trợ) — quy đổi sang km/h rồi làm mượt bằng EMA giống các giá trị
+      // khác ở trên, để: (1) camera zoom/pitch theo tốc độ (xem
+      // getNavigationCamera) không bị giật mỗi khi GPS báo speed dao động,
+      // và (2) số km/h hiển thị lên UI cũng mượt, không nhảy số liên tục.
+
+      const rawSpeedKmh =
+        speed !== null && Number.isFinite(speed) && speed >= 0
+          ? speed * 3.6
+          : 0;
+
+      smoothedSpeedKmhRef.current =
+        smoothedSpeedKmhRef.current === null
+          ? rawSpeedKmh
+          : smoothValue(smoothedSpeedKmhRef.current, rawSpeedKmh, 0.25);
+
+      // ============================================================
       // 3. XÁC ĐỊNH HEADING
       // ============================================================
 
@@ -1634,6 +1759,7 @@ export function useNavigationTracking(
             remaining?.distanceToDestination ?? null,
             remaining?.estimatedTimeRemaining ?? null,
           ),
+          speedKmh: smoothedSpeedKmhRef.current,
         }));
 
         // TRƯỚC ĐÂY: luôn gọi performReroute() ngay ở đây, tốn 1 request
@@ -1762,6 +1888,7 @@ export function useNavigationTracking(
               remaining?.distanceToDestination ?? null,
               remaining?.estimatedTimeRemaining ?? null,
             ),
+            speedKmh: smoothedSpeedKmhRef.current,
           };
         });
 
@@ -1816,6 +1943,7 @@ export function useNavigationTracking(
     smoothedLatRef.current = null;
     smoothedLonRef.current = null;
     smoothedBearingRef.current = null;
+    smoothedSpeedKmhRef.current = null;
     isGpsHeadingActiveRef.current = false;
     lastCameraUpdateRef.current = 0;
 
@@ -1866,6 +1994,7 @@ export function useNavigationTracking(
       isRerouting: false,
       isFollowing: false,
       hasArrived: false,
+      speedKmh: null,
     });
 
     if (map) {
