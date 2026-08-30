@@ -85,7 +85,7 @@
 
 /* Đẩy góc dưới bên phải lên cao hơn (ví dụ 80px hoặc 5rem) */
 .maplibregl-ctrl-bottom-right {
-  bottom: 80px !important; /* Thay đổi con số này theo ý bạn */
+  bottom: 90px !important; /* Thay đổi con số này theo ý bạn */
 }
 
 /* PWA/iOS: tránh hiệu ứng highlight mặc định khi chạm các nút cài app. */
