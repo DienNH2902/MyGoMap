@@ -7,6 +7,7 @@ import {
   fetchDrivingRoute,
   type RouteOptions,
 } from "@/lib/routing/openRouteService";
+import { DEFAULT_MAP_ZOOM } from "@/lib/constants";
 
 interface UserLocation {
   lat: number;
@@ -208,6 +209,19 @@ interface PersistedNavigationSession {
   lastPitch?: number;
   lastBearing?: number;
   lastSpeedKmh?: number;
+  /**
+   * Lộ trình MỚI NHẤT sau lần tính lại (reroute) thành công gần nhất — nếu
+   * có. KHÁC với plan.route mà useRoutePlanner.ts lưu riêng (đó luôn là
+   * tuyến GỐC lúc lập kế hoạch, không đổi dù có reroute hay không).
+   *
+   * Nếu không lưu trường này: sau khi cố tình đi lệch xa khiến hệ thống
+   * reroute thành công, rồi trang bị tải lại giữa chừng (PWA bị kill...),
+   * lần resume tiếp theo sẽ dựng lại routeLineRef từ tuyến GỐC (đã lệch)
+   * thay vì tuyến ĐÚNG vừa tính — khiến hệ thống lại thấy "lệch tuyến" và
+   * tốn thêm 1 request TomTom để reroute lại lần nữa, dù đáp án đúng đã có
+   * sẵn từ trước reload.
+   */
+  liveRoute?: RouteGeometry | null;
 }
 
 function loadPersistedNavigationSession(): PersistedNavigationSession | null {
@@ -227,6 +241,14 @@ function loadPersistedNavigationSession(): PersistedNavigationSession | null {
       return null;
     }
 
+    const liveRouteRaw = parsed.liveRoute as RouteGeometry | null | undefined;
+    const liveRoute =
+      liveRouteRaw &&
+      Array.isArray(liveRouteRaw.coordinates) &&
+      liveRouteRaw.coordinates.length >= 2
+        ? liveRouteRaw
+        : null;
+
     return {
       isNavigating: parsed.isNavigating === true,
       isFollowing: parsed.isFollowing !== false,
@@ -241,6 +263,7 @@ function loadPersistedNavigationSession(): PersistedNavigationSession | null {
         typeof parsed.lastSpeedKmh === "number"
           ? parsed.lastSpeedKmh
           : undefined,
+      liveRoute,
     };
   } catch (err) {
     console.warn("Không đọc được phiên dẫn đường đã lưu:", err);
@@ -257,6 +280,10 @@ function savePersistedNavigationSession(
     bearing?: number;
     speedKmh?: number;
   },
+  // undefined = GIỮ NGUYÊN liveRoute đã lưu trước đó (không đụng tới).
+  // Chỉ truyền tường minh khi thực sự muốn cập nhật — ví dụ ngay sau một
+  // lần reroute thành công (xem performReroute bên dưới).
+  liveRoute?: RouteGeometry | null,
 ): void {
   if (typeof window === "undefined") return;
 
@@ -266,14 +293,32 @@ function savePersistedNavigationSession(
       return;
     }
 
+    // Đọc lại phiên đã lưu để MERGE — không ghi đè trắng. Trước đây mỗi
+    // lần gọi hàm này (camera update, toggle follow...) đều dựng payload
+    // mới TỪ ĐẦU chỉ với các trường lần gọi đó biết; các trường không được
+    // truyền (ví dụ liveRoute lúc chỉ đang cập nhật camera) bị mất ngay
+    // sau một lần ghi tiếp theo — đây chính là lý do lộ trình vừa reroute
+    // xong "biến mất" khỏi localStorage chỉ sau chưa đầy 1 giây.
+    let existing: Partial<PersistedNavigationSession> = {};
+    try {
+      const raw = window.localStorage.getItem(NAVIGATION_SESSION_STORAGE_KEY);
+      if (raw) {
+        existing = JSON.parse(raw) as Partial<PersistedNavigationSession>;
+      }
+    } catch {
+      existing = {};
+    }
+
     const payload: PersistedNavigationSession = {
       isNavigating: true,
       isFollowing,
       updatedAt: Date.now(),
-      lastZoom: camera?.zoom,
-      lastPitch: camera?.pitch,
-      lastBearing: camera?.bearing,
-      lastSpeedKmh: camera?.speedKmh,
+      lastZoom: camera?.zoom ?? existing.lastZoom,
+      lastPitch: camera?.pitch ?? existing.lastPitch,
+      lastBearing: camera?.bearing ?? existing.lastBearing,
+      lastSpeedKmh: camera?.speedKmh ?? existing.lastSpeedKmh,
+      liveRoute:
+        liveRoute !== undefined ? liveRoute : (existing.liveRoute ?? null),
     };
 
     window.localStorage.setItem(
@@ -839,6 +884,16 @@ export function useNavigationTracking(
   const wasFollowingBeforeReload =
     persistedNavigationSession?.isFollowing ?? true;
   const shouldResumeFollowingRef = useRef(wasNavigatingBeforeReload);
+
+  // Lộ trình đã tính lại (reroute) thành công gần nhất, đọc MỘT LẦN lúc
+  // mount — nếu có, dùng ĐÚNG lộ trình này để dựng routeLineRef ngay khi
+  // resume, KHÔNG dùng tuyến gốc (đã lệch) — xem giải thích ở
+  // PersistedNavigationSession.liveRoute phía trên.
+  const resumedLiveRouteRef = useRef<RouteGeometry | null>(
+    wasNavigatingBeforeReload
+      ? (persistedNavigationSession?.liveRoute ?? null)
+      : null,
+  );
 
   // Camera (zoom/pitch/bearing/tốc độ) tại thời điểm phiên trước bị lưu —
   // CHỈ dùng đúng MỘT LẦN cho lần "về giữa" đầu tiên ngay sau khi resume,
@@ -1733,11 +1788,28 @@ export function useNavigationTracking(
         // ngay lập tức nếu điểm định vị kế tiếp vẫn tạm thời cách tuyến mới
         // một chút trong lúc GPS ổn định lại.
         offRouteSinceRef.current = null;
+        // Lưu NGAY lộ trình vừa tính lại — để nếu trang bị tải lại giữa
+        // chừng ngay sau đó, lần resume tiếp theo dùng lại đúng lộ trình
+        // này (xem resumedLiveRouteRef) thay vì tốn thêm 1 request TomTom.
+        savePersistedNavigationSession(
+          true,
+          isFollowingRef.current,
+          undefined,
+          newRoute,
+        );
 
         setState((prev) => ({
           ...prev,
           liveRoute: newRoute,
           isRerouting: false,
+          // Reroute vừa xong nghĩa là tuyến MỚI bắt đầu chính xác từ vị trí
+          // hiện tại — không còn lý do để tiếp tục coi là "đang lệch
+          // tuyến". TRƯỚC ĐÂY isOffRoute chỉ được cập nhật lại ở lần
+          // watchPosition KẾ TIẾP (có thể cách vài giây), khiến banner "đi
+          // sai đường, sẽ tính lại sau vài giây" vẫn hiện thêm một lúc dù
+          // đã reroute xong. Đặt false NGAY tại đây để mọi UI phụ thuộc
+          // isOffRoute cập nhật tức thì, không cần chờ tick GPS tiếp theo.
+          isOffRoute: false,
         }));
       } catch (err) {
         console.warn("Không thể tính lại lộ trình theo vị trí hiện tại:", err);
@@ -1881,11 +1953,41 @@ export function useNavigationTracking(
     isFollowingRef.current = shouldFollow;
     isProgrammaticCameraRef.current = false;
 
+    // Nếu resume sau reload VÀ trước đó đã từng reroute thành công — dùng
+    // lại ĐÚNG lộ trình đó ngay từ đầu. Nếu bỏ qua bước này, routeLineRef
+    // vẫn trỏ về tuyến GỐC (đã lệch từ trước reload), khiến hệ thống lại
+    // thấy "lệch tuyến" và tốn thêm 1 request TomTom để reroute lần nữa —
+    // dù đáp án đúng đã có sẵn.
+    const resumedLiveRoute = resumedLiveRouteRef.current;
+    if (resumedLiveRoute && resumedLiveRoute.coordinates.length >= 2) {
+      try {
+        routeLineRef.current = turf.lineString(resumedLiveRoute.coordinates);
+      } catch (err) {
+        console.warn(
+          "Không dựng lại được lộ trình đã tính lại từ phiên trước:",
+          err,
+        );
+      }
+
+      // Coi như vừa reroute xong NGAY LÚC NÀY — mở lại đủ cooldown trước
+      // khi cho phép reroute tiếp, tránh GPS dao động nhẹ ngay sau resume
+      // vô tình kích hoạt một lần reroute kép không cần thiết.
+      lastRerouteAtRef.current = Date.now();
+      offRouteSinceRef.current = null;
+    }
+    // Chỉ dùng đúng MỘT LẦN — các lần bắt đầu navigate tiếp theo trong cùng
+    // phiên quay lại tính toán hoàn toàn theo GPS thực tế như bình thường.
+    resumedLiveRouteRef.current = null;
+
     setState((prev) => ({
       ...prev,
       isNavigating: true,
       isFollowing: shouldFollow,
       hasArrived: false, // chuyến đi mới, phải reset để có thể báo "đến nơi" lại
+      // Hiển thị ngay lộ trình đã resume lên bản đồ, không cần chờ tick GPS
+      // đầu tiên mới có buildTrimmedLiveRoute — tránh một khoảnh khắc bản
+      // đồ vẽ nhầm tuyến gốc trước khi kịp cập nhật.
+      liveRoute: resumedLiveRoute ?? prev.liveRoute,
     }));
 
     // Đánh dấu ra localStorage là đang dẫn đường — xem giải thích ở
@@ -2253,8 +2355,10 @@ export function useNavigationTracking(
 
     if (map) {
       map.easeTo({
+        zoom: 18,
         bearing: 0,
         pitch: 0,
+        padding: 0,
         duration: 800,
       });
     }

@@ -336,6 +336,8 @@ export function MapView({
 
   const sovereigntyMarkersRef = useRef<Marker[]>([]);
 
+  const wasNavigatingRef = useRef(isNavigating);
+
   const [gender, setGender] = useState<GenderTheme>("nam");
 
   const [styleReloadKey, setStyleReloadKey] = useState(0);
@@ -545,6 +547,9 @@ export function MapView({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+
+    const exitedNavigation = wasNavigatingRef.current && !isNavigating;
+    wasNavigatingRef.current = isNavigating;
 
     const clearSegmentLayers = () => {
       activeSegmentLayersRef.current.forEach((layerId) => {
@@ -808,6 +813,7 @@ export function MapView({
 
       if (
         !isNavigating &&
+        !exitedNavigation &&
         !preventAutoFitBounds &&
         !hasPersistedNavigationSession &&
         route &&
