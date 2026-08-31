@@ -453,7 +453,7 @@ export function PlaceAutocompleteInput({
           }}
           className={`w-full rounded-xl border border-ink/10 bg-black/30 py-2.5 pr-20 text-base text-cream placeholder:text-cream/30 transition focus:outline-none disabled:bg-black/10 disabled:text-cream/40 sm:text-sm ${
             hideFocusRing
-              ? "pl-10 focus:border-white/20 placeholder:text-teal-500"
+              ? "pl-10 focus:border-white/20 placeholder:text-gray-500"
               : "px-4 focus:border-primary focus:ring-2 focus:ring-primary/30"
           }`}
         />
