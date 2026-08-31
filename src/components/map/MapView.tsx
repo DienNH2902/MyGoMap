@@ -496,102 +496,29 @@ export function MapView({
     const applyRoute = () => {
       const coords = route?.coordinates ?? [];
 
-      if (
-        isNavigating &&
-        coords.length > 1 &&
-        activeSegmentLayersRef.current.length > 0
-      ) {
-        const breakPoints: [number, number][] = [];
-
-        if (start && Number.isFinite(start.lon) && Number.isFinite(start.lat)) {
-          breakPoints.push([start.lon, start.lat]);
-        }
-
-        stops
-          .filter((stop) => stop.source !== "interval")
-          .forEach((stop) => {
-            if (Number.isFinite(stop.lon) && Number.isFinite(stop.lat)) {
-              breakPoints.push([stop.lon, stop.lat]);
-            }
-          });
-
-        customStops.forEach((stop) => {
-          if (Number.isFinite(stop.lon) && Number.isFinite(stop.lat)) {
-            breakPoints.push([stop.lon, stop.lat]);
-          }
-        });
-
-        if (end && Number.isFinite(end.lon) && Number.isFinite(end.lat)) {
-          breakPoints.push([end.lon, end.lat]);
-        }
-
-        if (breakPoints.length > 1) {
-          const findClosestIndex = (pt: [number, number]): number => {
-            let minDistanceSq = Infinity;
-            let closestIndex = 0;
-
-            for (let i = 0; i < coords.length; i++) {
-              const coord = coords[i];
-              if (!coord) continue;
-
-              const dx = coord[0] - pt[0];
-              const dy = coord[1] - pt[1];
-              const distSq = dx * dx + dy * dy;
-
-              if (distSq < minDistanceSq) {
-                minDistanceSq = distSq;
-                closestIndex = i;
-              }
-            }
-
-            return closestIndex;
-          };
-
-          const breakIndices = breakPoints
-            .map(findClosestIndex)
-            .sort((a, b) => a - b);
-
-          const uniqueIndices = Array.from(new Set(breakIndices));
-          const expectedSegmentCount = uniqueIndices.length - 1;
-
-          if (
-            expectedSegmentCount === activeSegmentLayersRef.current.length &&
-            uniqueIndices.length > 1
-          ) {
-            for (let i = 0; i < expectedSegmentCount; i++) {
-              const startIdx = uniqueIndices[i];
-              const endIdx = uniqueIndices[i + 1];
-
-              if (startIdx === undefined || endIdx === undefined) continue;
-
-              const segmentCoords = coords.slice(startIdx, endIdx + 1);
-              if (segmentCoords.length < 2) continue;
-
-              const segmentSourceId = `mygomap-live-route-seg-source-${i}`;
-              const source = map.getSource(segmentSourceId);
-
-              if (source && "setData" in source) {
-                const segGeojson: GeoJSON.Feature<GeoJSON.LineString> = {
-                  type: "Feature",
-                  properties: {},
-                  geometry: {
-                    type: "LineString",
-                    coordinates: segmentCoords,
-                  },
-                };
-
-                (source as GeoJSONSource).setData(segGeojson);
-              }
-            }
-
-            return;
-          }
-        }
-      }
-
+      // ĐÃ BỎ cơ chế "fast path" tái sử dụng segment màu lúc đang dẫn
+      // đường: cách cũ tìm lại index gần nhất của các điểm dừng ĐÃ LẬP KẾ
+      // HOẠCH (start/stops/end, cố định) trên đoạn đường CÒN LẠI (liveRoute,
+      // càng đi càng ngắn dần). Càng gần đích, các điểm dừng đã đi qua đều
+      // "dồn cục" về cùng một index gần đầu đoạn còn lại, khiến số lượng
+      // segment tính ra không còn khớp số layer đang có — có lúc còn tra
+      // nhầm ID nguồn dữ liệu nếu vừa chuyển từ lập-kế-hoạch (nhiều điểm
+      // dừng, nhiều màu) sang dẫn đường, khiến code lặng lẽ return mà KHÔNG
+      // tạo lại line mới lẫn không xoá line màu cũ — biểu hiện: gần đích mất
+      // hẳn line chỉ đường, nhưng màu line CŨ (lúc lập kế hoạch) gần điểm B
+      // vẫn còn sót lại trên bản đồ.
+      //
+      // SỬA: khi đang dẫn đường, KHÔNG chia màu theo từng chặng nữa — chỉ
+      // dùng DUY NHẤT MỘT đường (ROUTE_LAYER_ID/ROUTE_SOURCE_ID, setData ở
+      // dưới) xuyên suốt từ vị trí hiện tại tới đích, cập nhật liên tục mỗi
+      // lần có toạ độ mới. Không còn phụ thuộc vào việc tính lại index nào
+      // cả nên KHÔNG THỂ biến mất dù tuyến co ngắn tới đâu, kể cả khi chỉ
+      // còn vài mét trước khi tới nơi.
       clearSegmentLayers();
 
-      // Thu thập tất cả điểm dừng theo thứ tự tuyến đường
+      // Thu thập các điểm dừng theo thứ tự tuyến đường — CHỈ dùng cho chế độ
+      // LẬP KẾ HOẠCH (chia màu từng chặng) bên dưới, không dùng khi đang dẫn
+      // đường nữa.
       const breakPoints: [number, number][] = [];
       if (start && Number.isFinite(start.lon) && Number.isFinite(start.lat)) {
         breakPoints.push([start.lon, start.lat]);
@@ -615,7 +542,10 @@ export function MapView({
         breakPoints.push([end.lon, end.lat]);
       }
 
-      // Đảo bảo hoặc hạ cờ đường chính cơ bản
+      // Đường chính DUY NHẤT — dùng cho CẢ hai chế độ. Lúc lập kế hoạch có
+      // nhiều điểm dừng, đường này có thể bị ẩn (opacity 0) để nhường chỗ
+      // cho các segment màu; lúc dẫn đường, đây LUÔN là đường duy nhất hiển
+      // thị, không bao giờ bị ẩn.
       const mainGeojson: GeoJSON.Feature<GeoJSON.LineString> = {
         type: "Feature",
         properties: {},
@@ -645,16 +575,28 @@ export function MapView({
         });
       }
 
-      // Đang dẫn đường thời gian thực: route ở đây là lộ trình được tính lại
-      // liên tục từ vị trí hiện tại → đích, không còn khớp với các mốc dừng
-      // đã lập kế hoạch (start/stops/end cũ) nữa, nên bỏ qua việc chia màu
-      // từng chặng và chỉ hiển thị một đường màu chính duy nhất cho rõ ràng.
       if (isNavigating) {
+        // CHỈ ĐƯỜNG: một đường DUY NHẤT, luôn hiển thị (opacity 1 nếu có
+        // toạ độ), độ rộng lớn hơn cho dễ nhìn khi đang lái. Được cập nhật
+        // NGAY ở setData phía trên mỗi lần route đổi — ổn định xuyên suốt
+        // từ đầu tới cuối chuyến đi, kể cả những mét cuối cùng trước khi
+        // tới nơi.
         if (map.getLayer(ROUTE_LAYER_ID)) {
-          map.setPaintProperty(ROUTE_LAYER_ID, "line-opacity", 0);
-        }
+          map.setPaintProperty(
+            ROUTE_LAYER_ID,
+            "line-opacity",
+            coords.length > 0 ? 1 : 0,
+          );
+          map.setPaintProperty(ROUTE_LAYER_ID, "line-color", theme.routeColor);
+          map.setPaintProperty(ROUTE_LAYER_ID, "line-width", 10);
 
-        if (coords.length > 0 && breakPoints.length > 1) {
+          if (map.getLayer(TRAFFIC_LAYER_ID)) {
+            map.moveLayer(ROUTE_LAYER_ID);
+          }
+        }
+      } else {
+        // LẬP KẾ HOẠCH: giữ nguyên hành vi chia màu từng chặng như cũ.
+        if (coords.length > 0 && breakPoints.length > 2) {
           const findClosestIndex = (pt: [number, number]): number => {
             let minDistanceSq = Infinity;
             let closestIndex = 0;
@@ -682,183 +624,83 @@ export function MapView({
 
           const uniqueIndices = Array.from(new Set(breakIndices));
 
-          const palette = getSegmentColorsByGender(gender);
-
-          for (let i = 0; i < uniqueIndices.length - 1; i++) {
-            const segmentStartIndex = uniqueIndices[i];
-            const segmentEndIndex = uniqueIndices[i + 1];
-
-            if (
-              segmentStartIndex === undefined ||
-              segmentEndIndex === undefined
-            ) {
-              continue;
+          if (uniqueIndices.length > 1) {
+            if (map.getLayer(ROUTE_LAYER_ID)) {
+              map.setPaintProperty(ROUTE_LAYER_ID, "line-opacity", 0);
             }
 
-            const segmentCoords = coords.slice(
-              segmentStartIndex,
-              segmentEndIndex + 1,
+            const palette = getSegmentColorsByGender(gender);
+
+            for (let i = 0; i < uniqueIndices.length - 1; i++) {
+              const startIdx = uniqueIndices[i];
+              const endIdx = uniqueIndices[i + 1];
+
+              if (startIdx === undefined || endIdx === undefined) continue;
+
+              const segmentCoords = coords.slice(startIdx, endIdx + 1);
+
+              if (segmentCoords.length < 2) continue;
+
+              const segmentSourceId = `mygomap-route-seg-source-${i}`;
+              const segmentLayerId = `mygomap-route-seg-layer-${i}`;
+              const color = palette[i % palette.length];
+
+              const segGeojson: GeoJSON.Feature<GeoJSON.LineString> = {
+                type: "Feature",
+                properties: {},
+                geometry: {
+                  type: "LineString",
+                  coordinates: segmentCoords,
+                },
+              };
+
+              map.addSource(segmentSourceId, {
+                type: "geojson",
+                data: segGeojson,
+              });
+
+              map.addLayer({
+                id: segmentLayerId,
+                type: "line",
+                source: segmentSourceId,
+                layout: { "line-cap": "round", "line-join": "round" },
+                paint: {
+                  "line-color": color,
+                  "line-width": 4,
+                  "line-opacity": 0.9,
+                },
+              });
+
+              activeSegmentLayersRef.current.push(segmentLayerId);
+
+              if (map.getLayer(TRAFFIC_LAYER_ID)) {
+                map.moveLayer(segmentLayerId);
+              }
+            }
+          } else if (map.getLayer(ROUTE_LAYER_ID)) {
+            map.setPaintProperty(ROUTE_LAYER_ID, "line-opacity", 0.9);
+            map.setPaintProperty(ROUTE_LAYER_ID, "line-width", 3);
+            map.setPaintProperty(
+              ROUTE_LAYER_ID,
+              "line-color",
+              theme.routeColor,
             );
-
-            if (segmentCoords.length < 2) continue;
-
-            const segmentSourceId = `mygomap-live-route-seg-source-${i}`;
-
-            const segmentLayerId = `mygomap-live-route-seg-layer-${i}`;
-
-            const color = palette[i % palette.length];
-
-            const segGeojson: GeoJSON.Feature<GeoJSON.LineString> = {
-              type: "Feature",
-              properties: {},
-              geometry: {
-                type: "LineString",
-                coordinates: segmentCoords,
-              },
-            };
-
-            map.addSource(segmentSourceId, {
-              type: "geojson",
-              data: segGeojson,
-            });
-
-            map.addLayer({
-              id: segmentLayerId,
-              type: "line",
-              source: segmentSourceId,
-              layout: {
-                "line-cap": "round",
-                "line-join": "round",
-              },
-              paint: {
-                "line-color": color,
-                "line-width": 10,
-                "line-opacity": 1,
-              },
-            });
-
-            activeSegmentLayersRef.current.push(segmentLayerId);
-
-            if (map.getLayer(TRAFFIC_LAYER_ID)) {
-              map.moveLayer(segmentLayerId);
-            }
-          }
-        }
-
-        return;
-      }
-
-      // Xử lý chia màu từng chặng nếu có các điểm dừng trên đường
-      if (coords.length > 0 && breakPoints.length > 2) {
-        const findClosestIndex = (pt: [number, number]): number => {
-          let minDistanceSq = Infinity;
-          let closestIndex = 0;
-
-          for (let i = 0; i < coords.length; i++) {
-            const coord = coords[i];
-            if (!coord) continue; // Bỏ qua nếu phần tử không tồn tại
-
-            const dx = coord[0] - pt[0];
-            const dy = coord[1] - pt[1];
-            const distSq = dx * dx + dy * dy;
-
-            if (distSq < minDistanceSq) {
-              minDistanceSq = distSq;
-              closestIndex = i;
-            }
-          }
-
-          return closestIndex;
-        };
-
-        const breakIndices = breakPoints
-          .map(findClosestIndex)
-          .sort((a, b) => a - b);
-
-        const uniqueIndices = Array.from(new Set(breakIndices));
-
-        if (uniqueIndices.length > 1) {
-          // Bất hiển thị tuyến đường đơn sắc chính để thay bằng đa sắc
-          if (map.getLayer(ROUTE_LAYER_ID)) {
-            map.setPaintProperty(ROUTE_LAYER_ID, "line-opacity", 0);
-          }
-
-          const palette = getSegmentColorsByGender(gender);
-
-          for (let i = 0; i < uniqueIndices.length - 1; i++) {
-            const startIdx = uniqueIndices[i];
-            const endIdx = uniqueIndices[i + 1];
-
-            // Bỏ qua nếu 1 trong 2 chỉ số bị undefined
-            if (startIdx === undefined || endIdx === undefined) continue;
-
-            const segmentCoords = coords.slice(startIdx, endIdx + 1);
-
-            if (segmentCoords.length < 2) continue;
-
-            const segmentSourceId = `mygomap-route-seg-source-${i}`;
-            const segmentLayerId = `mygomap-route-seg-layer-${i}`;
-            const color = palette[i % palette.length];
-
-            const segGeojson: GeoJSON.Feature<GeoJSON.LineString> = {
-              type: "Feature",
-              properties: {},
-              geometry: {
-                type: "LineString",
-                coordinates: segmentCoords,
-              },
-            };
-
-            map.addSource(segmentSourceId, {
-              type: "geojson",
-              data: segGeojson,
-            });
-
-            map.addLayer({
-              id: segmentLayerId,
-              type: "line",
-              source: segmentSourceId,
-              layout: { "line-cap": "round", "line-join": "round" },
-              paint: {
-                "line-color": color,
-                "line-width": 4,
-                "line-opacity": 0.9,
-              },
-            });
-
-            activeSegmentLayersRef.current.push(segmentLayerId);
-
-            if (map.getLayer(TRAFFIC_LAYER_ID)) {
-              map.moveLayer(segmentLayerId);
-            }
           }
         } else if (map.getLayer(ROUTE_LAYER_ID)) {
           map.setPaintProperty(ROUTE_LAYER_ID, "line-opacity", 0.9);
+          map.setPaintProperty(ROUTE_LAYER_ID, "line-width", 3);
           map.setPaintProperty(ROUTE_LAYER_ID, "line-color", theme.routeColor);
         }
-      } else if (map.getLayer(ROUTE_LAYER_ID)) {
-        map.setPaintProperty(ROUTE_LAYER_ID, "line-opacity", 0.9);
-        map.setPaintProperty(ROUTE_LAYER_ID, "line-color", theme.routeColor);
+
+        // Ensure route layer is always above traffic layer
+        if (map.getLayer(ROUTE_LAYER_ID) && map.getLayer(TRAFFIC_LAYER_ID)) {
+          map.moveLayer(ROUTE_LAYER_ID);
+        }
       }
 
-      // Ensure route layer is always above traffic layer
-      if (map.getLayer(ROUTE_LAYER_ID) && map.getLayer(TRAFFIC_LAYER_ID)) {
-        map.moveLayer(ROUTE_LAYER_ID);
-      }
-
-      // if (route && route.coordinates.length > 0) {
-      //   const [first, ...rest] = route.coordinates;
-      //   if (first) {
-      //     const bounds = rest.reduce(
-      //       (acc, coord) => acc.extend(coord),
-      //       new LngLatBounds(first, first),
-      //     );
-      //     map.fitBounds(bounds, { padding: 80, duration: 800 });
-      //   }
-      // }
-
-      // Chỉ fitBounds nếu TOÀN BỘ TUYẾN ĐƯỜNG MỚI ĐƯỢC TÍNH LẠI (thay đổi route.coordinates)
-      // Nếu chỉ thêm customStops mà hình dáng tuyến đường chính không đổi thì bỏ qua zoom
+      // Chỉ fitBounds nếu TOÀN BỘ TUYẾN ĐƯỜNG MỚI ĐƯỢC TÍNH LẠI (thay đổi
+      // route.coordinates). Nếu chỉ thêm customStops mà hình dáng tuyến
+      // đường chính không đổi thì bỏ qua zoom.
       const currentCoordsString = JSON.stringify(route?.coordinates ?? []);
 
       const hasPersistedNavigationSession = (() => {
@@ -889,18 +731,6 @@ export function MapView({
         }
       })();
 
-      // FIX: đúng như doc comment của prop `isNavigating` ở trên (map KHÔNG
-      // được tự ý fitBounds/zoom trong lúc đang dẫn đường vì camera lúc này
-      // do useNavigationTracking chủ động điều khiển theo GPS) — nhưng điều
-      // kiện dưới đây trước đây thiếu guard `!isNavigating`, nên vẫn có thể
-      // fitBounds đúng 1 lần khi route MỚI xuất hiện trong lúc isNavigating
-      // còn đang chuyển từ false -> true (ví dụ: tự động resume navigation
-      // sau khi PWA bị tải lại giữa chừng — xem MapExperience.tsx). fitBounds
-      // đó bắn ra sự kiện zoomstart, bị useNavigationTracking hiểu nhầm là
-      // người dùng tự kéo/zoom bản đồ nên tắt mất auto-follow ("Về giữa")
-      // ngay sau khi vừa bật lại — đây chính là lý do "chỉ đường đúng nhưng
-      // không tự về giữa" sau khi resume. Thêm `!isNavigating` để khớp đúng
-      // với ý định ban đầu đã ghi trong doc comment của prop này.
       if (
         !isNavigating &&
         !preventAutoFitBounds &&
@@ -921,10 +751,6 @@ export function MapView({
           }
         }
       } else if (route && route.coordinates.length > 0) {
-        // Đang navigate HOẶC đang trong lúc chặn fitBounds để resume: không
-        // fitBounds, nhưng vẫn phải cập nhật previousRouteCoordsRef — lý do
-        // xem comment gốc phía trên (tránh fitBounds "trễ" ngay khi resume
-        // xong / khi bỏ chặn).
         previousRouteCoordsRef.current = currentCoordsString;
       }
     };
@@ -933,7 +759,6 @@ export function MapView({
   }, [
     route,
     theme.routeColor,
-    // mapStyleId,
     styleReloadKey,
     start,
     end,
@@ -1488,7 +1313,7 @@ export function MapView({
         font-size: 11px;
         padding: 4px 8px;
         border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+        // box-shadow: 0 4px 12px rgba(0,0,0,0.35);
         border: 1.5px solid #ffffff;
         white-space: nowrap;
         display: flex;

@@ -183,6 +183,15 @@ const MAX_SNAP_TO_ROUTE_METERS = 35;
 const NAVIGATION_SESSION_STORAGE_KEY = "mygomap_navigation_session_v1";
 const NAVIGATION_SESSION_STORAGE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 giờ
 
+// Sau khi báo "đã đến nơi", chờ một nhịp ngắn (đủ để rung + Modal kịp hiện)
+// rồi tự động dừng hẳn phiên dẫn đường — dừng GPS watch, ẩn marker/line,
+// trả camera về bearing/pitch mặc định. Trước đây không có bước này: GPS
+// vẫn tiếp tục chạy vô thời hạn sau khi đến nơi, khiến route tiếp tục co
+// về gần 0 và dễ rơi vào các trường hợp biên (route quá ngắn, camera vẫn
+// "về giữa" một điểm gần như đứng yên) — không có điểm "chốt" rõ ràng cho
+// chuyến đi.
+const ARRIVAL_AUTO_STOP_DELAY_MS = 1500;
+
 interface PersistedNavigationSession {
   isNavigating: boolean;
   isFollowing: boolean;
@@ -2223,6 +2232,17 @@ export function useNavigationTracking(
       });
     }
   }, [map]);
+
+  useEffect(() => {
+    if (!state.hasArrived) return;
+
+    const timer = setTimeout(() => {
+      stopNavigation();
+    }, ARRIVAL_AUTO_STOP_DELAY_MS);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.hasArrived]);
 
   useEffect(() => {
     return () => {

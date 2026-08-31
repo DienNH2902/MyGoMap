@@ -178,6 +178,46 @@ export const VIETNAM_SOVEREIGNTY_STOPS: SovereigntyMarker[] = [
     label: "Việt Nam",
   },
 
+  {
+    id: "hs-6",
+    name: "",
+    lat: 16.44666364574249,
+    lng: 111.60670566204328,
+    label: "Việt Nam",
+  },
+
+  {
+    id: "hs-7",
+    name: "",
+    lat: 16.502842065842955,
+    lng: 111.5854031166495,
+    label: "Việt Nam",
+  },
+
+  {
+    id: "hs-8",
+    name: "",
+    lat: 16.566488789186394,
+    lng: 111.68626105398056,
+    label: "Việt Nam",
+  },
+
+  {
+    id: "hs-9",
+    name: "",
+    lat: 16.579804474432933,
+    lng: 111.70453004013854,
+    label: "Việt Nam",
+  },
+
+  {
+    id: "hs-10",
+    name: "",
+    lat: 16.96153567837088,
+    lng: 112.31246135550458,
+    label: "Việt Nam",
+  },
+
   // Quần đảo Trường Sa (Spratly Islands)
   {
     id: "ts-1",
@@ -226,6 +266,46 @@ export const VIETNAM_SOVEREIGNTY_STOPS: SovereigntyMarker[] = [
     name: "Đá Subi",
     lat: 10.909995855786818,
     lng: 114.07107137420098,
+    label: "Việt Nam",
+  },
+
+  {
+    id: "ts-8",
+    name: "Đá Subi",
+    lat: 9.92935451097614,
+    lng: 115.51993674171598,
+    label: "Việt Nam",
+  },
+
+  {
+    id: "ts-9",
+    name: "Đá Subi",
+    lat: 9.544944932419497,
+    lng: 112.88713481628201,
+    label: "Việt Nam",
+  },
+
+  {
+    id: "ts-10",
+    name: "Đá Subi",
+    lat: 8.86523721639496,
+    lng: 112.82945686339843,
+    label: "Việt Nam",
+  },
+
+  {
+    id: "ts-11",
+    name: "Đá Subi",
+    lat: 10.207054175368398,
+    lng: 114.22282590440909,
+    label: "Việt Nam",
+  },
+
+  {
+    id: "ts-12",
+    name: "Đá Subi",
+    lat: 11.053480589305906,
+    lng: 114.28507375706482,
     label: "Việt Nam",
   },
 ];
