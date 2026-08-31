@@ -77,8 +77,9 @@ export async function fetchDrivingRoute(
 ): Promise<RouteGeometry> {
   // LUÔN gọi ORS trước để lấy tổng quãng đường.
   // ORS miễn phí hơn và không bị giới hạn request như TomTom.
-  // Sau khi biết chính xác quãng đường, chỉ những tuyến dưới 400km
-  // mới được gọi lại bằng TomTom để lấy tuyến chính xác hơn.
+  // Sau khi biết chính xác quãng đường, chỉ xe máy (avoidHighways=true) trên
+  // tuyến dưới 400km mới được gọi lại bằng TomTom để lấy tuyến chính xác
+  // hơn (né cao tốc đúng luật). Ô tô luôn dùng thẳng kết quả ORS.
   const apiKey = process.env.NEXT_PUBLIC_ORS_API_KEY;
   if (!apiKey) {
     throw new RoutingError(
@@ -162,9 +163,11 @@ export async function fetchDrivingRoute(
 
   const distanceKm = feature.properties.summary.distance / 1000;
 
-  // Chỉ sử dụng TomTom cho các tuyến dưới 400km để tiết kiệm request.
-  // ORS đã được gọi trước đó chỉ để xác định tổng quãng đường.
-  if (distanceKm < TOMTOM_MAX_ROUTE_DISTANCE_KM) {
+  // CHỈ xe máy (avoidHighways=true) mới cần TomTom — API duy nhất có
+  // travelMode="motorcycle" thật để né cao tốc đúng luật — và chỉ khi tuyến
+  // dưới 400km để tiết kiệm request TomTom (có giới hạn). Ô tô luôn dùng
+  // thẳng kết quả ORS, không bao giờ gọi TomTom.
+  if (routeOptions.avoidHighways && distanceKm < TOMTOM_MAX_ROUTE_DISTANCE_KM) {
     try {
       return await fetchTomTomRoute(
         start,
