@@ -113,7 +113,7 @@ export function RouteDirectionsPanel({
                   Còn {formatStepDistance(remainingToTurnMeters)}
                 </p>
               )}
-              <p className="truncate text-sm font-bold text-cream">
+              <p className="whitespace-normal break-words text-sm font-bold text-cream">
                 {currentStep.instruction}
               </p>
             </div>

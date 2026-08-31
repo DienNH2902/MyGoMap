@@ -45,6 +45,82 @@ interface TomTomRouteResponse {
   };
 }
 
+function buildTomTomInstruction(message: string, streetName?: string): string {
+  const normalized = message.trim().toLowerCase();
+
+  if (!message) {
+    return streetName ? `Tiếp tục vào ${streetName}` : "Tiếp tục di chuyển";
+  }
+
+  if (
+    normalized.includes("you have arrived") ||
+    normalized.includes("arrived at") ||
+    normalized.includes("destination")
+  ) {
+    return streetName ? `Đã đến ${streetName}` : "Đã đến nơi";
+  }
+
+  if (
+    normalized.startsWith("leave from") ||
+    normalized.includes("depart from") ||
+    normalized.includes("start from")
+  ) {
+    return streetName ? `Xuất phát từ ${streetName}` : "Xuất phát";
+  }
+
+  if (normalized.includes("sharp left")) {
+    return streetName ? `Rẽ trái gắt vào ${streetName}` : "Rẽ trái gắt";
+  }
+
+  if (normalized.includes("sharp right")) {
+    return streetName ? `Rẽ phải gắt vào ${streetName}` : "Rẽ phải gắt";
+  }
+
+  if (normalized.includes("slight left")) {
+    return streetName ? `Rẽ trái nhẹ vào ${streetName}` : "Rẽ trái nhẹ";
+  }
+
+  if (normalized.includes("slight right")) {
+    return streetName ? `Rẽ phải nhẹ vào ${streetName}` : "Rẽ phải nhẹ";
+  }
+
+  if (normalized.includes("turn left")) {
+    return streetName ? `Rẽ trái vào ${streetName}` : "Rẽ trái";
+  }
+
+  if (normalized.includes("turn right")) {
+    return streetName ? `Rẽ phải vào ${streetName}` : "Rẽ phải";
+  }
+
+  if (normalized.includes("keep left")) {
+    return streetName
+      ? `Đi theo làn bên trái vào ${streetName}`
+      : "Đi theo làn bên trái";
+  }
+
+  if (normalized.includes("keep right")) {
+    return streetName
+      ? `Đi theo làn bên phải vào ${streetName}`
+      : "Đi theo làn bên phải";
+  }
+
+  if (normalized.includes("continue")) {
+    return streetName ? `Tiếp tục vào ${streetName}` : "Tiếp tục di chuyển";
+  }
+
+  if (normalized.includes("roundabout")) {
+    return streetName
+      ? `Vào vòng xoay theo hướng ${streetName}`
+      : "Vào vòng xoay";
+  }
+
+  if (normalized.includes("u-turn") || normalized.includes("uturn")) {
+    return streetName ? `Quay đầu vào ${streetName}` : "Quay đầu xe";
+  }
+
+  return streetName ? `Tiếp tục vào ${streetName}` : "Tiếp tục di chuyển";
+}
+
 export async function POST(request: Request) {
   const apiKey = process.env.TOMTOM_API_KEY;
 
@@ -134,6 +210,7 @@ export async function POST(request: Request) {
   // đường), vì TomTom chỉ trả offset TÍCH LŨY chứ không trả sẵn độ dài từng
   // chặng.
   const instructions = route.guidance?.instructions ?? [];
+
   const steps = instructions.map((instruction, index) => {
     const nextInstruction = instructions[index + 1];
 
@@ -141,12 +218,22 @@ export async function POST(request: Request) {
       nextInstruction !== undefined
         ? nextInstruction.routeOffsetInMeters
         : route.summary.lengthInMeters;
+
+    const streetName =
+      instruction.street && instruction.street !== "-"
+        ? instruction.street
+        : undefined;
+
     return {
       distanceMeters: Math.max(0, nextOffset - instruction.routeOffsetInMeters),
-      instruction: instruction.message ?? "",
-      streetName: instruction.street || undefined,
+      instruction: buildTomTomInstruction(
+        instruction.message ?? "",
+        streetName,
+      ),
+      streetName,
     };
   });
+
   return NextResponse.json({
     coordinates,
     distanceKm: route.summary.lengthInMeters / 1000,

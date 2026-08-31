@@ -471,7 +471,7 @@ export function MapExperience() {
           camera đang "phản ứng" theo tốc độ thực tế. */}
       {navigation.isNavigating && navigation.speedKmh !== null && (
         <div
-          className="pointer-events-none fixed bottom-[calc(var(--safe-bottom)+5.5rem)] right-2 top-[130px] z-40 flex h-16 w-16 flex-col items-center justify-center rounded-full border-2 border-accent-gold/40 bg-ink/90 shadow-2xl backdrop-blur-md md:bottom-6"
+          className="pointer-events-none fixed bottom-[calc(var(--safe-bottom)+5.5rem)] left-4 top-[200px] z-40 flex h-16 w-16 flex-col items-center justify-center rounded-full border-2 border-accent-gold/40 bg-ink/90 shadow-2xl backdrop-blur-md md:bottom-6"
           aria-label="Tốc độ hiện tại"
         >
           <span className="text-xl font-extrabold leading-none text-cream">
@@ -492,7 +492,7 @@ export function MapExperience() {
       {isPanelCollapsed && (
         <div
           className={clsx(
-            "fixed top-[calc(var(--header-h)+10rem)] right-0 z-40 transition-transform duration-300 md:hidden",
+            "fixed top-[calc(var(--header-h)+7rem)] right-0 z-40 transition-transform duration-300 md:hidden",
             isMobileStyleOpen
               ? "translate-x-0"
               : "translate-x-[calc(100%-2.75rem)]",

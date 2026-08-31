@@ -14,7 +14,7 @@ const STORAGE_KEY_GENDER = "mygomap_user_gender";
 interface MapStyleToggleProps {
   value: MapStyleId;
   onChange: (styleId: MapStyleId) => void;
-  isPanelOpen?: boolean,
+  isPanelOpen?: boolean;
 }
 
 const STYLE_IDS: MapStyleId[] = [
@@ -26,7 +26,11 @@ const STYLE_IDS: MapStyleId[] = [
   "openStreet",
 ];
 
-export function MapStyleToggle({ value, onChange, isPanelOpen = false, }: MapStyleToggleProps) {
+export function MapStyleToggle({
+  value,
+  onChange,
+  isPanelOpen = false,
+}: MapStyleToggleProps) {
   const [gender, setGender] = useState<GenderTheme>("nam");
 
   useEffect(() => {
@@ -77,7 +81,7 @@ export function MapStyleToggle({ value, onChange, isPanelOpen = false, }: MapSty
               }
               onClick={() => onChange(style.id)}
               className={clsx(
-                "rounded-xl px-3 py-2 text-xs font-semibold transition text-cream/70 text-left md:text-center whitespace-nowrap",
+                "rounded-xl px-3 py-2 text-sm font-semibold transition text-cream/70 text-left md:text-center whitespace-nowrap",
                 isActive
                   ? getActiveStyles()
                   : clsx("bg-transparent", getHoverStyles()),
