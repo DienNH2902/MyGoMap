@@ -33,6 +33,18 @@
        hình, tránh xuất hiện thanh cuộn ngang không mong muốn. */
     overflow-x: hidden;
     width: 100%;
+    /* FIX: khoảng trắng lộ ra ở cạnh dưới (gần thanh home) khi vuốt/kéo
+       trang trên iPhone (kể cả khi đã chạy dạng PWA "Thêm vào MH chính").
+       Đây là hiệu ứng "rubber-band" / overscroll mặc định của Safari:
+       khi người dùng kéo quá giới hạn nội dung, Safari cho phép cả trang
+       trượt lố ra rồi bật lại, để lộ nền THẬT của <html>/<body> phía sau —
+       không phải lỗi layout thiếu chiều cao. `overscroll-behavior: none`
+       chặn đúng hành vi "trượt lố rồi bật lại" đó ở biên trang (root),
+       trong khi cuộn bình thường bên trong trang (nếu nội dung dài hơn màn
+       hình, ví dụ trang chủ) vẫn hoạt động y như cũ — không ảnh hưởng gì
+       tới các trang khác.
+    */
+    overscroll-behavior: none;
   }
 
   body {
@@ -41,6 +53,12 @@
     min-height: 100dvh;
     overflow-x: hidden;
     margin: 0;
+    /* Đặt lại lần nữa ở body — trên một số phiên bản Safari/PWA standalone,
+       chính <body> (chứ không phải <html>) mới là phần tử thực sự nhận cử
+       chỉ kéo/vuốt, nên cần chặn overscroll ở CẢ HAI để đảm bảo hết mọi
+       trường hợp, xem giải thích chi tiết ở khai báo cùng thuộc tính trên
+       thẻ html phía trên. */
+    overscroll-behavior: none;
   }
 
   /*
