@@ -79,7 +79,7 @@ export default function RootLayout({
       lang="vi"
       className={`${beVietnamPro.variable} ${jetBrainsMono.variable}`}
     >
-      <body className="bg-surface font-display text-ink antialiased">
+      <body className="h-[100dvh] w-full bg-surface font-display text-ink antialiased">
         <MobileRedirect />
         <ServiceWorkerRegistration />
         <Header />
