@@ -1476,7 +1476,7 @@ export function useNavigationTracking(
         const distanceFromRoute = turf.distance(userPoint, nearestPoint, {
           units: "meters",
         });
-        const isOffRoute = distanceFromRoute > 100;
+        const isOffRoute = distanceFromRoute > 30;
 
         const nearestPointCoords = nearestPoint.geometry.coordinates as [
           number,
