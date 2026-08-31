@@ -81,7 +81,7 @@ export function MapStyleToggle({
               }
               onClick={() => onChange(style.id)}
               className={clsx(
-                "rounded-xl px-3 py-2 text-sm font-semibold transition text-cream/70 text-left md:text-center whitespace-nowrap",
+                "rounded-xl px-3 py-2 text-xs font-semibold transition text-cream/70 text-left md:text-center whitespace-nowrap",
                 isActive
                   ? getActiveStyles()
                   : clsx("bg-transparent", getHoverStyles()),

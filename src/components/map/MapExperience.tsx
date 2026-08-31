@@ -471,12 +471,13 @@ export function MapExperience() {
           camera đang "phản ứng" theo tốc độ thực tế. */}
       {navigation.isNavigating && navigation.speedKmh !== null && (
         <div
-          className="pointer-events-none fixed bottom-[calc(var(--safe-bottom)+5.5rem)] left-4 top-[200px] z-40 flex h-16 w-16 flex-col items-center justify-center rounded-full border-2 border-accent-gold/40 bg-ink/90 shadow-2xl backdrop-blur-md md:bottom-6"
+          className="pointer-events-none fixed left-4 top-[200px] z-40 flex h-16 w-16 flex-col items-center justify-center rounded-full border-2 border-accent-gold/40 bg-ink/90 shadow-2xl backdrop-blur-md md:hidden"
           aria-label="Tốc độ hiện tại"
         >
           <span className="text-xl font-extrabold leading-none text-cream">
             {Math.round(navigation.speedKmh)}
           </span>
+
           <span className="text-[11px] font-semibold uppercase tracking-wide text-cream/60">
             km/h
           </span>

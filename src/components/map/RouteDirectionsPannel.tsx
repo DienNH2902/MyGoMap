@@ -80,6 +80,11 @@ export function RouteDirectionsPanel({
       ? Math.max(0, currentStepOffset - distanceTraveledMeters)
       : null;
 
+  const upcomingSteps =
+    isNavigating && currentStepIndex >= 0
+      ? steps.slice(currentStepIndex, currentStepIndex + 2)
+      : [];
+
   if (steps.length === 0) return null;
 
   return (
@@ -87,53 +92,91 @@ export function RouteDirectionsPanel({
       {/* Banner "còn Xm thì rẽ..." khi đang dẫn đường */}
       {isNavigating && currentStep && (
         <div
-          className="pointer-events-none fixed left-1/2 top-[calc(var(--header-h)+0.75rem)] z-40 w-[92%] max-w-md -translate-x-1/2 rounded-2xl border border-accent-gold/30 bg-ink/90 px-4 py-3 shadow-2xl backdrop-blur-md"
+          className="pointer-events-auto fixed left-1/2 top-[calc(var(--header-h)+0.75rem)] z-50 w-[92%] max-w-md -translate-x-1/2"
           aria-live="polite"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent-gold/15">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-accent-gold"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13 7l5 5m0 0l-5 5m5-5H6"
-                />
-              </svg>
-            </div>
-            <div className="min-w-0">
-              {remainingToTurnMeters != null && (
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-accent-gold">
-                  Còn {formatStepDistance(remainingToTurnMeters)}
+          <button
+            type="button"
+            onClick={() => setIsListOpen((prev) => !prev)}
+            className="w-full rounded-2xl border border-accent-gold/30 bg-ink/90 px-4 py-3 text-left shadow-2xl backdrop-blur-md"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent-gold/15">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 text-accent-gold"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M13 7l5 5m0 0l-5 5m5-5H6"
+                  />
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                {remainingToTurnMeters != null && (
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-accent-gold">
+                    Còn {formatStepDistance(remainingToTurnMeters)}
+                  </p>
+                )}
+                <p className="whitespace-normal break-words text-sm font-bold text-cream">
+                  {currentStep.instruction}
                 </p>
-              )}
-              <p className="whitespace-normal break-words text-sm font-bold text-cream">
-                {currentStep.instruction}
-              </p>
+              </div>
             </div>
-          </div>
+          </button>
+
+          {isListOpen && (
+            <div className="mt-2 overflow-hidden rounded-2xl border border-white/20 bg-ink/95 shadow-2xl backdrop-blur-md">
+              <ol className="divide-y divide-white/10">
+                {upcomingSteps.map((step, index) => {
+                  const actualIndex = currentStepIndex + index;
+
+                  return (
+                    <li
+                      key={actualIndex}
+                      className="flex items-start gap-2.5 px-3 py-3"
+                    >
+                      <span className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-accent-gold/15 text-[11px] font-bold text-accent-gold">
+                        {actualIndex + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="whitespace-normal break-words text-sm leading-snug text-cream">
+                          {step.instruction}
+                        </p>
+                        <p className="text-[11px] text-cream/50">
+                          {formatStepDistance(step.distanceMeters)}
+                          {step.streetName ? ` · ${step.streetName}` : ""}
+                        </p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          )}
         </div>
       )}
 
       {/* Bảng chỉ dẫn đầy đủ khi CHƯA dẫn đường — xem trước toàn bộ tuyến */}
       {!isNavigating && (
-        <div className="pointer-events-auto absolute right-3 top-[calc(var(--header-h)+0.75rem)] z-30 hidden md:block">
+        <div className="pointer-events-auto absolute right-3 top-[calc(var(--header-h)+4rem)] z-30 hidden md:block">
           <button
             type="button"
             onClick={() => setIsListOpen((prev) => !prev)}
-            className="rounded-full border border-white/20 bg-ink/90 px-3.5 py-2 text-xs font-bold text-cream shadow-xl backdrop-blur-md transition hover:bg-ink"
+            className="rounded-2xl border border-white/20 bg-ink/85 px-3.5 py-2 text-sm font-bold text-cream shadow-xl backdrop-blur-md transition hover:bg-ink"
           >
-            {isListOpen ? "Ẩn chỉ dẫn" : `Chỉ dẫn (${steps.length} chặng)`}
+            {isListOpen
+              ? "Ẩn chỉ dẫn"
+              : `Chỉ dẫn chi tiết (${steps.length} chặng)`}
           </button>
 
           {isListOpen && (
-            <div className="mt-2 max-h-[60vh] w-80 overflow-y-auto rounded-2xl border border-white/20 bg-ink/95 p-3 shadow-2xl backdrop-blur-md">
+            <div className="mt-2 max-h-[50vh] w-80 overflow-y-auto rounded-2xl border border-white/20 bg-ink/95 p-3 shadow-2xl backdrop-blur-md">
               <ol className="space-y-2.5">
                 {steps.map((step, index) => (
                   <li

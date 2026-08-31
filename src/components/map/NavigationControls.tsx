@@ -206,9 +206,9 @@ export function NavigationControls({
     );
   }
 
-  // Nút "Bắt đầu chỉ đường" khi chưa bật Navigation
+  // Nút "Bắt đầu chỉ đường" — CHỈ HIỆN TRÊN MOBILE
   return (
-    <div className="pointer-events-auto absolute bottom-32 left-1/2 z-0 -translate-x-1/2">
+    <div className="pointer-events-auto absolute bottom-32 left-1/2 z-0 -translate-x-1/2 md:hidden">
       <button
         type="button"
         {...startTapHandlers}
