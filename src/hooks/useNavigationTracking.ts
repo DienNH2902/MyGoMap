@@ -1396,12 +1396,21 @@ export function useNavigationTracking(
         compassHeading = (event as any).webkitCompassHeading;
       } else if (event.alpha !== null) {
         // Hỗ trợ Android
-        compassHeading = 360 - event.alpha;
+        const screenAngle =
+          typeof window.screen.orientation?.angle === "number"
+            ? window.screen.orientation.angle
+            : typeof window.orientation === "number"
+              ? window.orientation
+              : 0;
+
+        compassHeading = 360 - event.alpha + screenAngle;
       }
 
       if (compassHeading === null || !Number.isFinite(compassHeading)) {
         return;
       }
+
+      compassHeading = (compassHeading + 360) % 360;
 
       currentHeadingRef.current = compassHeading;
 
