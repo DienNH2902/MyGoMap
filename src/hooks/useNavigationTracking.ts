@@ -850,6 +850,69 @@ function resolveNavigationMarkerPosition(
   return { lng: rawLng, lat: rawLat };
 }
 
+function getRouteBearingAtPosition(
+  routeLine: Feature<LineString> | null,
+  lng: number,
+  lat: number,
+): number | null {
+  if (!routeLine || routeLine.geometry.coordinates.length < 2) {
+    return null;
+  }
+
+  try {
+    const userPoint = turf.point([lng, lat]);
+
+    const nearest = turf.nearestPointOnLine(routeLine, userPoint, {
+      units: "meters",
+    });
+
+    const coordinates = routeLine.geometry.coordinates;
+    const nearestIndex =
+      typeof nearest.properties.index === "number"
+        ? nearest.properties.index
+        : 0;
+
+    const startIndex = Math.max(
+      0,
+      Math.min(nearestIndex, coordinates.length - 2),
+    );
+
+    const from = coordinates[startIndex];
+    const to = coordinates[startIndex + 1];
+
+    if (!from || !to) {
+      return null;
+    }
+
+    const fromLon = from[0];
+    const fromLat = from[1];
+    const toLon = to[0];
+    const toLat = to[1];
+
+    if (
+      typeof fromLon !== "number" ||
+      typeof fromLat !== "number" ||
+      typeof toLon !== "number" ||
+      typeof toLat !== "number"
+    ) {
+      return null;
+    }
+
+    const bearing = turf.bearing(
+      turf.point([fromLon, fromLat]),
+      turf.point([toLon, toLat]),
+    );
+
+    if (!Number.isFinite(bearing)) {
+      return null;
+    }
+
+    return (bearing + 360) % 360;
+  } catch {
+    return null;
+  }
+}
+
 export function useNavigationTracking(
   map: MapLibreMap | null,
   route: RouteGeometry | null,
@@ -943,6 +1006,11 @@ export function useNavigationTracking(
   const routeLineRef = useRef<Feature<LineString> | null>(null);
   const userMarkerRef = useRef<Marker | null>(null);
   const userMarkerMapRef = useRef<MapLibreMap | null>(null);
+
+  const userMarkerElementRef = useRef<HTMLDivElement | null>(null);
+  const headingConeElementRef = useRef<HTMLDivElement | null>(null);
+  const routeArrowElementRef = useRef<HTMLDivElement | null>(null);
+
   const currentHeadingRef = useRef<number>(0);
   // true khi GPS đang di chuyển đủ nhanh để heading GPS đáng tin (xem bước 3
   // trong updateMarker) — lúc đó la bàn không phải nguồn hướng chính. Khi
@@ -956,6 +1024,7 @@ export function useNavigationTracking(
   const smoothedLatRef = useRef<number | null>(null);
   const smoothedLonRef = useRef<number | null>(null);
   const smoothedBearingRef = useRef<number | null>(null);
+  const routeBearingRef = useRef<number | null>(null);
   const lastCameraUpdateRef = useRef<number>(0);
   // Tốc độ hiện tại (km/h) đã làm mượt bằng EMA từ speed GPS (m/s) — dùng
   // làm trục CHÍNH để tính camera zoom/pitch (xem getNavigationCamera) và
@@ -1186,6 +1255,9 @@ export function useNavigationTracking(
 
       userMarkerRef.current = null;
       userMarkerMapRef.current = null;
+      userMarkerElementRef.current = null;
+      headingConeElementRef.current = null;
+      routeArrowElementRef.current = null;
     }
 
     if (userMarkerRef.current) {
@@ -1196,17 +1268,28 @@ export function useNavigationTracking(
 
     el.className = "user-location-puck";
 
-    el.innerHTML = `
-    <div
-      style="
-        width: 84px;
-        height: 84px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.3));
-      "
-    >
+    el.style.width = "84px";
+    el.style.height = "84px";
+    el.style.display = "flex";
+    el.style.alignItems = "center";
+    el.style.justifyContent = "center";
+    el.style.position = "relative";
+    el.style.filter = "drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.3))";
+
+    const headingCone = document.createElement("div");
+
+    headingCone.style.position = "absolute";
+    headingCone.style.inset = "0";
+    headingCone.style.width = "84px";
+    headingCone.style.height = "84px";
+    headingCone.style.display = "flex";
+    headingCone.style.alignItems = "center";
+    headingCone.style.justifyContent = "center";
+    headingCone.style.transformOrigin = "center center";
+    headingCone.style.willChange = "transform";
+    headingCone.style.transform = "scale(1.5)";
+
+    headingCone.innerHTML = `
       <svg
         width="112"
         height="112"
@@ -1244,11 +1327,34 @@ export function useNavigationTracking(
         <circle
           cx="16"
           cy="16"
-          r="14"
-          fill="#3B82F6"
-          fill-opacity="0.25"
+          r="10"
+          // fill="#3B82F6"
+          fill="rgba(66, 133, 244, 0.18)"
+          fill-opacity="0.9"
         />
+      </svg>
+    `;
 
+    const routeArrow = document.createElement("div");
+
+    routeArrow.style.position = "absolute";
+    routeArrow.style.inset = "0";
+    routeArrow.style.width = "84px";
+    routeArrow.style.height = "84px";
+    routeArrow.style.display = "flex";
+    routeArrow.style.alignItems = "center";
+    routeArrow.style.justifyContent = "center";
+    routeArrow.style.transformOrigin = "center center";
+    routeArrow.style.willChange = "transform";
+
+    routeArrow.innerHTML = `
+      <svg
+        width="112"
+        height="112"
+        viewBox="0 0 32 32"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
         <path
           d="M16 4L25 24L16 20L7 24L16 4Z"
           fill="#2563EB"
@@ -1257,8 +1363,14 @@ export function useNavigationTracking(
           stroke-linejoin="round"
         />
       </svg>
-    </div>
-  `;
+    `;
+
+    el.appendChild(headingCone);
+    el.appendChild(routeArrow);
+
+    userMarkerElementRef.current = el;
+    headingConeElementRef.current = headingCone;
+    routeArrowElementRef.current = routeArrow;
 
     const marker = new maplibregl.Marker({
       element: el,
@@ -1271,7 +1383,7 @@ export function useNavigationTracking(
     return marker;
   }, [map]);
 
-  // Lắng nghe cảm biến la bàn di động (cho trường hợp đứng yên vẫn quay mũi tên được)
+  // Lắng nghe cảm biến la bàn di động để xoay vùng xanh theo hướng thiết bị
   useEffect(() => {
     const handleOrientation = (event: DeviceOrientationEvent) => {
       let compassHeading: number | null = null;
@@ -1287,28 +1399,14 @@ export function useNavigationTracking(
         compassHeading = 360 - event.alpha;
       }
 
-      if (compassHeading !== null) {
-        currentHeadingRef.current = compassHeading;
+      if (compassHeading === null || !Number.isFinite(compassHeading)) {
+        return;
+      }
 
-        // TRƯỚC ĐÂY: chỉ set thẳng vào marker ở đây, nhưng animateMarker
-        // chạy mỗi khung hình (60fps) lại ghi đè bằng renderedBearingRef
-        // đang đuổi theo smoothedBearingRef — mà smoothedBearingRef chỉ
-        // được cập nhật trong updateMarker() (tức là theo nhịp GPS, có khi
-        // vài giây mới có 1 lần) => la bàn xoay bị "đợi" tới lần GPS tiếp
-        // theo mới thấy, gây delay hơn 2 giây như đã gặp.
-        //
-        // SỬA: khi GPS heading KHÔNG đáng tin (đứng yên/đi chậm), la bàn là
-        // nguồn hướng chính — cập nhật thẳng vào smoothedBearingRef ngay khi
-        // có sự kiện la bàn mới (nhiều lần/giây), để animateMarker (đang
-        // chạy liên tục, không phụ thuộc nhịp GPS) xoay marker theo NGAY,
-        // không phải chờ lần định vị GPS kế tiếp nữa.
-        if (!isGpsHeadingActiveRef.current) {
-          smoothedBearingRef.current = compassHeading;
-        }
+      currentHeadingRef.current = compassHeading;
 
-        if (userMarkerRef.current) {
-          userMarkerRef.current.setRotation(compassHeading);
-        }
+      if (headingConeElementRef.current) {
+        headingConeElementRef.current.style.transform = `rotate(${compassHeading}deg )`;
       }
     };
 
@@ -1525,12 +1623,13 @@ export function useNavigationTracking(
         renderedBearingRef.current =
           renderedBearingRef.current === null
             ? targetBearing
-            : smoothAngle(renderedBearingRef.current, targetBearing, 0.18);
+            : smoothAngle(renderedBearingRef.current, targetBearing, 0.3);
       }
 
       marker.setLngLat([renderedLonRef.current, renderedLatRef.current]);
-      if (renderedBearingRef.current !== null) {
-        marker.setRotation(renderedBearingRef.current);
+
+      if (renderedBearingRef.current !== null && routeArrowElementRef.current) {
+        routeArrowElementRef.current.style.transform = `rotate(${renderedBearingRef.current}deg)`;
       }
     }
 
@@ -1645,38 +1744,49 @@ export function useNavigationTracking(
       // 3. XÁC ĐỊNH HEADING
       // ============================================================
 
-      // GPS heading chỉ đáng tin khi xe/người dùng thực sự di chuyển.
+      // GPS heading chỉ dùng cho dead-reckoning vị trí.
       const isMovingFastEnoughForGpsHeading = (speed ?? 0) > 0.6;
-      // Cho listener la bàn (deviceorientation) biết GPS có đang "giữ quyền"
-      // điều khiển hướng marker hay không, để tránh cả 2 nguồn giành nhau.
+
       isGpsHeadingActiveRef.current = isMovingFastEnoughForGpsHeading;
 
-      let effectiveHeading: number;
+      // ============================================================
+      // 3b. XÁC ĐỊNH BEARING CỦA TUYẾN
+      // ============================================================
+
+      const routeBearing = getRouteBearingAtPosition(
+        routeLineRef.current,
+        lng,
+        lat,
+      );
+
+      if (routeBearing !== null) {
+        routeBearingRef.current = routeBearing;
+
+        if (smoothedBearingRef.current === null) {
+          smoothedBearingRef.current = routeBearing;
+        } else {
+          smoothedBearingRef.current = smoothAngle(
+            smoothedBearingRef.current,
+            routeBearing,
+            0.3,
+          );
+        }
+      }
+
+      // GPS heading vẫn được dùng cho dead-reckoning,
+      // nhưng KHÔNG dùng để xoay mũi tên.
+      let effectiveMovementHeading: number;
 
       if (
         isMovingFastEnoughForGpsHeading &&
         heading !== null &&
         Number.isFinite(heading)
       ) {
-        effectiveHeading = heading;
+        effectiveMovementHeading = heading;
       } else if (Number.isFinite(currentHeadingRef.current)) {
-        effectiveHeading = currentHeadingRef.current;
+        effectiveMovementHeading = currentHeadingRef.current;
       } else {
-        effectiveHeading = 0;
-      }
-
-      // ============================================================
-      // 4. SMOOTH HEADING
-      // ============================================================
-
-      if (smoothedBearingRef.current === null) {
-        smoothedBearingRef.current = effectiveHeading;
-      } else {
-        smoothedBearingRef.current = smoothAngle(
-          smoothedBearingRef.current,
-          effectiveHeading,
-          0.2,
-        );
+        effectiveMovementHeading = routeBearing ?? 0;
       }
 
       // Ghi lại thời điểm + vận tốc/hướng của lần fix GPS này, để vòng lặp
@@ -1688,7 +1798,7 @@ export function useNavigationTracking(
       lastFixAtRef.current = now;
       if (isMovingFastEnoughForGpsHeading) {
         extrapolationSpeedRef.current = speed ?? 0;
-        extrapolationBearingRef.current = effectiveHeading;
+        extrapolationBearingRef.current = effectiveMovementHeading;
       } else {
         extrapolationSpeedRef.current = 0;
       }
@@ -1732,9 +1842,10 @@ export function useNavigationTracking(
 
       if (
         smoothedBearingRef.current !== null &&
-        Number.isFinite(smoothedBearingRef.current)
+        Number.isFinite(smoothedBearingRef.current) &&
+        routeArrowElementRef.current
       ) {
-        marker.setRotation(smoothedBearingRef.current);
+        routeArrowElementRef.current.style.transform = `rotate(${smoothedBearingRef.current}deg)`;
       }
 
       // ============================================================
@@ -2289,12 +2400,17 @@ export function useNavigationTracking(
       userMarkerRef.current = null;
     }
 
+    userMarkerElementRef.current = null;
+    headingConeElementRef.current = null;
+    routeArrowElementRef.current = null;
+
     userMarkerMapRef.current = null;
 
     // Reset smoothing refs
     smoothedLatRef.current = null;
     smoothedLonRef.current = null;
     smoothedBearingRef.current = null;
+    routeBearingRef.current = null;
     smoothedSpeedKmhRef.current = null;
     isGpsHeadingActiveRef.current = false;
     lastCameraUpdateRef.current = 0;
