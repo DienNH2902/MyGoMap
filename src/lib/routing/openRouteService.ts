@@ -3,7 +3,7 @@ import {
   MOTORBIKE_AVERAGE_SPEED_KMH,
   CAR_AVERAGE_SPEED_KMH,
 } from "../constants";
-import type { RouteGeometry } from "../types";
+import type { RouteGeometry, RouteStep } from "../types";
 import { fetchTomTomRoute } from "./tomTomTrafficRoute";
 
 /** Shape of the fields we actually read from an ORS GeoJSON directions response. */
@@ -15,6 +15,17 @@ interface OrsGeoJsonResponse {
         distance: number; // meters
         duration: number; // seconds
       };
+      // Chỉ dẫn rẽ từng chặng — ORS trả sẵn khi `instructions: true` (mặc
+      // định), ta chỉ cần đọc thêm để dựng bảng "còn Xm thì rẽ..." như ggmap.
+      segments: Array<{
+        steps: Array<{
+          distance: number; // meters, quãng đường của chặng này trước khi rẽ
+          duration: number; // seconds
+          type: number; // mã loại thao tác (rẽ trái/phải/đi thẳng...) của ORS
+          instruction: string; // câu hướng dẫn đầy đủ, theo `language` đã gửi
+          name: string; // tên đường của chặng này, "-" nếu đường không tên
+        }>;
+      }>;
     };
   }>;
 }
@@ -69,6 +80,19 @@ function estimateCarDurationMinutes(distanceKm: number): number {
   return (distanceKm / CAR_AVERAGE_SPEED_KMH) * 60;
 }
 
+/** Dựng bảng chỉ dẫn rẽ (kiểu ggmap) từ các `segments[].steps[]` mà ORS trả về. */
+function parseOrsSteps(
+  segments: OrsGeoJsonResponse["features"][number]["properties"]["segments"],
+): RouteStep[] {
+  return segments.flatMap((segment) =>
+    segment.steps.map((step) => ({
+      distanceMeters: step.distance,
+      instruction: step.instruction,
+      streetName: step.name && step.name !== "-" ? step.name : undefined,
+    })),
+  );
+}
+
 export async function fetchDrivingRoute(
   start: { lon: number; lat: number },
   end: { lon: number; lat: number },
@@ -112,6 +136,8 @@ export async function fetchDrivingRoute(
       body: JSON.stringify({
         coordinates,
         radiuses,
+        // Chỉ dẫn rẽ (turn-by-turn) trả về bằng tiếng Việt.
+        language: "vi",
         options: {
           avoid_borders: "all",
           // CHỈ né "highways" (cao tốc). KHÔNG bao giờ thêm "tollways" —
@@ -162,6 +188,7 @@ export async function fetchDrivingRoute(
   }
 
   const distanceKm = feature.properties.summary.distance / 1000;
+  const steps = parseOrsSteps(feature.properties.segments);
 
   // CHỈ xe máy (avoidHighways=true) mới cần TomTom — API duy nhất có
   // travelMode="motorcycle" thật để né cao tốc đúng luật — và chỉ khi tuyến
@@ -194,5 +221,6 @@ export async function fetchDrivingRoute(
     durationMinutes: routeOptions.avoidHighways
       ? estimateMotorbikeDurationMinutes(distanceKm)
       : estimateCarDurationMinutes(distanceKm),
+    steps,
   };
 }

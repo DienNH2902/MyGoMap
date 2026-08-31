@@ -10,7 +10,15 @@ interface TomTomRouteRequest {
   avoidHighways?: boolean;
   useTraffic?: boolean;
 }
-
+// Một chỉ dẫn rẽ trong `guidance.instructions[]` — chỉ có khi request có
+// `instructionsType=text` (xem bên dưới). `routeOffsetInMeters` là khoảng
+// cách TÍNH TỪ ĐIỂM XUẤT PHÁT tới nơi thực hiện thao tác này, dùng để suy
+// ra quãng đường của từng chặng (còn bao nhiêu m thì rẽ).
+interface TomTomGuidanceInstruction {
+  routeOffsetInMeters: number;
+  street?: string;
+  message?: string;
+}
 interface TomTomRouteResponse {
   routes?: Array<{
     summary: {
@@ -25,6 +33,9 @@ interface TomTomRouteResponse {
         longitude: number;
       }>;
     }>;
+    guidance?: {
+      instructions: TomTomGuidanceInstruction[];
+    };
   }>;
   error?: {
     description?: string;
@@ -73,7 +84,12 @@ export async function POST(request: Request) {
   url.searchParams.set("routeRepresentation", "polyline");
   url.searchParams.set("computeTravelTimeFor", "all");
   url.searchParams.set("sectionType", "traffic");
-  
+  // Bảng chỉ dẫn rẽ từng chặng kiểu ggmap ("còn Xm thì rẽ trái vào ABC") —
+  // "text" để TomTom dựng sẵn câu hướng dẫn hoàn chỉnh trong `message`,
+  // "vi-VN" để câu đó bằng tiếng Việt.
+  url.searchParams.set("instructionsType", "text");
+  url.searchParams.set("language", "vi-VN");
+
   if (body.avoidHighways) {
     // CHỈ né cao tốc. KHÔNG né "tollRoads" nữa — trạm thu phí BOT trên quốc
     // lộ thường (không phải cao tốc) vẫn hợp lệ và cần thiết cho xe máy đi
@@ -113,7 +129,24 @@ export async function POST(request: Request) {
   const coordinates = route.legs.flatMap((leg) =>
     leg.points.map((point) => [point.longitude, point.latitude]),
   );
+  // Suy ra quãng đường của từng chặng bằng hiệu `routeOffsetInMeters` giữa
+  // chỉ dẫn hiện tại và chỉ dẫn kế tiếp (chặng cuối lấy tới hết tổng quãng
+  // đường), vì TomTom chỉ trả offset TÍCH LŨY chứ không trả sẵn độ dài từng
+  // chặng.
+  const instructions = route.guidance?.instructions ?? [];
+  const steps = instructions.map((instruction, index) => {
+    const nextInstruction = instructions[index + 1];
 
+    const nextOffset =
+      nextInstruction !== undefined
+        ? nextInstruction.routeOffsetInMeters
+        : route.summary.lengthInMeters;
+    return {
+      distanceMeters: Math.max(0, nextOffset - instruction.routeOffsetInMeters),
+      instruction: instruction.message ?? "",
+      streetName: instruction.street || undefined,
+    };
+  });
   return NextResponse.json({
     coordinates,
     distanceKm: route.summary.lengthInMeters / 1000,
@@ -126,5 +159,6 @@ export async function POST(request: Request) {
       typeof route.summary.trafficDelayInSeconds === "number"
         ? route.summary.trafficDelayInSeconds / 60
         : undefined,
+    steps,
   });
 }

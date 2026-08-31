@@ -62,6 +62,19 @@ export interface RouteStop {
   pois: PoiResult[];
 }
 
+/**
+ * One turn-by-turn instruction along the route, e.g. "còn 350m thì rẽ trái
+ * vào Nguyễn Huệ" — giống bảng chỉ đường của Google Maps. `distanceMeters`
+ * là quãng đường cần đi tiếp trên đoạn đường hiện tại TRƯỚC KHI thực hiện
+ * thao tác `instruction` mô tả (không phải khoảng cách còn lại tới đích).
+ */
+export interface RouteStep {
+  distanceMeters: number;
+  /** Câu hướng dẫn đầy đủ bằng tiếng Việt, ví dụ "Rẽ trái vào Nguyễn Huệ". */
+  instruction: string;
+  /** Tên đường sau khi thực hiện thao tác (nếu nguồn dữ liệu có trả về). */
+  streetName?: string;
+}
 /** The computed driving route between the start and end point. */
 export interface RouteGeometry {
   coordinates: [number, number][];
@@ -69,6 +82,8 @@ export interface RouteGeometry {
   durationMinutes: number;
   noTrafficDurationMinutes?: number;
   trafficDelayMinutes?: number;
+  /** Chỉ dẫn rẽ trái/phải/đi thẳng... theo từng chặng dọc tuyến đường, nếu nguồn định tuyến (ORS/TomTom) trả về được. */
+  steps?: RouteStep[];
   /**
    * Đoạn nối NGẮN [vị trí GPS thật, điểm gần nhất trên tuyến đã cache] —
    * chỉ xuất hiện khi đang dẫn đường và người dùng đã đi lệch ra khỏi

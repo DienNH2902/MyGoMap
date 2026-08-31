@@ -22,6 +22,7 @@ import { useRoutePlanner } from "@/hooks/useRoutePlanner";
 import { QuickDestinationCard } from "./QuickDestinationCard";
 import { useQuickDestinationSearch } from "@/hooks/useQuickDestinationSearch ";
 import clsx from "clsx";
+import { RouteDirectionsPanel } from "./RouteDirectionsPannel";
 
 const STORAGE_KEY_USER_GENDER = "mygomap_user_gender";
 const STORAGE_KEY_LOADER = "mygomap_user_loader";
@@ -455,6 +456,14 @@ export function MapExperience() {
           onFollowUserLocation={navigation.followUserLocation}
         />
       )}
+
+      {/* BẢNG/BANNER CHỈ DẪN RẼ TỪNG CHẶNG (kiểu ggmap) — xem RouteDirectionsPanel.tsx */}
+      <RouteDirectionsPanel
+        route={displayRoute}
+        plannedTotalDistanceKm={planner.plan?.route.distanceKm ?? null}
+        isNavigating={navigation.isNavigating}
+        distanceToDestinationKm={navigation.distanceToDestination}
+      />
 
       {/* HIỂN THỊ TỐC ĐỘ HIỆN TẠI (km/h) KHI ĐANG DẪN ĐƯỜNG — cùng nguồn dữ
           liệu (đã làm mượt) với tốc độ dùng để tính camera zoom/pitch trong
