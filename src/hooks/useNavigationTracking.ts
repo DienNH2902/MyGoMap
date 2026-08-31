@@ -1540,18 +1540,14 @@ export function useNavigationTracking(
       return;
     }
 
-    // ============================================================
-    // DEAD-RECKONING: đẩy vị trí MỤC TIÊU (smoothed) tiến thêm theo vận
-    // tốc/hướng di chuyển thực gần nhất, dựa trên thời gian thực trôi qua kể
-    // từ khung hình trước — để marker tiếp tục "trôi" mượt trong lúc chờ tín
-    // hiệu GPS tiếp theo, thay vì đứng yên tại điểm cũ rồi giật khi có fix
-    // mới. Chỉ áp dụng khi: (1) thực sự đang di chuyển đủ nhanh, và (2) lần
-    // fix GPS gần nhất chưa quá cũ (tránh trôi lung tung nếu mất tín hiệu
-    // lâu, ví dụ vào hầm/khuất sóng).
     const nowMs = Date.now();
     const frameDtSeconds = lastAnimFrameTimeRef.current
-      ? (nowMs - lastAnimFrameTimeRef.current) / 1000
+      ? Math.min(
+          0.1,
+          Math.max(0, (nowMs - lastAnimFrameTimeRef.current) / 1000),
+        )
       : 0;
+
     lastAnimFrameTimeRef.current = nowMs;
 
     const msSinceLastFix = lastFixAtRef.current
@@ -1561,9 +1557,8 @@ export function useNavigationTracking(
     const canExtrapolate =
       extrapolationSpeedRef.current > 0.6 &&
       extrapolationBearingRef.current !== null &&
-      msSinceLastFix < 4000 &&
-      frameDtSeconds > 0 &&
-      frameDtSeconds < 0.5;
+      msSinceLastFix < 10000 &&
+      frameDtSeconds > 0;
 
     if (
       canExtrapolate &&
@@ -1581,6 +1576,7 @@ export function useNavigationTracking(
             extrapolationBearingRef.current as number,
             { units: "kilometers" },
           );
+
           const [advancedLon, advancedLat] = advanced.geometry.coordinates;
 
           if (
@@ -1607,13 +1603,12 @@ export function useNavigationTracking(
         renderedLatRef.current = targetLat;
         renderedLonRef.current = targetLon;
       } else {
-        // Hệ số nội suy mỗi khung hình (không phải hệ số smoothing theo thời
-        // gian thực) — đủ nhỏ để chuyển động mềm, đủ lớn để không bị "trễ"
-        // so với vị trí thật khi đang di chuyển nhanh.
-        const frameLerp = 0.15;
+        const frameLerp = 0.38;
+
         renderedLatRef.current =
           renderedLatRef.current +
           (targetLat - renderedLatRef.current) * frameLerp;
+
         renderedLonRef.current =
           renderedLonRef.current +
           (targetLon - renderedLonRef.current) * frameLerp;
@@ -1661,6 +1656,28 @@ export function useNavigationTracking(
             { units: "meters" },
           )
         : Infinity;
+
+      const gpsIntervalSeconds =
+        lastRaw !== null ? Math.max(0.05, (now - lastRaw.t) / 1000) : 0;
+
+      const calculatedSpeedMps =
+        lastRaw !== null &&
+        Number.isFinite(movedFromLastRaw) &&
+        gpsIntervalSeconds > 0
+          ? movedFromLastRaw / gpsIntervalSeconds
+          : null;
+
+      const effectiveSpeedMps =
+        speed !== null && Number.isFinite(speed) && speed >= 0
+          ? speed
+          : calculatedSpeedMps;
+
+      const effectiveSpeedKmh =
+        effectiveSpeedMps !== null &&
+        Number.isFinite(effectiveSpeedMps) &&
+        effectiveSpeedMps >= 0
+          ? effectiveSpeedMps * 3.6
+          : 0;
 
       // ============================================================
       // 1. LỌC NHIỄU GPS
@@ -1710,13 +1727,13 @@ export function useNavigationTracking(
           smoothedLatRef.current = smoothValue(
             smoothedLatRef.current,
             lat,
-            posSmoothingFactor,
+            Math.max(posSmoothingFactor, 0.55),
           );
 
           smoothedLonRef.current = smoothValue(
             smoothedLonRef.current,
             lng,
-            posSmoothingFactor,
+            Math.max(posSmoothingFactor, 0.55),
           );
         }
       }
@@ -1735,10 +1752,7 @@ export function useNavigationTracking(
           ? speed * 3.6
           : 0;
 
-      smoothedSpeedKmhRef.current =
-        smoothedSpeedKmhRef.current === null
-          ? rawSpeedKmh
-          : smoothValue(smoothedSpeedKmhRef.current, rawSpeedKmh, 0.25);
+      smoothedSpeedKmhRef.current = effectiveSpeedKmh;
 
       // ============================================================
       // 3. XÁC ĐỊNH HEADING
@@ -1796,8 +1810,12 @@ export function useNavigationTracking(
       // nếu không, đặt speed về 0 để animateMarker không tự trôi lung tung
       // lúc người dùng đứng yên.
       lastFixAtRef.current = now;
-      if (isMovingFastEnoughForGpsHeading) {
-        extrapolationSpeedRef.current = speed ?? 0;
+      if (
+        effectiveSpeedMps !== null &&
+        Number.isFinite(effectiveSpeedMps) &&
+        effectiveSpeedMps > 0.6
+      ) {
+        extrapolationSpeedRef.current = effectiveSpeedMps ?? 0;
         extrapolationBearingRef.current = effectiveMovementHeading;
       } else {
         extrapolationSpeedRef.current = 0;
