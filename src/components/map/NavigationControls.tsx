@@ -105,7 +105,7 @@ export function NavigationControls({
               />
             </svg>
             <p className="text-xs font-semibold text-white">
-              Bạn đang đi chệch tuyến đường! Cập nhật tuyến đường mới sau 3
+              Bạn đang đi chệch tuyến đường! Cập nhật tuyến đường mới sau vài
               giây...
             </p>
           </div>

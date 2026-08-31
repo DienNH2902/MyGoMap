@@ -38,6 +38,15 @@ const ROUTE_SOURCE_ID = "mygomap-route";
 const ROUTE_LAYER_ID = "mygomap-route-line";
 const STORAGE_KEY_GENDER = "mygomap_user_gender";
 
+// Layer RIÊNG cho đoạn "nối tạm" khi người dùng lệch khỏi ngưỡng bám đường
+// (xem RouteGeometry.offRouteConnector) — cố tình tách biệt hoàn toàn khỏi
+// ROUTE_SOURCE_ID/ROUTE_LAYER_ID, dùng màu + kiểu nét khác hẳn (cam cảnh
+// báo, nét đứt) để không bị hiểu nhầm là một đoạn đường thật, vì đoạn này
+// chỉ là đường chim bay có thể cắt xuyên qua nhà cửa/vật thể.
+const OFFROUTE_CONNECTOR_SOURCE_ID = "mygomap-offroute-connector";
+const OFFROUTE_CONNECTOR_LAYER_ID = "mygomap-offroute-connector-line";
+const OFFROUTE_CONNECTOR_COLOR = "#F59E0B"; // Cam cảnh báo — khác hẳn mọi màu route
+
 const TRAFFIC_SOURCE_ID = "mygomap-traffic-flow";
 const TRAFFIC_LAYER_ID = "mygomap-traffic-flow-layer";
 
@@ -200,6 +209,62 @@ function removeTrafficLayer(map: MapLibreMap) {
 
   if (map.getSource(TRAFFIC_SOURCE_ID)) {
     map.removeSource(TRAFFIC_SOURCE_ID);
+  }
+}
+
+function removeOffRouteConnectorLayer(map: MapLibreMap) {
+  if (map.getLayer(OFFROUTE_CONNECTOR_LAYER_ID)) {
+    map.removeLayer(OFFROUTE_CONNECTOR_LAYER_ID);
+  }
+  if (map.getSource(OFFROUTE_CONNECTOR_SOURCE_ID)) {
+    map.removeSource(OFFROUTE_CONNECTOR_SOURCE_ID);
+  }
+}
+
+function applyOffRouteConnectorLayer(
+  map: MapLibreMap,
+  connector: [[number, number], [number, number]] | null | undefined,
+) {
+  if (!connector) {
+    removeOffRouteConnectorLayer(map);
+    return;
+  }
+
+  const geojson: GeoJSON.Feature<GeoJSON.LineString> = {
+    type: "Feature",
+    properties: {},
+    geometry: { type: "LineString", coordinates: connector },
+  };
+
+  const existingSource = map.getSource(OFFROUTE_CONNECTOR_SOURCE_ID);
+  if (existingSource && "setData" in existingSource) {
+    (existingSource as GeoJSONSource).setData(geojson);
+  } else {
+    map.addSource(OFFROUTE_CONNECTOR_SOURCE_ID, {
+      type: "geojson",
+      data: geojson,
+    });
+
+    map.addLayer({
+      id: OFFROUTE_CONNECTOR_LAYER_ID,
+      type: "line",
+      source: OFFROUTE_CONNECTOR_SOURCE_ID,
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": OFFROUTE_CONNECTOR_COLOR,
+        "line-width": 5,
+        // Nét đứt — dấu hiệu trực quan "đây không phải đường thật", khác
+        // hẳn nét liền của ROUTE_LAYER_ID.
+        "line-dasharray": [0.6, 1.4],
+        "line-opacity": 0.95,
+      },
+    });
+  }
+
+  // Luôn hiển thị TRÊN CÙNG — trên cả tuyến chính lẫn traffic layer — vì
+  // đây là cảnh báo cần chú ý ngay, không được để tuyến chính che mất.
+  if (map.getLayer(OFFROUTE_CONNECTOR_LAYER_ID)) {
+    map.moveLayer(OFFROUTE_CONNECTOR_LAYER_ID);
   }
 }
 
@@ -402,6 +467,7 @@ export function MapView({
     return () => {
       sovereigntyMarkersRef.current.forEach((marker) => marker.remove());
       sovereigntyMarkersRef.current = [];
+      removeOffRouteConnectorLayer(map);
       map.remove();
       mapRef.current = null;
     };
@@ -594,7 +660,16 @@ export function MapView({
             map.moveLayer(ROUTE_LAYER_ID);
           }
         }
+
+        // Vẽ/cập nhật/ẩn đoạn "nối tạm" cảnh báo — xem giải thích ở
+        // RouteGeometry.offRouteConnector. route ở đây chính là displayRoute
+        // (navigation.liveRoute) truyền từ MapExperience, đã mang sẵn field
+        // này mỗi khi người dùng lệch khỏi ngưỡng bám đường.
+        applyOffRouteConnectorLayer(map, route?.offRouteConnector ?? null);
       } else {
+        // Không ở chế độ dẫn đường (đang lập kế hoạch) — không bao giờ cần
+        // hiển thị cảnh báo lệch tuyến.
+        removeOffRouteConnectorLayer(map);
         // LẬP KẾ HOẠCH: giữ nguyên hành vi chia màu từng chặng như cũ.
         if (coords.length > 0 && breakPoints.length > 2) {
           const findClosestIndex = (pt: [number, number]): number => {

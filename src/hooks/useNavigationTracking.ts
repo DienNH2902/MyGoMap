@@ -56,6 +56,7 @@ function buildTrimmedLiveRoute(
   remainingCoordinates: [number, number][] | undefined,
   distanceToDestination: number | null,
   estimatedTimeRemaining: number | null,
+  offRouteConnector: [[number, number], [number, number]] | null | undefined,
 ): RouteGeometry | null {
   if (!remainingCoordinates || remainingCoordinates.length < 2) {
     return fallback;
@@ -66,6 +67,7 @@ function buildTrimmedLiveRoute(
     coordinates: remainingCoordinates,
     distanceKm: distanceToDestination ?? fallback?.distanceKm ?? 0,
     durationMinutes: estimatedTimeRemaining ?? fallback?.durationMinutes ?? 0,
+    offRouteConnector: offRouteConnector ?? null,
   };
 }
 
@@ -146,13 +148,15 @@ const OFFROUTE_COOLDOWN_MS = 15000;
 const ARRIVAL_THRESHOLD_METERS = 30;
 
 // Khi đang chỉ đường, mũi tên chỉ "bám" (snap) vào tuyến nếu GPS lệch khỏi
-// tuyến KHÔNG QUÁ ngưỡng này — đủ để che các trường hợp GPS đô thị lệch vào
-// công trình/vỉa hè cạnh đường (thường vài mét đến ~30m), nhưng không đủ để
-// che trường hợp rẽ nhầm sang một đường khác hẳn (khi đó nên hiển thị đúng
-// vị trí GPS thật, không ép về tuyến cũ đã sai). Cố tình để nhỏ hơn ngưỡng
-// isOffRoute (100m, xem calculateRemainingDistance) — off-route thật sự thì
-// không nên snap.
-const MAX_SNAP_TO_ROUTE_METERS = 35;
+// tuyến KHÔNG QUÁ ngưỡng này — đủ để che nhiễu GPS đô thị thông thường
+// (vài mét đến ~20m), nhưng KHÔNG được lớn tới mức nuốt luôn khoảng cách
+// giữa hai đường chạy song song (đường gom, đường phụ cạnh đường chính,
+// dải phân cách...) — nhiều trường hợp thực tế chỉ cách nhau 20-35m. Ngưỡng
+// cũ (35m) từng khiến hệ thống "kéo" mũi tên về đường chính dù người dùng
+// đã thực sự rẽ sang đường phụ kế bên, gây cảm giác chỉ đường sai. Giảm
+// xuống 20m để nghiêm ngặt hơn: chỉ snap khi gần như chắc chắn vẫn đang
+// trên đúng con đường đã chỉ.
+const MAX_SNAP_TO_ROUTE_METERS = 20;
 
 /**
  * ============================================================
@@ -763,19 +767,23 @@ function getNavigationCamera(
 /**
  * Khi đang CHỈ ĐƯỜNG (turn-by-turn), mũi tên định vị nên "bám" theo đúng
  * tuyến đường đang đi thay vì hiển thị y nguyên tọa độ GPS thô — vì GPS đô
- * thị có thể lệch vài chục mét (ví dụ báo mũi tên nằm trong một công
- * trình/tòa nhà cạnh đường), điều này vô lý khi đang dẫn đường trên một con
- * đường cụ thể. Chỉ áp dụng "bám đường" khi độ lệch còn trong ngưỡng hợp lý
- * (MAX_SNAP_TO_ROUTE_METERS) — nếu lệch xa hơn (ví dụ rẽ nhầm sang đường
- * khác hẳn), snap về tuyến CŨ sẽ hiển thị SAI vị trí thật, nên lúc đó ưu
- * tiên hiển thị đúng tọa độ GPS thô cho tới khi performReroute() tính xong
- * tuyến mới khớp với vị trí thực.
+ * thị có thể lệch vài mét (ví dụ báo mũi tên nằm trong một công trình/vỉa
+ * hè cạnh đường), điều này vô lý khi đang dẫn đường trên một con đường cụ
+ * thể. Chỉ áp dụng "bám đường" khi độ lệch còn RẤT NHỎ (MAX_SNAP_TO_ROUTE_
+ * METERS, xem giải thích ở khai báo hằng số) — cố tình để ngưỡng này khá
+ * hẹp, đủ để che nhiễu GPS thông thường nhưng KHÔNG đủ để nuốt khoảng cách
+ * giữa hai con đường chạy song song. Nếu lệch xa hơn ngưỡng này (ví dụ rẽ
+ * hẳn sang một đường khác, kể cả đường phụ song song với tuyến chính), ưu
+ * tiên hiển thị đúng tọa độ GPS thô — line dẫn đường lúc này cũng được nối
+ * thực từ đúng vị trí này (xem calculateRemainingDistance), nên mũi tên và
+ * line luôn khớp nhau, không còn tình trạng "line vẫn ở đường chính, mũi
+ * tên lại ở đường phụ kế bên".
  *
- * Hàm này CHỈ ảnh hưởng tới vị trí hiển thị của mũi tên trong chế độ chỉ
- * đường (hook này chỉ chạy khi đang navigate) — không ảnh hưởng tới chấm
- * định vị GPS thông thường của MapLibre GeolocateControl khi KHÔNG chỉ
- * đường, vốn nằm hoàn toàn ở MapView.tsx và luôn hiển thị đúng tọa độ GPS
- * thật.
+ * Việc TÍNH LẠI LỘ TRÌNH MỚI (gọi API performReroute) vẫn CHỈ xảy ra khi
+ * lệch tuyến thật sự nhiều (isOffRoute, ngưỡng 100m) và kéo dài liên tục
+ * (xem OFFROUTE_CONFIRM_MS/OFFROUTE_COOLDOWN_MS) — đúng yêu cầu: đi đường
+ * phụ gần đó chỉ cần vẽ lại line cho đúng thực tế, chỉ khi tiếp tục lệch xa
+ * hơn nữa mới cần yêu cầu tuyến mới.
  */
 function resolveNavigationMarkerPosition(
   rawLng: number,
@@ -1317,25 +1325,42 @@ export function useNavigationTracking(
         });
         const isOffRoute = distanceFromRoute > 100;
 
+        const nearestPointCoords = nearestPoint.geometry.coordinates as [
+          number,
+          number,
+        ];
+
+        // Đoạn đường CHÍNH còn lại vẫn LUÔN bắt đầu từ điểm chiếu lên tuyến
+        // cache (KHÔNG prepend vị trí GPS thật vào đây nữa) — để tuyến
+        // chính hiển thị đúng bản chất "đây là con đường đã lập kế hoạch",
+        // không lẫn lộn với đoạn nối chỉ mang tính chỉ dẫn tạm thời.
+        const remainingCoordinates = slicedRoute.geometry.coordinates as [
+          number,
+          number,
+        ][];
+
+        // Chỉ tạo đoạn NỐI (offRouteConnector) khi độ lệch GPS thật vượt
+        // ngưỡng bám đường — tức mũi tên đang hiển thị đúng toạ độ GPS thô,
+        // không bị kéo về tuyến chính (xem resolveNavigationMarkerPosition).
+        // MapView.tsx sẽ vẽ riêng đoạn này bằng layer cảnh báo (màu cam,
+        // nét đứt) — KHÔNG gộp chung vào tuyến chính để tránh hiểu nhầm đây
+        // là một đoạn đường thật.
+        const offRouteConnector: [[number, number], [number, number]] | null =
+          distanceFromRoute > MAX_SNAP_TO_ROUTE_METERS
+            ? [[userLon, userLat], nearestPointCoords]
+            : null;
+
         return {
           distanceToDestination: remainingDistance,
           estimatedTimeRemaining: remainingTime,
-          nearestPointOnRoute: nearestPoint.geometry.coordinates as [
-            number,
-            number,
-          ],
+          nearestPointOnRoute: nearestPointCoords,
           isOffRoute,
           // Trả thêm khoảng cách thô (mét) từ GPS tới tuyến — dùng để quyết
           // định có nên "bám" mũi tên vào tuyến hay không, xem
           // resolveNavigationMarkerPosition().
           distanceFromRouteMeters: distanceFromRoute,
-          // Toạ độ đoạn đường CÒN LẠI (đã cắt sẵn từ vị trí hiện tại tới
-          // đích) — dùng để cập nhật line hiển thị ngay mỗi lần có GPS mới,
-          // không cần đợi API reroute.
-          remainingCoordinates: slicedRoute.geometry.coordinates as [
-            number,
-            number,
-          ][],
+          remainingCoordinates,
+          offRouteConnector,
         };
       } catch (err) {
         console.error("Failed to calculate remaining distance:", err);
@@ -1973,6 +1998,7 @@ export function useNavigationTracking(
             remaining?.remainingCoordinates,
             remaining?.distanceToDestination ?? null,
             remaining?.estimatedTimeRemaining ?? null,
+            remaining?.offRouteConnector,
           ),
           speedKmh: smoothedSpeedKmhRef.current,
         }));
@@ -2109,6 +2135,7 @@ export function useNavigationTracking(
               remaining?.remainingCoordinates,
               remaining?.distanceToDestination ?? null,
               remaining?.estimatedTimeRemaining ?? null,
+              remaining?.offRouteConnector,
             ),
             speedKmh: smoothedSpeedKmhRef.current,
           };
