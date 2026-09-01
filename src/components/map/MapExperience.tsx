@@ -493,7 +493,7 @@ export function MapExperience() {
       {isPanelCollapsed && (
         <div
           className={clsx(
-            "fixed top-[calc(var(--header-h)+7rem)] right-0 z-40 transition-transform duration-300 md:hidden",
+            "fixed top-[calc(var(--header-h)+9rem)] right-0 z-40 transition-transform duration-300 md:hidden",
             isMobileStyleOpen
               ? "translate-x-0"
               : "translate-x-[calc(100%-2.75rem)]",

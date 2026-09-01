@@ -19,8 +19,8 @@ interface RouteDirectionsPanelProps {
 }
 
 function formatStepDistance(meters: number): string {
-  if (meters >= 1000) return `${(meters / 1000).toFixed(1)}km`;
-  return `${Math.round(meters / 10) * 10}m`;
+  if (meters >= 1000) return `${(meters / 1000).toFixed(1)} km`;
+  return `${Math.round(meters / 10) * 10} m`;
 }
 
 /**
@@ -82,7 +82,7 @@ export function RouteDirectionsPanel({
 
   const upcomingSteps =
     isNavigating && currentStepIndex >= 0
-      ? steps.slice(currentStepIndex, currentStepIndex + 2)
+      ? steps.slice(currentStepIndex, currentStepIndex + 6)
       : [];
 
   if (steps.length === 0) return null;
@@ -101,7 +101,7 @@ export function RouteDirectionsPanel({
             className="w-full rounded-2xl border border-accent-gold/30 bg-ink/90 px-4 py-3 text-left shadow-2xl backdrop-blur-md"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent-gold/15">
+              {/* <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent-gold/15">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-5 w-5 text-accent-gold"
@@ -116,13 +116,14 @@ export function RouteDirectionsPanel({
                     d="M13 7l5 5m0 0l-5 5m5-5H6"
                   />
                 </svg>
-              </div>
+              </div> */}
               <div className="min-w-0 flex-1">
                 {remainingToTurnMeters != null && (
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-accent-gold">
+                  <p className="text-[16px] font-semibold tracking-wide text-accent-gold">
                     Còn {formatStepDistance(remainingToTurnMeters)}
                   </p>
                 )}
+                <span className="text-white">---------</span>
                 <p className="whitespace-normal break-words text-sm font-bold text-cream">
                   {currentStep.instruction}
                 </p>
@@ -131,7 +132,7 @@ export function RouteDirectionsPanel({
           </button>
 
           {isListOpen && (
-            <div className="mt-2 overflow-hidden rounded-2xl border border-white/20 bg-ink/95 shadow-2xl backdrop-blur-md">
+            <div className="mt-2 max-h-[50vh] overflow-y-auto rounded-2xl border border-white/20 bg-ink/95 shadow-2xl backdrop-blur-md">
               <ol className="divide-y divide-white/10">
                 {upcomingSteps.map((step, index) => {
                   const actualIndex = currentStepIndex + index;
