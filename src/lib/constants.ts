@@ -1,6 +1,7 @@
 import type { PoiCategoryDefinition } from "./types";
 
 export type MapStyleId =
+  | "custom"
   | "standard"
   | "topo"
   | "outdoor"
@@ -41,6 +42,12 @@ export const MAP_STYLE_URL =
 const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY;
 
 export const MAP_STYLES: Record<MapStyleId, MapStyleDefinition> = {
+  custom: {
+    id: "custom",
+    label: "Custom",
+    description: "Bản đồ sáng, dễ nhìn cho tìm đường.",
+    url: "/maps/style/google-style.json",
+  },
   standard: {
     id: "standard",
     label: "Thường",
@@ -115,6 +122,13 @@ export const CAR_AVERAGE_SPEED_KMH = 50;
 
 /** Map is centered on Vietnam by default, zoomed out to show the whole country. */
 export const VIETNAM_CENTER = { lon: 105.8342, lat: 21.0278 } as const;
+export const VIETNAM_BOUNDS = {
+  minLon: 102.14,
+  minLat: 8.18,
+  maxLon: 109.47,
+  maxLat: 23.39,
+};
+
 export const DEFAULT_MAP_ZOOM = 5.2;
 
 /**

@@ -12,6 +12,8 @@ import {
 } from "maplibre-gl";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { initializePMTiles } from "../../lib/pmtiles";
+
 import {
   // MAP_STYLE_URL,
   VIETNAM_CENTER,
@@ -320,6 +322,17 @@ export function MapView({
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+
+  // Đánh dấu style-change effect đã từng chạy lần nào chưa. Effect đổi
+  // mapStyleId (bên dưới) và effect tạo map đều phụ thuộc/chạy lúc mount —
+  // nếu không có guard này, map sẽ bị gọi setStyle() 2 LẦN CHỒNG NHAU ngay
+  // lúc khởi tạo (1 lần qua constructor `style:`, 1 lần qua setStyle() ở
+  // effect dưới), khiến request thứ 2 chen vào lúc map chưa isStyleLoaded()
+  // và MapLibre fallback về style rỗng {} — đây chính là nguyên nhân lỗi
+  // "missing required property version/sources/layers" xuất hiện ngay khi
+  // mở trang.
+  const isFirstStyleEffectRunRef = useRef(true);
+
   const clickPopupRef = useRef<Popup | null>(null);
   const endpointMarkersRef = useRef<Marker[]>([]);
   const stopMarkersRef = useRef<Marker[]>([]);
@@ -390,12 +403,14 @@ export function MapView({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    initializePMTiles();
+
     const map = new MapLibreMap({
       container: containerRef.current,
       style: MAP_STYLES[mapStyleId].url,
       center: [VIETNAM_CENTER.lon, VIETNAM_CENTER.lat],
       zoom: DEFAULT_MAP_ZOOM,
-      attributionControl: false,
+      // attributionControl: false,
     });
 
     map.addControl(
