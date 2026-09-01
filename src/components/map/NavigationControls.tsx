@@ -76,10 +76,24 @@ export function NavigationControls({
           <button
             type="button"
             {...followTapHandlers}
-            className="touch-manipulation flex items-center gap-2 rounded-full bg-ink/80 px-4 py-2 text-md font-bold text-green-500 shadow-xl transition hover:scale-105 active:scale-95 self-start backdrop-blur-3xl"
+            className="touch-manipulation flex items-center gap-2 rounded-full bg-ink/80 px-4 py-2 text-xl font-bold text-green-500 shadow-xl transition hover:scale-105 active:scale-95 self-start backdrop-blur-3xl"
             style={{ WebkitTapHighlightColor: "transparent" }}
             aria-label="Về giữa"
           >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-7 w-7"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+              />
+            </svg>
             <span>Về giữa</span>
           </button>
         )}
@@ -92,7 +106,7 @@ export function NavigationControls({
           <div className="flex w-full items-center gap-2 rounded-xl bg-red-500/90 px-3.5 py-2 shadow-lg backdrop-blur-md animate-in fade-in slide-in-from-bottom-1">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4 shrink-0 text-white"
+              className="h-8 w-8 shrink-0 text-white"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -104,7 +118,7 @@ export function NavigationControls({
                 d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
               />
             </svg>
-            <p className="text-xs font-semibold text-white">
+            <p className="text-md font-semibold text-white">
               Bạn đang đi chệch tuyến đường! Cập nhật tuyến đường mới sau vài
               giây...
             </p>
@@ -115,7 +129,7 @@ export function NavigationControls({
           <div className="flex w-full items-center gap-2 rounded-xl bg-amber-500/90 px-3.5 py-2 shadow-lg backdrop-blur-md animate-in fade-in slide-in-from-bottom-1">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4 shrink-0 animate-spin text-white"
+              className="h-8 w-8 shrink-0 animate-spin text-white"
               viewBox="0 0 24 24"
               fill="none"
             >
@@ -133,7 +147,7 @@ export function NavigationControls({
                 d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z"
               />
             </svg>
-            <p className="text-xs font-semibold text-white">
+            <p className="text-md font-semibold text-white">
               Đang cập nhật tuyến đường mới...
             </p>
           </div>
@@ -182,7 +196,7 @@ export function NavigationControls({
           <button
             type="button"
             {...stopTapHandlers}
-            className="touch-manipulation flex h-11 items-center gap-1.5 rounded-xl bg-red-500 px-4 text-xs font-semibold text-white shadow-md transition hover:bg-red-600 active:scale-95 shrink-0"
+            className="touch-manipulation flex h-11 items-center gap-1.5 rounded-xl bg-red-500 px-4 text-md font-semibold text-white shadow-md transition hover:bg-red-600 active:scale-95 shrink-0"
             style={{ WebkitTapHighlightColor: "transparent" }}
           >
             <svg
