@@ -410,7 +410,7 @@ export function MapView({
       style: MAP_STYLES[mapStyleId].url,
       center: [VIETNAM_CENTER.lon, VIETNAM_CENTER.lat],
       zoom: DEFAULT_MAP_ZOOM,
-      // attributionControl: false,
+      attributionControl: false,
     });
 
     map.addControl(

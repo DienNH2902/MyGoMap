@@ -395,7 +395,7 @@
       "source": "protomaps",
       "source-layer": "water",
       "paint": {
-        "fill-color": "#aadaff"
+        "fill-color": "#0086B3"
       }
     },
     {
@@ -410,7 +410,7 @@
         "stream"
       ],
       "paint": {
-        "line-color": "#aadaff",
+        "line-color": "#0086B3",
         "line-width": 0.5
       }
     },
@@ -426,7 +426,7 @@
         "river"
       ],
       "paint": {
-        "line-color": "#aadaff",
+        "line-color": "#0086B3",
         "line-width": [
           "interpolate",
           [
@@ -492,7 +492,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#dedad2",
+        "line-color": "#e3e7ea",
         "line-gap-width": [
           "interpolate",
           [
@@ -527,7 +527,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#dedad2",
+        "line-color": "#adbac5",
         "line-dasharray": [
           3,
           2
@@ -583,7 +583,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#e0a640",
+        "line-color": "#e8a23d",
         "line-dasharray": [
           3,
           2
@@ -642,7 +642,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#e0b060",
+        "line-color": "#3f4d59",
         "line-dasharray": [
           3,
           2
@@ -705,7 +705,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#e0a060",
+        "line-color": "#e8871f",
         "line-dasharray": [
           6,
           0.5
@@ -763,7 +763,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#f2f0ec",
+        "line-color": "#ffffff",
         "line-dasharray": [
           4.5,
           0.5
@@ -802,7 +802,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#f2f0ec",
+        "line-color": "#c7d3db",
         "line-width": [
           "interpolate",
           [
@@ -840,7 +840,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#f2f0ec",
+        "line-color": "#ffc477",
         "line-width": [
           "interpolate",
           [
@@ -877,7 +877,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#ffe6b0",
+        "line-color": "#5b6b7a",
         "line-width": [
           "interpolate",
           [
@@ -926,7 +926,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#ffcc99",
+        "line-color": "#ffa733",
         "line-width": [
           "interpolate",
           [
@@ -1023,7 +1023,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#d8d5cd",
+        "line-color": "#e3e7ea",
         "line-gap-width": [
           "interpolate",
           [
@@ -1081,7 +1081,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#d8d5cd",
+        "line-color": "#adbac5",
         "line-gap-width": [
           "interpolate",
           [
@@ -1127,7 +1127,7 @@
         "is_link"
       ],
       "paint": {
-        "line-color": "#d8d5cd",
+        "line-color": "#e8a23d",
         "line-gap-width": [
           "interpolate",
           [
@@ -1183,7 +1183,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#e0a640",
+        "line-color": "#3f4d59",
         "line-gap-width": [
           "interpolate",
           [
@@ -1245,7 +1245,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#f2994a",
+        "line-color": "#e8871f",
         "line-gap-width": [
           "interpolate",
           [
@@ -1339,7 +1339,7 @@
         "is_link"
       ],
       "paint": {
-        "line-color": "#ffe08a",
+        "line-color": "#ffc477",
         "line-width": [
           "interpolate",
           [
@@ -1429,20 +1429,7 @@
         ]
       ],
       "paint": {
-        "line-color": [
-          "interpolate",
-          [
-            "exponential",
-            1.6
-          ],
-          [
-            "zoom"
-          ],
-          11,
-          "#ffffff",
-          16,
-          "#ffffff"
-        ],
+        "line-color": "#c7d3db",
         "line-width": [
           "interpolate",
           [
@@ -1486,7 +1473,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#e0a640",
+        "line-color": "#3f4d59",
         "line-gap-width": [
           "interpolate",
           [
@@ -1541,7 +1528,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#ffd97a",
+        "line-color": "#8ea9bb",
         "line-width": [
           "interpolate",
           [
@@ -1589,7 +1576,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#f2994a",
+        "line-color": "#e8871f",
         "line-gap-width": [
           "interpolate",
           [
@@ -1648,7 +1635,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#ffb347",
+        "line-color": "#ffa733",
         "line-width": [
           "interpolate",
           [
@@ -1796,7 +1783,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#d8d5cd",
+        "line-color": "#e3e7ea",
         "line-gap-width": [
           "interpolate",
           [
@@ -1831,7 +1818,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#d8d5cd",
+        "line-color": "#e8a23d",
         "line-gap-width": [
           "interpolate",
           [
@@ -1883,7 +1870,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#d8d5cd",
+        "line-color": "#adbac5",
         "line-gap-width": [
           "interpolate",
           [
@@ -1937,7 +1924,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#e0a640",
+        "line-color": "#3f4d59",
         "line-gap-width": [
           "interpolate",
           [
@@ -2030,7 +2017,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#ffffff",
+        "line-color": "#c7d3db",
         "line-width": [
           "interpolate",
           [
@@ -2069,7 +2056,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#ffffff",
+        "line-color": "#ffc477",
         "line-width": [
           "interpolate",
           [
@@ -2107,7 +2094,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#ffd97a",
+        "line-color": "#5b6b7a",
         "line-width": [
           "interpolate",
           [
@@ -2151,7 +2138,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#f2994a",
+        "line-color": "#e8871f",
         "line-gap-width": [
           "interpolate",
           [
@@ -2208,7 +2195,7 @@
         ]
       ],
       "paint": {
-        "line-color": "#ffb347",
+        "line-color": "#ffa733",
         "line-width": [
           "interpolate",
           [
@@ -2245,7 +2232,7 @@
       "layout": {
         "symbol-placement": "point",
         "text-font": [
-          "Noto Sans Italic"
+          "Noto Sans Regular"
         ],
         "text-field": [
           "get",
@@ -2274,7 +2261,7 @@
       "layout": {
         "symbol-placement": "line",
         "text-font": [
-          "Noto Sans Italic"
+          "Noto Sans Regular"
         ],
         "text-field": [
           "case",
@@ -2396,26 +2383,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -2519,26 +2489,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -2557,26 +2510,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script2"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               }
@@ -2620,26 +2556,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -2677,26 +2596,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -2742,26 +2644,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -2780,26 +2665,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script2"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -2818,26 +2686,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script3"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               }
@@ -2884,26 +2735,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -2922,26 +2756,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script3"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -2986,26 +2803,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -3024,26 +2824,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script3"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -3081,26 +2864,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -3119,26 +2885,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -3150,8 +2899,8 @@
         "text-letter-spacing": 0.2
       },
       "paint": {
-        "text-color": "#7fb8e0",
-        "text-halo-color": "#aadaff",
+        "text-color": "#eaf3fb",
+        "text-halo-color": "#4f86c6",
         "text-halo-width": 1
       }
     },
@@ -3297,26 +3046,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -3420,26 +3152,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -3458,26 +3173,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script2"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               }
@@ -3521,26 +3219,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -3578,26 +3259,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -3643,26 +3307,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -3681,26 +3328,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script2"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -3719,26 +3349,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script3"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               }
@@ -3785,26 +3398,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -3823,26 +3419,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script3"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -3887,26 +3466,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -3925,26 +3487,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script3"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -3982,26 +3527,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -4020,26 +3548,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -4071,7 +3582,7 @@
       ],
       "layout": {
         "text-font": [
-          "Noto Sans Italic"
+          "Noto Sans Regular"
         ],
         "text-field": [
           "case",
@@ -4193,26 +3704,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -4316,26 +3810,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -4354,26 +3831,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script2"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               }
@@ -4417,26 +3877,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -4474,26 +3917,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -4539,26 +3965,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -4577,26 +3986,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script2"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -4615,26 +4007,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script3"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               }
@@ -4681,26 +4056,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -4719,26 +4077,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script3"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -4783,26 +4124,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -4821,26 +4145,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script3"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -4878,26 +4185,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -4916,26 +4206,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -4961,9 +4234,9 @@
         "text-transform": "uppercase"
       },
       "paint": {
-        "text-color": "#7fb8e0",
+        "text-color": "#eaf3fb",
         "text-halo-width": 1,
-        "text-halo-color": "#aadaff"
+        "text-halo-color": "#4f86c6"
       }
     },
     {
@@ -4979,7 +4252,7 @@
       ],
       "layout": {
         "text-font": [
-          "Noto Sans Italic"
+          "Noto Sans Regular"
         ],
         "text-field": [
           "case",
@@ -5101,26 +4374,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -5224,26 +4480,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -5262,26 +4501,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script2"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               }
@@ -5325,26 +4547,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -5382,26 +4587,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -5447,26 +4635,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -5485,26 +4656,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script2"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -5523,26 +4677,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script3"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               }
@@ -5589,26 +4726,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -5627,26 +4747,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script3"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -5691,26 +4794,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -5729,26 +4815,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script3"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -5786,26 +4855,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -5824,26 +4876,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -5870,8 +4905,8 @@
         "text-max-width": 9
       },
       "paint": {
-        "text-color": "#7fb8e0",
-        "text-halo-color": "#aadaff",
+        "text-color": "#eaf3fb",
+        "text-halo-color": "#4f86c6",
         "text-halo-width": 1
       }
     },
@@ -6016,26 +5051,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -6139,26 +5157,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -6177,26 +5178,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script2"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               }
@@ -6240,26 +5224,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -6297,26 +5264,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -6362,26 +5312,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -6400,26 +5333,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script2"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -6438,26 +5354,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script3"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               }
@@ -6504,26 +5403,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -6542,26 +5424,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script3"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -6606,26 +5471,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -6644,26 +5492,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script3"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -6701,26 +5532,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -6739,26 +5553,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -6965,26 +5762,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -7088,26 +5868,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -7126,26 +5889,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script2"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               }
@@ -7189,26 +5935,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -7246,26 +5975,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -7311,26 +6023,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -7349,26 +6044,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script2"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -7387,26 +6065,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script3"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               }
@@ -7453,26 +6114,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -7491,26 +6135,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script3"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -7555,26 +6182,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -7593,26 +6203,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script3"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -7650,26 +6243,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -7688,26 +6264,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -7739,70 +6298,9 @@
         ]
       },
       "paint": {
-        "text-color": [
-          "case",
-          [
-            "in",
-            [
-              "get",
-              "kind"
-            ],
-            [
-              "literal",
-              [
-                "beach",
-                "forest",
-                "marina",
-                "park",
-                "peak",
-                "zoo",
-                "garden",
-                "bench"
-              ]
-            ]
-          ],
-          "rgba(0,0,0,0)",
-          [
-            "in",
-            [
-              "get",
-              "kind"
-            ],
-            [
-              "literal",
-              [
-                "aerodrome",
-                "station",
-                "bus_stop",
-                "ferry_terminal"
-              ]
-            ]
-          ],
-          "rgba(0,0,0,0)",
-          [
-            "in",
-            [
-              "get",
-              "kind"
-            ],
-            [
-              "literal",
-              [
-                "stadium",
-                "university",
-                "library",
-                "school",
-                "animal",
-                "toilets",
-                "drinking_water"
-              ]
-            ]
-          ],
-          "rgba(0,0,0,0)",
-          "#f2efe9"
-        ],
-        "text-halo-color": "#f2efe9",
-        "text-halo-width": 1
+        "text-color": "#3c4043",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.4
       }
     },
     {
@@ -7940,26 +6438,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -8063,26 +6544,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -8101,26 +6565,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script2"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               }
@@ -8164,26 +6611,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -8221,26 +6651,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -8286,26 +6699,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -8324,26 +6720,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script2"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -8362,26 +6741,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script3"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               }
@@ -8428,26 +6790,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -8466,26 +6811,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script3"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -8530,26 +6858,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -8568,26 +6879,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script3"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -8625,26 +6919,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -8663,26 +6940,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -8877,26 +7137,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -9000,26 +7243,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -9038,26 +7264,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script2"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               }
@@ -9101,26 +7310,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -9158,26 +7350,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -9223,26 +7398,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -9261,26 +7419,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script2"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               },
@@ -9299,26 +7440,9 @@
               ],
               {
                 "text-font": [
-                  "case",
+                  "literal",
                   [
-                    "==",
-                    [
-                      "get",
-                      "script3"
-                    ],
-                    "Devanagari"
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Devanagari Regular v1"
-                    ]
-                  ],
-                  [
-                    "literal",
-                    [
-                      "Noto Sans Regular"
-                    ]
+                    "Noto Sans Regular"
                   ]
                 ]
               }
@@ -9365,26 +7489,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -9403,26 +7510,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script3"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -9467,26 +7557,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -9505,26 +7578,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script3"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -9562,26 +7618,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -9600,26 +7639,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -9628,27 +7650,7 @@
           ]
         ],
         "text-font": [
-          "case",
-          [
-            "<=",
-            [
-              "get",
-              "min_zoom"
-            ],
-            5
-          ],
-          [
-            "literal",
-            [
-              "Noto Sans Medium"
-            ]
-          ],
-          [
-            "literal",
-            [
-              "Noto Sans Regular"
-            ]
-          ]
+          "Noto Sans Regular"
         ],
         "text-padding": [
           "interpolate",
@@ -9844,9 +7846,9 @@
         "text-radial-offset": 0.4
       },
       "paint": {
-        "text-color": "#3a3a3a",
+        "text-color": "black",
         "text-halo-color": "#ffffffcc",
-        "text-halo-width": 1
+        "text-halo-width": 2
       }
     },
     {
@@ -9994,26 +7996,9 @@
                   ],
                   {
                     "text-font": [
-                      "case",
+                      "literal",
                       [
-                        "==",
-                        [
-                          "get",
-                          "script"
-                        ],
-                        "Devanagari"
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Devanagari Regular v1"
-                        ]
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Regular"
-                        ]
+                        "Noto Sans Regular"
                       ]
                     ]
                   }
@@ -10117,26 +8102,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -10155,26 +8123,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -10218,26 +8169,9 @@
                   ],
                   {
                     "text-font": [
-                      "case",
+                      "literal",
                       [
-                        "==",
-                        [
-                          "get",
-                          "script2"
-                        ],
-                        "Devanagari"
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Devanagari Regular v1"
-                        ]
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Regular"
-                        ]
+                        "Noto Sans Regular"
                       ]
                     ]
                   }
@@ -10275,26 +8209,9 @@
                   ],
                   {
                     "text-font": [
-                      "case",
+                      "literal",
                       [
-                        "==",
-                        [
-                          "get",
-                          "script"
-                        ],
-                        "Devanagari"
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Devanagari Regular v1"
-                        ]
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Regular"
-                        ]
+                        "Noto Sans Regular"
                       ]
                     ]
                   }
@@ -10340,26 +8257,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -10378,26 +8278,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script2"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 },
@@ -10416,26 +8299,9 @@
                 ],
                 {
                   "text-font": [
-                    "case",
+                    "literal",
                     [
-                      "==",
-                      [
-                        "get",
-                        "script3"
-                      ],
-                      "Devanagari"
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Devanagari Regular v1"
-                      ]
-                    ],
-                    [
-                      "literal",
-                      [
-                        "Noto Sans Regular"
-                      ]
+                      "Noto Sans Regular"
                     ]
                   ]
                 }
@@ -10482,26 +8348,9 @@
                   ],
                   {
                     "text-font": [
-                      "case",
+                      "literal",
                       [
-                        "==",
-                        [
-                          "get",
-                          "script2"
-                        ],
-                        "Devanagari"
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Devanagari Regular v1"
-                        ]
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Regular"
-                        ]
+                        "Noto Sans Regular"
                       ]
                     ]
                   },
@@ -10520,26 +8369,9 @@
                   ],
                   {
                     "text-font": [
-                      "case",
+                      "literal",
                       [
-                        "==",
-                        [
-                          "get",
-                          "script3"
-                        ],
-                        "Devanagari"
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Devanagari Regular v1"
-                        ]
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Regular"
-                        ]
+                        "Noto Sans Regular"
                       ]
                     ]
                   }
@@ -10584,26 +8416,9 @@
                   ],
                   {
                     "text-font": [
-                      "case",
+                      "literal",
                       [
-                        "==",
-                        [
-                          "get",
-                          "script"
-                        ],
-                        "Devanagari"
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Devanagari Regular v1"
-                        ]
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Regular"
-                        ]
+                        "Noto Sans Regular"
                       ]
                     ]
                   },
@@ -10622,26 +8437,9 @@
                   ],
                   {
                     "text-font": [
-                      "case",
+                      "literal",
                       [
-                        "==",
-                        [
-                          "get",
-                          "script3"
-                        ],
-                        "Devanagari"
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Devanagari Regular v1"
-                        ]
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Regular"
-                        ]
+                        "Noto Sans Regular"
                       ]
                     ]
                   }
@@ -10679,26 +8477,9 @@
                   ],
                   {
                     "text-font": [
-                      "case",
+                      "literal",
                       [
-                        "==",
-                        [
-                          "get",
-                          "script"
-                        ],
-                        "Devanagari"
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Devanagari Regular v1"
-                        ]
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Regular"
-                        ]
+                        "Noto Sans Regular"
                       ]
                     ]
                   },
@@ -10717,26 +8498,9 @@
                   ],
                   {
                     "text-font": [
-                      "case",
+                      "literal",
                       [
-                        "==",
-                        [
-                          "get",
-                          "script2"
-                        ],
-                        "Devanagari"
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Devanagari Regular v1"
-                        ]
-                      ],
-                      [
-                        "literal",
-                        [
-                          "Noto Sans Regular"
-                        ]
+                        "Noto Sans Regular"
                       ]
                     ]
                   }
@@ -10802,7 +8566,7 @@
           {}
         ],
         "text-font": [
-          "Noto Sans Medium"
+          "Noto Sans Regular"
         ],
         "text-size": [
           "interpolate",
@@ -10904,7 +8668,7 @@
         "text-transform": "uppercase"
       },
       "paint": {
-        "text-color": "#3a3a3a",
+        "text-color": "gray",
         "text-halo-color": "#f2efe9",
         "text-halo-width": 1
       }

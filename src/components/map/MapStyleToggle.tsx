@@ -19,10 +19,10 @@ interface MapStyleToggleProps {
 
 const STYLE_IDS: MapStyleId[] = [
   "custom",
-  "standard",
+  // "standard",
   "street",
-  "topo",
-  "outdoor",
+  // "topo",
+  // "outdoor",
   "satellite",
   "openStreet",
 ];

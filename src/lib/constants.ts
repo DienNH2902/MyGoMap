@@ -44,7 +44,7 @@ const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY;
 export const MAP_STYLES: Record<MapStyleId, MapStyleDefinition> = {
   custom: {
     id: "custom",
-    label: "Custom",
+    label: "MyGoMap",
     description: "Bản đồ sáng, dễ nhìn cho tìm đường.",
     url: "/maps/style/google-style.json",
   },
