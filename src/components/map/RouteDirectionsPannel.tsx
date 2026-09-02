@@ -119,11 +119,16 @@ export function RouteDirectionsPanel({
               </div> */}
               <div className="min-w-0 flex-1">
                 {remainingToTurnMeters != null && (
-                  <p className="text-[16px] font-semibold tracking-wide text-accent-gold">
-                    Còn {formatStepDistance(remainingToTurnMeters)}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[16px] font-semibold tracking-wide text-orange-500">
+                      Đi tiếp
+                    </p>
+                    <p className="text-[20px] font-semibold tracking-wide text-accent-gold">
+                      {formatStepDistance(remainingToTurnMeters)}
+                    </p>
+                  </div>
                 )}
-                <span className="text-white">---------</span>
+                <span className="text-white">------------</span>
                 <p className="whitespace-normal break-words text-sm font-bold text-cream">
                   {currentStep.instruction}
                 </p>
