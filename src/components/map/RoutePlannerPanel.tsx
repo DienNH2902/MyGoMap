@@ -415,8 +415,8 @@ export function RoutePlannerPanel({
 
               {/* Loading modal - chỉ hiện trên Mobile */}
               {planner.isLoading && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm sm:hidden">
-                  <div className="flex w-[180px] flex-col items-center justify-center gap-3 rounded-2xl bg-ink/95 px-6 py-5 shadow-2xl">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm sm:hidden">
+                  <div className="flex w-[180px] flex-col items-center justify-center gap-3 rounded-2xl bg-ink/70 px-6 py-5 shadow-2xl">
                     <LoadingSpinner label="Đang tính lộ trình…" />
                   </div>
                 </div>
