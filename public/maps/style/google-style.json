@@ -3563,7 +3563,7 @@
       "paint": {
         "text-color": "#6b6b6b",
         "text-halo-color": "#ffffffcc",
-        "text-halo-width": 1
+        "text-halo-width": 2
       }
     },
     {
@@ -5568,7 +5568,7 @@
       "paint": {
         "text-color": "#4a4a4a",
         "text-halo-color": "#ffffffcc",
-        "text-halo-width": 1
+        "text-halo-width": 2
       }
     },
     {
