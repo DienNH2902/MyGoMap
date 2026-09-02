@@ -221,6 +221,14 @@ export function MapExperience() {
   // định vị lỗi, đặc biệt hay gặp trên mobile. Tự ẩn sau vài giây.
   const [locationError, setLocationError] = useState<string | null>(null);
 
+  const [isPoiWarningDismissed, setIsPoiWarningDismissed] = useState(false);
+
+  useEffect(() => {
+    if (planner.poiWarning) {
+      setIsPoiWarningDismissed(false);
+    }
+  }, [planner.poiWarning]);
+
   useEffect(() => {
     if (!locationError) return;
     const timer = setTimeout(() => setLocationError(null), 8000);
@@ -663,7 +671,8 @@ export function MapExperience() {
             </svg>
           </button>
 
-          <div className="relative w-1/4 min-w-[90px] bg-red-50 p-10 flex items-center justify-center">
+          {/* Ảnh chỉ hiển thị từ màn hình sm trở lên */}
+          <div className="relative hidden sm:flex sm:w-1/4 min-w-[90px] bg-red-50 p-10 items-center justify-center">
             <Image
               src="/assets/Mèo thủy thủ.png"
               alt="Lỗi tính lộ trình"
@@ -674,7 +683,8 @@ export function MapExperience() {
             />
           </div>
 
-          <div className="flex w-3/4 flex-col justify-center p-4 pr-8 bg-red-50">
+          {/* Phần nội dung chiếm full width trên mobile, 3/4 trên desktop */}
+          <div className="flex w-full sm:w-3/4 flex-col justify-center p-4 pr-8 bg-red-50">
             <span className="text-xs font-bold uppercase tracking-wider text-red-600 mb-1">
               Không thể tính lộ trình
             </span>
@@ -687,14 +697,36 @@ export function MapExperience() {
 
       {/* Soft, non-blocking warning: the route succeeded but POI suggestions
           couldn't be loaded this time. Never replaces the route/stops UI. */}
-      {planner.poiWarning && (
-        <div className="pointer-events-auto absolute left-1/2 top-4 z-30 max-w-md -translate-x-1/2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 shadow-lg">
-          {planner.poiWarning}
+      {planner.poiWarning && !isPoiWarningDismissed && (
+        <div className="pointer-events-auto absolute left-1/2 top-6 z-40 flex w-[90%] max-w-md -translate-x-1/2 items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 shadow-lg">
+          <span className="flex-1 leading-relaxed">{planner.poiWarning}</span>
+
+          <button
+            type="button"
+            onClick={() => setIsPoiWarningDismissed(true)}
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-amber-500 transition hover:bg-amber-100 hover:text-amber-700 active:scale-95"
+            aria-label="Đóng thông báo"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
         </div>
       )}
 
       {locationError && (
-        <div className="pointer-events-auto absolute left-1/2 top-4 z-30 max-w-md -translate-x-1/2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 shadow-lg">
+        <div className="pointer-events-auto absolute left-1/2 top-6 z-40 max-w-md -translate-x-1/2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 shadow-lg">
           <div className="flex items-start justify-between gap-2">
             <span>📍 {locationError}</span>
             <button
