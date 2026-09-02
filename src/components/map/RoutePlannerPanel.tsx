@@ -413,12 +413,23 @@ export function RoutePlannerPanel({
                 </div>
               )}
 
+              {/* Loading modal - chỉ hiện trên Mobile */}
+              {planner.isLoading && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm sm:hidden">
+                  <div className="flex w-[180px] flex-col items-center justify-center gap-3 rounded-2xl bg-ink/95 px-6 py-5 shadow-2xl">
+                    <LoadingSpinner label="Đang tính lộ trình…" />
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center sm:justify-end lg:pt-0">
+                {/* Loading bên ngoài - chỉ hiện Desktop */}
                 {planner.isLoading && (
-                  <div className="flex w-full items-center justify-center scale-75 sm:w-auto sm:scale-100 origin-center">
+                  <div className="hidden w-auto items-center justify-center sm:flex">
                     <LoadingSpinner label="Đang tính lộ trình…" />
                   </div>
                 )}
+
                 <div className="flex w-full items-center gap-2 sm:w-auto">
                   <Button
                     variant="ghost"
@@ -428,6 +439,7 @@ export function RoutePlannerPanel({
                   >
                     Đặt lại
                   </Button>
+
                   <Button
                     variant="primary"
                     type="button"
