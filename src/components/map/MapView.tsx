@@ -655,7 +655,7 @@ export function MapView({
           layout: { "line-cap": "round", "line-join": "round" },
           paint: {
             "line-color": theme.routeColor,
-            "line-width": 3,
+            "line-width": 4,
             "line-opacity": 0.9,
           },
         });
@@ -783,7 +783,7 @@ export function MapView({
           }
         } else if (map.getLayer(ROUTE_LAYER_ID)) {
           map.setPaintProperty(ROUTE_LAYER_ID, "line-opacity", 0.9);
-          map.setPaintProperty(ROUTE_LAYER_ID, "line-width", 3);
+          map.setPaintProperty(ROUTE_LAYER_ID, "line-width", 5);
           map.setPaintProperty(ROUTE_LAYER_ID, "line-color", theme.routeColor);
         }
 
