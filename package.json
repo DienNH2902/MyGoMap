@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prebuild": "node scripts/merge-pmtiles.js",
-    "predev": "node scripts/merge-pmtiles.js"
+    "prebuild": "node script/merge-pmtiles.js",
+    "predev": "node script/merge-pmtiles.js"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
