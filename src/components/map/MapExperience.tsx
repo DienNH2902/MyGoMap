@@ -107,11 +107,19 @@ export function MapExperience() {
 
   // State quản lý Modal "Bạn đã đến nơi"
   const [isArrivalModalOpen, setIsArrivalModalOpen] = useState(false);
+  const navigationStops = useMemo(
+    () =>
+      planner.customStops
+        .filter(
+          (stop) =>
+            stop.label &&
+            Number.isFinite(stop.lat) &&
+            Number.isFinite(stop.lon),
+        )
+        .map((stop) => ({ id: stop.id, lon: stop.lon, lat: stop.lat })),
+    [planner.customStops],
+  );
 
-  // Navigation tracking hook — truyền thêm điểm đến cố định (planner.end) và
-  // cùng option né cao tốc/kẹt xe đã dùng để lập kế hoạch, để mỗi lần tính
-  // lại lộ trình theo vị trí hiện tại vẫn tôn trọng đúng lựa chọn của người
-  // dùng (né cao tốc cho xe máy, có/không tính traffic...).
   const navigation = useNavigationTracking(
     mapRef.current,
     planner.plan?.route ?? null,
@@ -121,6 +129,7 @@ export function MapExperience() {
       ? { lon: planner.end.lon, lat: planner.end.lat }
       : null,
     { avoidHighways: planner.avoidHighways, useTraffic: planner.avoidTraffic },
+    navigationStops,
   );
 
   // Hiện Modal khi hook xác nhận người dùng đã đến điểm đích.

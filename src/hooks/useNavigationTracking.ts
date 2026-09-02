@@ -119,6 +119,20 @@ interface NotificationState {
   message: string;
 }
 
+/** Một điểm dừng chân đã lập kế hoạch (customStops từ useRoutePlanner) — thứ
+ * tự trong mảng CHÍNH LÀ thứ tự phải đi qua (1, 2, 3...). */
+export interface NavigationStopPoint {
+  id: string;
+  lon: number;
+  lat: number;
+}
+
+// Trong 50m tính là "đã đến" một mốc dừng chân — ngưỡng RỘNG HƠN
+// ARRIVAL_THRESHOLD_METERS (30m, dành cho đích cuối, cần chính xác hơn) vì
+// mốc dừng chân là điểm ghé qua tạm, không cần đi sát tuyệt đối.
+const STOP_ARRIVAL_THRESHOLD_METERS = 50;
+
+
 /**
  * TRƯỚC ĐÂY: reroute (gọi API TomTom) còn bị kích hoạt theo THỜI GIAN
  * (mỗi 25s dù đứng yên) và theo KHOẢNG CÁCH ĐÃ ĐI (mỗi 40m nếu đã qua ≥8s)
@@ -222,6 +236,13 @@ interface PersistedNavigationSession {
    * sẵn từ trước reload.
    */
   liveRoute?: RouteGeometry | null;
+  /**
+   * ID các mốc dừng chân ĐÃ ĐI QUA (trong ngưỡng STOP_ARRIVAL_THRESHOLD_
+   * METERS) trong phiên dẫn đường hiện tại. Lưu lại để nếu trang bị tải lại
+   * giữa chừng (PWA bị kill...), lần resume tiếp theo KHÔNG bắt người dùng
+   * phải đi qua lại các mốc đã ghé — chỉ còn phải qua các mốc CÒN LẠI.
+   */
+  visitedStopIds?: string[];
 }
 
 function loadPersistedNavigationSession(): PersistedNavigationSession | null {
@@ -264,6 +285,11 @@ function loadPersistedNavigationSession(): PersistedNavigationSession | null {
           ? parsed.lastSpeedKmh
           : undefined,
       liveRoute,
+      visitedStopIds: Array.isArray(parsed.visitedStopIds)
+        ? parsed.visitedStopIds.filter(
+            (id): id is string => typeof id === "string",
+          )
+        : undefined,
     };
   } catch (err) {
     console.warn("Không đọc được phiên dẫn đường đã lưu:", err);
@@ -284,6 +310,9 @@ function savePersistedNavigationSession(
   // Chỉ truyền tường minh khi thực sự muốn cập nhật — ví dụ ngay sau một
   // lần reroute thành công (xem performReroute bên dưới).
   liveRoute?: RouteGeometry | null,
+  // undefined = GIỮ NGUYÊN visitedStopIds đã lưu trước đó. Chỉ truyền tường
+  // minh khi thực sự có thay đổi (một mốc vừa được đánh dấu đã đến).
+  visitedStopIds?: string[],
 ): void {
   if (typeof window === "undefined") return;
 
@@ -319,6 +348,10 @@ function savePersistedNavigationSession(
       lastSpeedKmh: camera?.speedKmh ?? existing.lastSpeedKmh,
       liveRoute:
         liveRoute !== undefined ? liveRoute : (existing.liveRoute ?? null),
+      visitedStopIds:
+        visitedStopIds !== undefined
+          ? visitedStopIds
+          : (existing.visitedStopIds ?? []),
     };
 
     window.localStorage.setItem(
@@ -918,6 +951,7 @@ export function useNavigationTracking(
   route: RouteGeometry | null,
   destination: NavigationDestination | null = null,
   routeOptions: RouteOptions = {},
+  stops: NavigationStopPoint[] = [],
 ) {
   const [state, setState] = useState<NavigationState>({
     isNavigating: false,
@@ -1085,6 +1119,33 @@ export function useNavigationTracking(
   const isNavigatingRef = useRef(false);
   const destinationRef = useRef<NavigationDestination | null>(destination);
   destinationRef.current = destination;
+
+  // Danh sách mốc dừng chân theo ĐÚNG THỨ TỰ phải đi qua (index trong mảng
+  // = thứ tự 1, 2, 3...) — đọc lại mỗi render qua ref để performReroute (và
+  // các callback khác dùng useCallback([])) luôn thấy giá trị mới nhất mà
+  // không cần liệt kê `stops` vào dependency array (tránh phải re-tạo toàn
+  // bộ closure mỗi khi mảng stops đổi tham chiếu).
+  const stopsRef = useRef<NavigationStopPoint[]>(stops);
+  stopsRef.current = stops;
+
+  // ID các mốc ĐÃ ĐI QUA trong phiên dẫn đường hiện tại. Khởi tạo từ phiên
+  // đã lưu CHỈ KHI đang resume sau reload (wasNavigatingBeforeReload) — một
+  // lần bấm "Bắt đầu" mới (kể cả bấm lại sau khi đã Dừng) luôn được coi là
+  // chuyến đi MỚI, phải đi qua lại từ mốc đầu tiên (xem reset trong
+  // startNavigation() bên dưới, cùng logic với arrivalNotifiedRef).
+  const visitedStopIdsRef = useRef<Set<string>>(
+    new Set(
+      wasNavigatingBeforeReload
+        ? (persistedNavigationSession?.visitedStopIds ?? [])
+        : [],
+    ),
+  );
+  // Đánh dấu đã từng gọi startNavigation() lần nào trong phiên component
+  // này chưa — dùng để phân biệt "lần start ĐẦU TIÊN sau khi resume" (giữ
+  // nguyên visitedStopIdsRef đã khôi phục) với "mọi lần start khác" (luôn
+  // reset về rỗng, coi là chuyến đi mới).
+  const hasStartedOnceRef = useRef(false);
+
   const routeOptionsRef = useRef<RouteOptions>(routeOptions);
   routeOptionsRef.current = routeOptions;
   const isFetchingRouteRef = useRef(false);
@@ -1904,10 +1965,20 @@ export function useNavigationTracking(
       setState((prev) => ({ ...prev, isRerouting: true }));
 
       try {
+        // CHỈ lấy các mốc dừng chân CHƯA đi qua, giữ NGUYÊN THỨ TỰ ban đầu
+        // (1, 2, 3...) — đây chính là phần trước đây bị thiếu: performReroute
+        // gọi fetchDrivingRoute() mà không truyền viaPoints nào cả, khiến
+        // tuyến tính lại luôn là đường NGẮN NHẤT thẳng tới đích, bỏ qua hoàn
+        // toàn các mốc đã lập kế hoạch.
+        const remainingStops = stopsRef.current.filter(
+          (stop) => !visitedStopIdsRef.current.has(stop.id),
+        );
+
         const newRoute = await fetchDrivingRoute(
           { lon: userLon, lat: userLat },
           { lon: dest.lon, lat: dest.lat },
           routeOptionsRef.current,
+          remainingStops.map((stop) => ({ lon: stop.lon, lat: stop.lat })),
         );
 
         // Bỏ qua kết quả nếu đã có yêu cầu tính lại mới hơn xen vào, hoặc
@@ -1926,9 +1997,7 @@ export function useNavigationTracking(
         // ngay lập tức nếu điểm định vị kế tiếp vẫn tạm thời cách tuyến mới
         // một chút trong lúc GPS ổn định lại.
         offRouteSinceRef.current = null;
-        // Lưu NGAY lộ trình vừa tính lại — để nếu trang bị tải lại giữa
-        // chừng ngay sau đó, lần resume tiếp theo dùng lại đúng lộ trình
-        // này (xem resumedLiveRouteRef) thay vì tốn thêm 1 request TomTom.
+
         savePersistedNavigationSession(
           true,
           isFollowingRef.current,
@@ -2009,6 +2078,52 @@ export function useNavigationTracking(
   );
 
   /**
+   * Kiểm tra xem người dùng đã tới ĐỦ GẦN mốc dừng chân TIẾP THEO (mốc CHƯA
+   * đi qua, gần nhất theo thứ tự) hay chưa. Chỉ kiểm tra mốc kế tiếp — theo
+   * đúng nghĩa "đi tuần tự qua từng mốc" (đến mốc 1 mới coi là qua mốc 1,
+   * dù có tình cờ đi ngang mốc 2 trước đó cũng không tính). Khi tới đủ gần
+   * (STOP_ARRIVAL_THRESHOLD_METERS), đánh dấu đã qua VÀ LƯU NGAY vào
+   * localStorage — để performReroute() ở các lần gọi sau (kể cả sau khi
+   * trang reload) không còn bắt đi qua lại mốc này nữa.
+   */
+  const checkStopArrival = useCallback((userLat: number, userLon: number) => {
+    const orderedStops = stopsRef.current;
+    if (orderedStops.length === 0) return;
+
+    const nextStop = orderedStops.find(
+      (stop) => !visitedStopIdsRef.current.has(stop.id),
+    );
+    if (!nextStop) return; // Đã qua hết mọi mốc.
+
+    try {
+      const distanceMeters = turf.distance(
+        turf.point([userLon, userLat]),
+        turf.point([nextStop.lon, nextStop.lat]),
+        { units: "meters" },
+      );
+
+      if (
+        Number.isFinite(distanceMeters) &&
+        distanceMeters <= STOP_ARRIVAL_THRESHOLD_METERS
+      ) {
+        visitedStopIdsRef.current.add(nextStop.id);
+
+        if (isNavigatingRef.current) {
+          savePersistedNavigationSession(
+            true,
+            isFollowingRef.current,
+            undefined,
+            undefined,
+            Array.from(visitedStopIdsRef.current),
+          );
+        }
+      }
+    } catch (err) {
+      console.warn("Không thể kiểm tra trạng thái đã tới mốc dừng chân:", err);
+    }
+  }, []);
+
+  /**
    * Kiểm tra khoảng cách trực tiếp từ vị trí GPS hiện tại tới điểm đến.
    *
    * Không dùng distanceToDestination của route vì route có thể đang được
@@ -2073,6 +2188,19 @@ export function useNavigationTracking(
       // ============================================================
       showNotification("Chưa có lộ trình để điều hướng");
       return;
+    }
+
+    // Chỉ giữ nguyên các mốc ĐÃ QUA nếu đây là lần start ĐẦU TIÊN sau khi
+    // resume từ một phiên dẫn đường bị gián đoạn (PWA bị kill giữa chừng).
+    // Mọi lần start khác — kể cả bấm lại "Bắt đầu" sau khi đã bấm "Dừng" —
+    // đều coi là MỘT CHUYẾN ĐI MỚI, phải đi qua lại từ mốc đầu tiên (cùng
+    // logic với việc reset arrivalNotifiedRef/hasArrived bên dưới).
+    const isFirstStartAfterResume =
+      !hasStartedOnceRef.current && wasNavigatingBeforeReload;
+    hasStartedOnceRef.current = true;
+
+    if (!isFirstStartAfterResume) {
+      visitedStopIdsRef.current = new Set();
     }
 
     // Yêu cầu cấp quyền cảm biến la bàn trên iOS (Safari)
@@ -2146,6 +2274,7 @@ export function useNavigationTracking(
       (position) => {
         const { latitude, longitude, heading, accuracy, speed } =
           position.coords;
+
         const remaining = calculateRemainingDistance(latitude, longitude);
 
         // Bám mũi tên vào tuyến (nếu độ lệch còn hợp lý) — xem
@@ -2221,6 +2350,9 @@ export function useNavigationTracking(
           }, 900);
         }
 
+        checkArrival(latitude, longitude);
+        checkStopArrival(latitude, longitude);
+
         setState((prev) => ({
           ...prev,
           userLocation: {
@@ -2292,6 +2424,7 @@ export function useNavigationTracking(
         );
 
         checkArrival(latitude, longitude);
+        checkStopArrival(latitude, longitude);
 
         setState((prev) => {
           // Throttle camera updates: chỉ cập nhật camera mỗi 800ms để tránh giật
@@ -2409,6 +2542,7 @@ export function useNavigationTracking(
     performReroute,
     maybeReroute,
     checkArrival,
+    checkStopArrival,
     showNotification,
     getCameraForCurrentRoute,
     wasFollowingBeforeReload,
@@ -2441,6 +2575,9 @@ export function useNavigationTracking(
     smoothedSpeedKmhRef.current = null;
     isGpsHeadingActiveRef.current = false;
     lastCameraUpdateRef.current = 0;
+
+    isFollowingRef.current = false;
+    visitedStopIdsRef.current = new Set();
 
     // Dừng vòng lặp nội suy vị trí và reset các ref liên quan
     if (animationFrameRef.current !== null) {
