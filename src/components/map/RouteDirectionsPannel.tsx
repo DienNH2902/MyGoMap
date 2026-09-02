@@ -81,9 +81,7 @@ export function RouteDirectionsPanel({
       : null;
 
   const upcomingSteps =
-    isNavigating && currentStepIndex >= 0
-      ? steps.slice(currentStepIndex, currentStepIndex + 6)
-      : [];
+    isNavigating && currentStepIndex >= 0 ? steps.slice(currentStepIndex) : [];
 
   if (steps.length === 0) return null;
 
