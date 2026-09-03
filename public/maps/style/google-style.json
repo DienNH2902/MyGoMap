@@ -2219,6 +2219,444 @@
       }
     },
     {
+      "id": "roads_quoclo_casing",
+      "type": "line",
+      "source": "protomaps",
+      "source-layer": "roads",
+      "minzoom": 6,
+      "filter": [
+        "all",
+        [
+          "!",
+          [
+            "has",
+            "is_tunnel"
+          ]
+        ],
+        [
+          "!",
+          [
+            "has",
+            "is_bridge"
+          ]
+        ],
+        [
+          "has",
+          "ref"
+        ],
+        [
+          "any",
+          [
+            "==",
+            [
+              "slice",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ],
+              0,
+              2
+            ],
+            "QL"
+          ],
+          [
+            "!=",
+            [
+              "index-of",
+              "QL",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ]
+            ],
+            -1
+          ]
+        ]
+      ],
+      "paint": {
+        "line-color": "#4C1D95",
+        "line-gap-width": [
+          "interpolate",
+          [
+            "exponential",
+            1.6
+          ],
+          [
+            "zoom"
+          ],
+          5,
+          0,
+          8,
+          0.9,
+          12,
+          1.4,
+          15,
+          3.6,
+          18,
+          13.5
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "exponential",
+            1.6
+          ],
+          [
+            "zoom"
+          ],
+          9,
+          0,
+          9.5,
+          2,
+          12,
+          4,
+          15,
+          6,
+          18,
+          10
+        ]
+      }
+    },
+    {
+      "id": "roads_quoclo",
+      "type": "line",
+      "source": "protomaps",
+      "source-layer": "roads",
+      "minzoom": 6,
+      "filter": [
+        "all",
+        [
+          "!",
+          [
+            "has",
+            "is_tunnel"
+          ]
+        ],
+        [
+          "!",
+          [
+            "has",
+            "is_bridge"
+          ]
+        ],
+        [
+          "has",
+          "ref"
+        ],
+        [
+          "any",
+          [
+            "==",
+            [
+              "slice",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ],
+              0,
+              2
+            ],
+            "QL"
+          ],
+          [
+            "!=",
+            [
+              "index-of",
+              "QL",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ]
+            ],
+            -1
+          ]
+        ]
+      ],
+      "paint": {
+        "line-color": "#8B5CF6",
+        "line-width": [
+          "interpolate",
+          [
+            "exponential",
+            1.6
+          ],
+          [
+            "zoom"
+          ],
+          5,
+          0,
+          8,
+          0.9,
+          12,
+          1.4,
+          15,
+          3.6,
+          18,
+          13.5
+        ]
+      }
+    },
+    {
+      "id": "roads_tinhlo_casing",
+      "type": "line",
+      "source": "protomaps",
+      "source-layer": "roads",
+      "minzoom": 8,
+      "filter": [
+        "all",
+        [
+          "!",
+          [
+            "has",
+            "is_tunnel"
+          ]
+        ],
+        [
+          "!",
+          [
+            "has",
+            "is_bridge"
+          ]
+        ],
+        [
+          "has",
+          "ref"
+        ],
+        [
+          "any",
+          [
+            "==",
+            [
+              "slice",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ],
+              0,
+              2
+            ],
+            "DT"
+          ],
+          [
+            "!=",
+            [
+              "index-of",
+              "DT",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ]
+            ],
+            -1
+          ],
+          [
+            "==",
+            [
+              "slice",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ],
+              0,
+              2
+            ],
+            "ĐT"
+          ],
+          [
+            "!=",
+            [
+              "index-of",
+              "ĐT",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ]
+            ],
+            -1
+          ]
+        ]
+      ],
+      "paint": {
+        "line-color": "#991B1B",
+        "line-gap-width": [
+          "interpolate",
+          [
+            "exponential",
+            1.6
+          ],
+          [
+            "zoom"
+          ],
+          8,
+          0,
+          12,
+          1.3,
+          15,
+          2.6,
+          18,
+          11
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "exponential",
+            1.6
+          ],
+          [
+            "zoom"
+          ],
+          9,
+          0,
+          9.5,
+          1,
+          12,
+          2,
+          15,
+          4,
+          18,
+          8
+        ]
+      }
+    },
+    {
+      "id": "roads_tinhlo",
+      "type": "line",
+      "source": "protomaps",
+      "source-layer": "roads",
+      "minzoom": 8,
+      "filter": [
+        "all",
+        [
+          "!",
+          [
+            "has",
+            "is_tunnel"
+          ]
+        ],
+        [
+          "!",
+          [
+            "has",
+            "is_bridge"
+          ]
+        ],
+        [
+          "has",
+          "ref"
+        ],
+        [
+          "any",
+          [
+            "==",
+            [
+              "slice",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ],
+              0,
+              2
+            ],
+            "DT"
+          ],
+          [
+            "!=",
+            [
+              "index-of",
+              "DT",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ]
+            ],
+            -1
+          ],
+          [
+            "==",
+            [
+              "slice",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ],
+              0,
+              2
+            ],
+            "ĐT"
+          ],
+          [
+            "!=",
+            [
+              "index-of",
+              "ĐT",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ]
+            ],
+            -1
+          ]
+        ]
+      ],
+      "paint": {
+        "line-color": "#EF4444",
+        "line-width": [
+          "interpolate",
+          [
+            "exponential",
+            1.6
+          ],
+          [
+            "zoom"
+          ],
+          8,
+          0,
+          12,
+          1.3,
+          15,
+          2.6,
+          18,
+          11
+        ]
+      }
+    },
+    {
       "id": "address_label",
       "type": "symbol",
       "source": "protomaps",
@@ -5572,6 +6010,230 @@
       }
     },
     {
+      "id": "roads_labels_quoclo",
+      "type": "symbol",
+      "source": "protomaps",
+      "source-layer": "roads",
+      "minzoom": 9,
+      "filter": [
+        "all",
+        [
+          "has",
+          "ref"
+        ],
+        [
+          "any",
+          [
+            "==",
+            [
+              "slice",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ],
+              0,
+              2
+            ],
+            "QL"
+          ],
+          [
+            "!=",
+            [
+              "index-of",
+              "QL",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ]
+            ],
+            -1
+          ]
+        ]
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "symbol-spacing": 150,
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-field": [
+          "get",
+          "ref"
+        ],
+        "text-size": 18,
+        "text-letter-spacing": 0.05
+      },
+      "paint": {
+        "text-color": "#9C27FF",
+        "text-halo-color": "white",
+        "text-halo-width": 2.2
+      }
+    },
+    {
+      "id": "roads_labels_tinhlo",
+      "type": "symbol",
+      "source": "protomaps",
+      "source-layer": "roads",
+      "minzoom": 10,
+      "filter": [
+        "all",
+        [
+          "has",
+          "ref"
+        ],
+        [
+          "any",
+          [
+            "==",
+            [
+              "slice",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ],
+              0,
+              2
+            ],
+            "DT"
+          ],
+          [
+            "!=",
+            [
+              "index-of",
+              "DT",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ]
+            ],
+            -1
+          ],
+          [
+            "==",
+            [
+              "slice",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ],
+              0,
+              2
+            ],
+            "ĐT"
+          ],
+          [
+            "!=",
+            [
+              "index-of",
+              "ĐT",
+              [
+                "to-string",
+                [
+                  "get",
+                  "ref"
+                ]
+              ]
+            ],
+            -1
+          ]
+        ]
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "symbol-spacing": 150,
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-field": [
+          "get",
+          "ref"
+        ],
+        "text-size": 14,
+        "text-letter-spacing": 0.05
+      },
+      "paint": {
+        "text-color": "#FF1744",
+        "text-halo-color": "white",
+        "text-halo-width": 2.2
+      }
+    },
+    {
+      "id": "roads_labels_highway_ref",
+      "type": "symbol",
+      "source": "protomaps",
+      "source-layer": "roads",
+      "minzoom": 8,
+      "filter": [
+        "all",
+        [
+          "!",
+          [
+            "has",
+            "is_tunnel"
+          ]
+        ],
+        [
+          "!",
+          [
+            "has",
+            "is_bridge"
+          ]
+        ],
+        [
+          "!",
+          [
+            "has",
+            "is_link"
+          ]
+        ],
+        [
+          "==",
+          [
+            "get",
+            "kind"
+          ],
+          "highway"
+        ],
+        [
+          "has",
+          "ref"
+        ]
+      ],
+      "layout": {
+        "symbol-placement": "line",
+        "symbol-spacing": 350,
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-field": [
+          "get",
+          "ref"
+        ],
+        "text-size": 14,
+        "text-letter-spacing": 0.05
+      },
+      "paint": {
+        "text-color": "#ffffff",
+        "text-halo-color": "#e8871f",
+        "text-halo-width": 2.2
+      }
+    },
+    {
       "id": "pois",
       "type": "symbol",
       "source": "protomaps",
@@ -6298,9 +6960,70 @@
         ]
       },
       "paint": {
-        "text-color": "#3c4043",
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 1.4
+        "text-color": [
+          "case",
+          [
+            "in",
+            [
+              "get",
+              "kind"
+            ],
+            [
+              "literal",
+              [
+                "beach",
+                "forest",
+                "marina",
+                "park",
+                "peak",
+                "zoo",
+                "garden",
+                "bench"
+              ]
+            ]
+          ],
+          "rgba(0,0,0,0)",
+          [
+            "in",
+            [
+              "get",
+              "kind"
+            ],
+            [
+              "literal",
+              [
+                "aerodrome",
+                "station",
+                "bus_stop",
+                "ferry_terminal"
+              ]
+            ]
+          ],
+          "rgba(0,0,0,0)",
+          [
+            "in",
+            [
+              "get",
+              "kind"
+            ],
+            [
+              "literal",
+              [
+                "stadium",
+                "university",
+                "library",
+                "school",
+                "animal",
+                "toilets",
+                "drinking_water"
+              ]
+            ]
+          ],
+          "rgba(0,0,0,0)",
+          "#f2efe9"
+        ],
+        "text-halo-color": "#f2efe9",
+        "text-halo-width": 1
       }
     },
     {
