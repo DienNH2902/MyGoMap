@@ -6,7 +6,7 @@ import { VehicleModeToggle } from "./VehicleModeToggle";
 import { NumberStepper } from "../ui/NumberStepper";
 import { Button } from "../ui/Button";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MAX_CUSTOM_STOPS, POI_CATEGORIES } from "@/lib/constants";
 import { UseRoutePlannerReturn } from "@/hooks/useRoutePlanner";
 import { useUserLocationBias } from "@/hooks/useUserLocationBias";
@@ -39,8 +39,11 @@ export function RoutePlannerPanel({
   const [isLocatingStart, setIsLocatingStart] = useState(false);
   const [isLocatingEnd, setIsLocatingEnd] = useState(false);
   const [gender, setGender] = useState<GenderTheme>("nam");
-  // Vị trí GPS của người dùng, dùng để ưu tiên & sắp xếp gợi ý tìm kiếm địa
-  // điểm theo khoảng cách gần nhất — tránh gợi ý ra nơi trùng tên ở tỉnh khác.
+
+  // Ref để truy cập container cuộn của panel
+  const panelContainerRef = useRef<HTMLDivElement>(null);
+
+  // Vị trí GPS của người dùng
   const userLocation = useUserLocationBias();
 
   useEffect(() => {
@@ -48,6 +51,14 @@ export function RoutePlannerPanel({
       (localStorage.getItem(STORAGE_KEY_GENDER) as GenderTheme) || "nam";
     setGender(savedGender);
   }, []);
+
+  // Xử lý cuộn lên top và khóa scroll trên mobile khi đang loading
+  useEffect(() => {
+    if (planner.isLoading && panelContainerRef.current) {
+      // 1. Nhảy lên top của panel
+      panelContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [planner.isLoading]);
 
   const getActiveStyles = () => {
     if (gender === "nu") {
@@ -212,7 +223,14 @@ export function RoutePlannerPanel({
           </div>
 
           {/* Bảng tìm đường chính */}
-          <div className="pointer-events-auto max-h-[70vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-ink/10 bg-ink/85 p-4 shadow-xl backdrop-blur-md transition-all scrollbar-none sm:max-h-none sm:p-5">
+          <div
+            ref={panelContainerRef}
+            className={`pointer-events-auto max-h-[70vh] w-full max-w-4xl rounded-3xl border border-ink/10 bg-ink/85 p-4 shadow-xl backdrop-blur-md transition-all scrollbar-none sm:max-h-none sm:p-5 ${
+              planner.isLoading
+                ? "overflow-hidden sm:overflow-y-auto"
+                : "overflow-y-auto"
+            }`}
+          >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
               <PlaceAutocompleteInput
                 label="Điểm xuất phát"
@@ -234,14 +252,7 @@ export function RoutePlannerPanel({
                 dropdownPlacement="bottom"
                 userLocation={userLocation}
               />
-              {/* {planner.stopMode === "auto" && (
-                <NumberStepper
-                  label="Số điểm dừng"
-                  value={planner.stopCount}
-                  onChange={planner.setStopCount}
-                />
-              )} */}
-              {/* Khối chọn Loại xe & Giao thông cùng 1 hàng ngang trên Mobile */}
+
               {/* Khối chọn Số điểm dừng (nếu auto), Loại xe & Giao thông */}
               <div className="grid grid-cols-12 gap-2 sm:flex sm:items-end sm:gap-3">
                 {planner.stopMode === "auto" && (
@@ -415,8 +426,8 @@ export function RoutePlannerPanel({
 
               {/* Loading modal - chỉ hiện trên Mobile */}
               {planner.isLoading && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm sm:hidden">
-                  <div className="flex w-[180px] flex-col items-center justify-center gap-3 rounded-2xl bg-ink/70 px-6 py-5 shadow-2xl">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-sm sm:hidden">
+                  <div className="flex w-[180px] flex-col items-center justify-center gap-3 rounded-2xl bg-ink/75 px-6 py-5 shadow-2xl">
                     <LoadingSpinner label="Đang tính lộ trình…" />
                   </div>
                 </div>
