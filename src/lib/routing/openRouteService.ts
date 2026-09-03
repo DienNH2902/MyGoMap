@@ -40,6 +40,43 @@ export class RoutingError extends Error {}
 /** How long we wait for ORS before giving up and telling the user to retry. */
 const ORS_TIMEOUT_MS = 20000;
 
+/**
+ * `radiuses` bên dưới được set = -1 (không giới hạn bán kính "bắt dính" vào
+ * đường) — đây là fix cho lỗi "Could not find routable point" ở toạ độ xa
+ * đường (tâm tỉnh, sân bay...). Tác dụng phụ: nếu người dùng chọn điểm ĐÚNG
+ * GIỮA BIỂN/ĐẠI DƯƠNG, ORS KHÔNG báo lỗi — nó vẫn "bắt dính" điểm đó vào con
+ * đường ven biển gần nhất dù cách xa hàng chục/hàng trăm km, rồi trả về một
+ * route hoàn toàn hợp lệ (nhưng vô lý) đi vòng ra tận bờ biển.
+ *
+ * Cách chặn: so sánh toạ độ start/end NGƯỜI DÙNG CHỌN với toạ độ ORS THỰC SỰ
+ * DÙNG sau khi bắt dính (đầu/cuối của feature.geometry.coordinates trả về).
+ * Lệch quá xa ngưỡng này gần như chắc chắn điểm gốc nằm trên biển hoặc quá xa
+ * mọi con đường — chặn lại thay vì âm thầm trả về route sai.
+ */
+const MAX_START_END_SNAP_DISTANCE_METERS = 2000;
+
+/** Haversine — đủ chính xác cho việc kiểm tra khoảng lệch bắt dính, không cần
+ *  kéo thêm thư viện geo (turf) chỉ cho một phép tính khoảng cách đơn giản. */
+function haversineDistanceMeters(
+  a: { lon: number; lat: number },
+  b: { lon: number; lat: number },
+): number {
+  const EARTH_RADIUS_METERS = 6371000;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+
+  const dLat = toRad(b.lat - a.lat);
+  const dLon = toRad(b.lon - a.lon);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+
+  const sinDLat = Math.sin(dLat / 2);
+  const sinDLon = Math.sin(dLon / 2);
+  const h =
+    sinDLat * sinDLat + Math.cos(lat1) * Math.cos(lat2) * sinDLon * sinDLon;
+
+  return 2 * EARTH_RADIUS_METERS * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
 const TOMTOM_MAX_ROUTE_DISTANCE_KM = 400;
 
 /** Extra routing preferences the caller can request. */
@@ -185,6 +222,46 @@ export async function fetchDrivingRoute(
     throw new RoutingError(
       "Không tìm thấy lộ trình phù hợp giữa các điểm này.",
     );
+  }
+
+  // Chặn trường hợp điểm đến/xuất phát nằm trên biển — xem giải thích đầy đủ
+  // ở MAX_START_END_SNAP_DISTANCE_METERS phía trên. `feature.geometry.
+  // coordinates` là tuyến ORS THỰC SỰ trả về sau khi đã bắt dính vào đường,
+  // nên đầu/cuối của nó chính là toạ độ ORS đã "kéo" start/end người dùng
+  // chọn về.
+  const snappedStartCoord = feature.geometry.coordinates[0];
+  const snappedEndCoord =
+    feature.geometry.coordinates[feature.geometry.coordinates.length - 1];
+
+  if (snappedStartCoord && snappedEndCoord) {
+    const startSnapDistanceMeters = haversineDistanceMeters(start, {
+      lon: snappedStartCoord[0],
+      lat: snappedStartCoord[1],
+    });
+    const endSnapDistanceMeters = haversineDistanceMeters(end, {
+      lon: snappedEndCoord[0],
+      lat: snappedEndCoord[1],
+    });
+
+    const startTooFar =
+      startSnapDistanceMeters > MAX_START_END_SNAP_DISTANCE_METERS;
+    const endTooFar =
+      endSnapDistanceMeters > MAX_START_END_SNAP_DISTANCE_METERS;
+
+    if (startTooFar || endTooFar) {
+      // Ưu tiên nêu đích danh điểm lệch xa hơn trong thông báo — thường chỉ
+      // một trong hai điểm thực sự nằm trên biển.
+      const pointLabel =
+        endSnapDistanceMeters >= startSnapDistanceMeters
+          ? "Điểm đến"
+          : "Điểm xuất phát";
+
+      throw new RoutingError(
+        `${pointLabel} bạn chọn có vẻ đang nằm trên biển, đại dương, hoặc quá xa mọi con đường (cách đường gần nhất hơn ${Math.round(
+          Math.max(startSnapDistanceMeters, endSnapDistanceMeters) / 1000,
+        )}km) nên không thể tính lộ trình. Vui lòng chọn lại một vị trí trên đất liền, gần đường hơn.`,
+      );
+    }
   }
 
   const distanceKm = feature.properties.summary.distance / 1000;
