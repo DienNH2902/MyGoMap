@@ -60,7 +60,7 @@ export function MapStyleToggle({
 
   return (
     <div className="pointer-events-auto relative md:absolute md:left-4 md:top-4 z-30 rounded-2xl border border-ink/10 bg-ink/85 p-2 shadow-xl backdrop-blur-md max-w-full">
-      <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wide text-cream/50">
+      <p className="px-2 pb-3 text-[12px] font-bold uppercase tracking-wide text-yellow-500">
         Kiểu bản đồ
       </p>
 
