@@ -97,12 +97,18 @@ export interface RouteGeometry {
    * dùng đang bám đúng tuyến, không cần hiển thị chỉ dẫn này.
    */
   offRouteConnector?: [[number, number], [number, number]] | null;
+  /**
+   * Các tuyến thay thế do ORS trả về.
+   * Không dùng khi route có điểm dừng hoặc khi đang dẫn đường.
+   */
+  alternatives?: RouteGeometry[];
 }
 
 /** Aggregated result of a full trip-planning request. */
 export interface TripPlan {
   route: RouteGeometry;
   stops: RouteStop[];
+  routeChoices?: RouteGeometry[];
 }
 
 export interface RouteStop {

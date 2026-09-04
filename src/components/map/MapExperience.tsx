@@ -462,6 +462,21 @@ export function MapExperience() {
         }}
         isQuickSearch={quickSearch.hasSearched}
         preventAutoFitBounds={fitBoundsSuppressed}
+        routeChoices={planner.plan?.routeChoices ?? []}
+        selectedRouteChoiceIndex={(() => {
+          const choices = planner.plan?.routeChoices;
+
+          if (!choices || !planner.plan?.route) return 0;
+
+          const currentCoords = JSON.stringify(planner.plan.route.coordinates);
+
+          const index = choices.findIndex(
+            (choice) => JSON.stringify(choice.coordinates) === currentCoords,
+          );
+
+          return index >= 0 ? index : 0;
+        })()}
+        onSelectRouteChoice={planner.selectRouteChoice}
       />
 
       {/* Tìm đường nhanh: chỉ nhập "Nơi đến", điểm A luôn = vị trí GPS */}

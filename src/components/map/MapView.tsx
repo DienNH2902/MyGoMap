@@ -40,6 +40,9 @@ const ROUTE_SOURCE_ID = "mygomap-route";
 const ROUTE_LAYER_ID = "mygomap-route-line";
 const STORAGE_KEY_GENDER = "mygomap_user_gender";
 
+const ALTERNATIVE_ROUTE_SOURCE_PREFIX = "mygomap-alternative-route-source";
+const ALTERNATIVE_ROUTE_LAYER_PREFIX = "mygomap-alternative-route-layer";
+
 // Layer RIÊNG cho đoạn "nối tạm" khi người dùng lệch khỏi ngưỡng bám đường
 // (xem RouteGeometry.offRouteConnector) — cố tình tách biệt hoàn toàn khỏi
 // ROUTE_SOURCE_ID/ROUTE_LAYER_ID, dùng màu + kiểu nét khác hẳn (cam cảnh
@@ -102,6 +105,9 @@ interface MapViewProps {
    * thực sự được gọi.
    */
   preventAutoFitBounds?: boolean;
+  routeChoices?: RouteGeometry[];
+  selectedRouteChoiceIndex?: number;
+  onSelectRouteChoice?: (index: number) => void;
 }
 
 const POI_FOCUS_ZOOM = 16;
@@ -319,6 +325,9 @@ export function MapView({
   isNavigating = false,
   isQuickSearch = false,
   preventAutoFitBounds = false,
+  routeChoices = [],
+  selectedRouteChoiceIndex = 0,
+  onSelectRouteChoice,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -356,6 +365,10 @@ export function MapView({
   const [styleReloadKey, setStyleReloadKey] = useState(0);
 
   const activeSegmentLayersRef = useRef<string[]>([]);
+
+  const alternativeRouteLayersRef = useRef<
+    { layerId: string; sourceId: string }[]
+  >([]);
 
   // Khi đang ở chế độ dẫn đường (isNavigating), useNavigationTracking đã tự
   // vẽ marker mũi tên riêng (kèm vùng báo hướng) — nếu để nguyên, chấm định
@@ -864,6 +877,191 @@ export function MapView({
     isNavigating,
     isQuickSearch,
     preventAutoFitBounds,
+  ]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const clearAlternativeRoutes = () => {
+      alternativeRouteLayersRef.current.forEach(({ layerId, sourceId }) => {
+        if (map.getLayer(layerId)) {
+          map.removeLayer(layerId);
+        }
+
+        if (map.getSource(sourceId)) {
+          map.removeSource(sourceId);
+        }
+      });
+
+      alternativeRouteLayersRef.current = [];
+    };
+
+    const applyAlternativeRoutes = () => {
+      clearAlternativeRoutes();
+
+      // Alternative routes CHỈ dùng khi lập kế hoạch.
+      // Khi navigation bắt đầu, displayRoute là liveRoute nên không được
+      // tiếp tục hiển thị các tuyến A -> B cũ.
+      if (isNavigating) return;
+
+      if (routeChoices.length <= 1) return;
+
+      routeChoices.forEach((routeChoice, index) => {
+        if (index === selectedRouteChoiceIndex) return;
+
+        if (routeChoice.coordinates.length < 2) return;
+
+        const sourceId = `${ALTERNATIVE_ROUTE_SOURCE_PREFIX}-${index}`;
+        const layerId = `${ALTERNATIVE_ROUTE_LAYER_PREFIX}-${index}`;
+
+        const geojson: GeoJSON.Feature<GeoJSON.LineString> = {
+          type: "Feature",
+          properties: {},
+          geometry: {
+            type: "LineString",
+            coordinates: routeChoice.coordinates,
+          },
+        };
+
+        map.addSource(sourceId, {
+          type: "geojson",
+          data: geojson,
+        });
+
+        map.addLayer({
+          id: layerId,
+          type: "line",
+          source: sourceId,
+          layout: {
+            "line-cap": "round",
+            "line-join": "round",
+          },
+          paint: {
+            // Cùng màu với tuyến chính nhưng nhạt hơn.
+            "line-color": "#FACC15",
+            "line-width": 5,
+            "line-opacity": 0.8,
+          },
+        });
+
+        alternativeRouteLayersRef.current.push({
+          layerId,
+          sourceId,
+        });
+      });
+
+      // Tuyến được chọn luôn nằm trên 2 tuyến phụ.
+      if (map.getLayer(ROUTE_LAYER_ID)) {
+        map.moveLayer(ROUTE_LAYER_ID);
+      }
+    };
+
+    runWhenStyleReady(map, applyAlternativeRoutes);
+
+    return () => {
+      clearAlternativeRoutes();
+    };
+  }, [
+    routeChoices,
+    selectedRouteChoiceIndex,
+    theme.routeColor,
+    styleReloadKey,
+    isNavigating,
+  ]);
+
+  // ============================================================
+  // CHỌN TUYẾN BẰNG CÁCH BẤM TRỰC TIẾP VÀO LINE
+  //
+  // - ROUTE_LAYER_ID luôn đại diện cho tuyến đang được chọn.
+  // - Các alternative layer mang index thật trong routeChoices.
+  // - Không bấm gì -> selectedRouteChoiceIndex mặc định = 0
+  //   => tuyến ORS chính.
+  // ============================================================
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (isNavigating) return;
+    if (routeChoices.length <= 1) return;
+    if (!onSelectRouteChoice) return;
+
+    const handlers: Array<{
+      layerId: string;
+      handler: (event: maplibregl.MapLayerMouseEvent) => void;
+      mouseEnterHandler: () => void;
+      mouseLeaveHandler: () => void;
+    }> = [];
+
+    const addRouteClickHandler = (layerId: string, index: number) => {
+      if (!map.getLayer(layerId)) return;
+
+      const handler = () => {
+        onSelectRouteChoice(index);
+      };
+
+      const mouseEnterHandler = () => {
+        map.getCanvas().style.cursor = "pointer";
+      };
+
+      const mouseLeaveHandler = () => {
+        map.getCanvas().style.cursor = "";
+      };
+
+      map.on("click", layerId, handler);
+      map.on("mouseenter", layerId, mouseEnterHandler);
+      map.on("mouseleave", layerId, mouseLeaveHandler);
+
+      handlers.push({
+        layerId,
+        handler,
+        mouseEnterHandler,
+        mouseLeaveHandler,
+      });
+    };
+
+    const applyRouteClickHandlers = () => {
+      // Tuyến đang được chọn luôn nằm ở ROUTE_LAYER_ID.
+      // Ví dụ:
+      // selectedRouteChoiceIndex = 0 -> ROUTE_LAYER_ID là tuyến chính.
+      // selectedRouteChoiceIndex = 1 -> ROUTE_LAYER_ID là tuyến phụ 1.
+      if (map.getLayer(ROUTE_LAYER_ID)) {
+        addRouteClickHandler(ROUTE_LAYER_ID, selectedRouteChoiceIndex);
+      }
+
+      // Các tuyến còn lại là alternative layers.
+      routeChoices.forEach((_, index) => {
+        if (index === selectedRouteChoiceIndex) return;
+
+        const layerId = `${ALTERNATIVE_ROUTE_LAYER_PREFIX}-${index}`;
+
+        if (map.getLayer(layerId)) {
+          addRouteClickHandler(layerId, index);
+        }
+      });
+    };
+
+    runWhenStyleReady(map, applyRouteClickHandlers);
+
+    return () => {
+      handlers.forEach(
+        ({ layerId, handler, mouseEnterHandler, mouseLeaveHandler }) => {
+          if (map.getLayer(layerId)) {
+            map.off("click", layerId, handler);
+            map.off("mouseenter", layerId, mouseEnterHandler);
+            map.off("mouseleave", layerId, mouseLeaveHandler);
+          }
+        },
+      );
+
+      map.getCanvas().style.cursor = "";
+    };
+  }, [
+    routeChoices,
+    selectedRouteChoiceIndex,
+    onSelectRouteChoice,
+    styleReloadKey,
+    isNavigating,
   ]);
 
   // Marker điểm A - B

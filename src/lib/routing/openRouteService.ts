@@ -80,6 +80,9 @@ function haversineDistanceMeters(
 const TOMTOM_MAX_ROUTE_DISTANCE_KM = 400;
 const TOMTOM_MIN_ROUTE_DISTANCE_KM = 130;
 
+const ORS_ALTERNATIVE_MAX_DISTANCE_KM = 100;
+const ORS_ALTERNATIVE_TARGET_COUNT = 2;
+
 /** Extra routing preferences the caller can request. */
 export interface RouteOptions {
   /**
@@ -91,6 +94,7 @@ export interface RouteOptions {
    */
   avoidHighways?: boolean;
   useTraffic?: boolean;
+  includeAlternatives?: boolean;
 }
 
 /**
@@ -276,6 +280,96 @@ export async function fetchDrivingRoute(
   const distanceKm = feature.properties.summary.distance / 1000;
   const steps = parseOrsSteps(feature.properties.segments);
 
+  let alternatives: RouteGeometry[] = [];
+
+  // CHỈ lấy route phụ khi:
+  // - caller yêu cầu
+  // - không có via point/điểm dừng
+  // - tuyến ORS không vượt quá giới hạn 100km của alternative algorithm
+  //
+  // Route chính vẫn dùng chính xác kết quả ORS request ban đầu.
+  if (
+    routeOptions.includeAlternatives &&
+    viaPoints.length === 0 &&
+    distanceKm <= ORS_ALTERNATIVE_MAX_DISTANCE_KM
+  ) {
+    const alternativeController = new AbortController();
+    const alternativeTimeoutId = setTimeout(
+      () => alternativeController.abort(),
+      ORS_TIMEOUT_MS,
+    );
+
+    try {
+      const alternativeResponse = await fetch(ORS_DIRECTIONS_URL, {
+        method: "POST",
+        headers: {
+          Authorization: apiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          coordinates,
+          radiuses,
+          language: "vi",
+          ...(routeOptions.avoidHighways ? { preference: "shortest" } : {}),
+
+          // ORS alternative algorithm:
+          // target_count = số tuyến phụ muốn tìm.
+          // share_factor = cho phép route phụ dùng chung tối đa 60%
+          // weight_factor = route phụ không được quá 1.4 lần route tối ưu.
+          alternative_routes: {
+            target_count: ORS_ALTERNATIVE_TARGET_COUNT,
+            share_factor: 0.6,
+            weight_factor: 1.4,
+          },
+
+          options: {
+            avoid_borders: "all",
+            ...(routeOptions.avoidHighways
+              ? { avoid_features: ["highways"] }
+              : {}),
+          },
+        }),
+        signal: alternativeController.signal,
+      });
+
+      if (alternativeResponse.ok) {
+        const alternativeData =
+          (await alternativeResponse.json()) as OrsGeoJsonResponse;
+
+        alternatives = alternativeData.features
+          .slice(1, ORS_ALTERNATIVE_TARGET_COUNT + 1)
+          .map((alternativeFeature) => {
+            const alternativeDistanceKm =
+              alternativeFeature.properties.summary.distance / 1000;
+
+            return {
+              coordinates: alternativeFeature.geometry.coordinates,
+              distanceKm: alternativeDistanceKm,
+              durationMinutes: routeOptions.avoidHighways
+                ? estimateMotorbikeDurationMinutes(alternativeDistanceKm)
+                : estimateCarDurationMinutes(alternativeDistanceKm),
+              steps: parseOrsSteps(alternativeFeature.properties.segments),
+            };
+          });
+      } else {
+        // Alternative route chỉ là tính năng bổ sung.
+        // Nếu ORS không tạo được route phụ thì giữ nguyên route chính.
+        console.warn(
+          "ORS alternative routing thất bại, sử dụng route chính:",
+          alternativeResponse.status,
+        );
+      }
+    } catch (err) {
+      // Không để lỗi alternative route làm mất route chính.
+      console.warn(
+        "ORS alternative routing thất bại, sử dụng route chính:",
+        err instanceof Error ? err.message : err,
+      );
+    } finally {
+      clearTimeout(alternativeTimeoutId);
+    }
+  }
+
   // CHỈ xe máy (avoidHighways=true) mới cần TomTom — API duy nhất có
   // travelMode="motorcycle" thật để né cao tốc đúng luật — và chỉ khi tuyến
   // dưới 400km để tiết kiệm request TomTom (có giới hạn). Ô tô luôn dùng
@@ -312,5 +406,6 @@ export async function fetchDrivingRoute(
       ? estimateMotorbikeDurationMinutes(distanceKm)
       : estimateCarDurationMinutes(distanceKm),
     steps,
+    ...(alternatives.length > 0 ? { alternatives } : {}),
   };
 }

@@ -403,12 +403,21 @@ export function useRoutePlanner() {
       return;
     }
 
+    const shouldIncludeAlternatives =
+      validCustomStops.length === 0 &&
+      stopCount === 0 &&
+      selectedCategories.length === 0;
+
     let route;
     try {
       route = await fetchDrivingRoute(
         start,
         end,
-        { avoidHighways, useTraffic: avoidTraffic },
+        {
+          avoidHighways,
+          useTraffic: avoidTraffic,
+          includeAlternatives: shouldIncludeAlternatives,
+        },
         stopMode === "custom" ? validCustomStops : [],
       );
     } catch (err) {
@@ -419,6 +428,11 @@ export function useRoutePlanner() {
       setState((prev) => ({ ...prev, isLoading: false, error: message }));
       return;
     }
+
+    const routeChoices =
+      route.alternatives && route.alternatives.length > 0
+        ? [route, ...route.alternatives]
+        : undefined;
 
     // Step 2: split the route into stop points (pure client-side math, can't fail).
     const activeCategories = POI_CATEGORIES.filter((category) =>
@@ -546,7 +560,11 @@ export function useRoutePlanner() {
 
     setState((prev) => ({
       ...prev,
-      plan: { route, stops },
+      plan: {
+        route,
+        stops,
+        ...(routeChoices ? { routeChoices } : {}),
+      },
       isLoading: false,
       poiWarning,
     }));
@@ -561,6 +579,24 @@ export function useRoutePlanner() {
       setState((prev) => ({ ...prev, aiTip: tip }));
     });
   }, [state]);
+
+  const selectRouteChoice = useCallback((index: number) => {
+    setState((prev) => {
+      if (!prev.plan?.routeChoices) return prev;
+
+      const selectedRoute = prev.plan.routeChoices[index];
+
+      if (!selectedRoute) return prev;
+
+      return {
+        ...prev,
+        plan: {
+          ...prev.plan,
+          route: selectedRoute,
+        },
+      };
+    });
+  }, []);
 
   return {
     ...state,
@@ -579,6 +615,7 @@ export function useRoutePlanner() {
     reset,
     planTrip,
     setAvoidTraffic,
+    selectRouteChoice,
   };
 }
 
