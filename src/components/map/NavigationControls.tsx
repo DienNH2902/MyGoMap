@@ -155,14 +155,14 @@ export function NavigationControls({
 
         {/* Thanh Navigation thu gọn 1 hàng ngang */}
         <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-ink/85 p-3 shadow-2xl backdrop-blur-xl">
-          <div className="flex items-center gap-3 pl-2">
+          <div className="flex items-center gap-2">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wide text-cream/50">
                 Còn lại
               </p>
               {distanceToDestination !== null ? (
                 <p className="font-mono text-xl font-bold leading-none text-primary">
-                  {distanceToDestination.toFixed(1)}{" "}
+                  {distanceToDestination.toFixed(1)}
                   <span className="text-xs">km</span>
                 </p>
               ) : (
