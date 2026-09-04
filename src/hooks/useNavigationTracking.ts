@@ -230,7 +230,7 @@ const ARRIVAL_AUTO_STOP_DELAY_MS = 1500;
 // theo tuyến, để không gây hiểu lầm "vẫn đang đi đúng" trong khi thực ra
 // đang đi ngược lại. Khi hướng thiết bị quay về lại trong ngưỡng này so
 // với tuyến, mũi tên tự khoá lại theo tuyến như bình thường.
-const ARROW_HEADING_DEVIATION_THRESHOLD_DEGREES = 90;
+const ARROW_HEADING_DEVIATION_THRESHOLD_DEGREES = 130;
 
 interface PersistedNavigationSession {
   isNavigating: boolean;
