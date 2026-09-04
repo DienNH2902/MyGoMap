@@ -150,7 +150,22 @@ export async function POST(request: Request) {
   );
 
   url.searchParams.set("key", apiKey);
+  // Ô tô giữ "fastest" như cũ. Xe máy dùng "shortest" — TomTom mặc định
+  // "fastest" cộng thêm chi phí ước tính thời gian chờ/lên-xuống phà nên gần
+  // như luôn né phà dù ngắn hơn; "shortest" tối ưu thuần theo quãng đường
+  // nên sẽ chọn tuyến qua phà nếu tuyến đó thực sự ngắn hơn.
+  // url.searchParams.set(
+  //   "routeType",
+  //   body.avoidHighways ? "shortest" : "fastest",
+  // );
+
   url.searchParams.set("routeType", "fastest");
+  // 3. Giới hạn tốc độ tối đa của xe máy (ví dụ 60-70 km/h).
+  // Việc này giúp TomTom không ảo tưởng tốc độ xe máy trên đường lộ rộng,
+  // từ đó phà Cát Lái (tiết kiệm hơn 20km) vẫn sẽ thắng về mặt thời gian (Fastest),
+  // nhưng các phà nhỏ đi Cần Thơ (chỉ tiết kiệm 1-2km) sẽ thua QL1A về thời gian.
+  url.searchParams.set("vehicleMaxSpeed", "60");
+
   url.searchParams.set("traffic", body.useTraffic === false ? "false" : "true");
   // Xe máy dùng đúng travelMode "motorcycle" — profile xe 2 bánh có động cơ
   // thật của TomTom (tốc độ, luật đường đúng cho xe máy, khác hẳn "car" lẫn

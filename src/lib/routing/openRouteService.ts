@@ -78,6 +78,7 @@ function haversineDistanceMeters(
 }
 
 const TOMTOM_MAX_ROUTE_DISTANCE_KM = 400;
+const TOMTOM_MIN_ROUTE_DISTANCE_KM = 130;
 
 /** Extra routing preferences the caller can request. */
 export interface RouteOptions {
@@ -175,6 +176,14 @@ export async function fetchDrivingRoute(
         radiuses,
         // Chỉ dẫn rẽ (turn-by-turn) trả về bằng tiếng Việt.
         language: "vi",
+        // Mặc định ORS tính theo "recommended" — cộng thêm chi phí ước tính
+        // cho thời gian chờ/lên-xuống phà, khiến các tuyến qua phà gần như
+        // luôn bị loại dù thực tế NGẮN HƠN. "shortest" tối ưu thuần theo
+        // quãng đường, nên nếu có tuyến qua phà ngắn hơn thật, ORS sẽ chọn
+        // tuyến đó thay vì né phà bằng mọi giá. Chỉ áp dụng cho xe máy — ô
+        // tô giữ nguyên hành vi mặc định như trước.
+        ...(routeOptions.avoidHighways ? { preference: "shortest" } : {}),
+
         options: {
           avoid_borders: "all",
           // CHỈ né "highways" (cao tốc). KHÔNG bao giờ thêm "tollways" —
@@ -271,7 +280,11 @@ export async function fetchDrivingRoute(
   // travelMode="motorcycle" thật để né cao tốc đúng luật — và chỉ khi tuyến
   // dưới 400km để tiết kiệm request TomTom (có giới hạn). Ô tô luôn dùng
   // thẳng kết quả ORS, không bao giờ gọi TomTom.
-  if (routeOptions.avoidHighways && distanceKm < TOMTOM_MAX_ROUTE_DISTANCE_KM) {
+  if (
+    routeOptions.avoidHighways &&
+    distanceKm < TOMTOM_MAX_ROUTE_DISTANCE_KM &&
+    distanceKm > TOMTOM_MIN_ROUTE_DISTANCE_KM
+  ) {
     try {
       return await fetchTomTomRoute(
         start,
