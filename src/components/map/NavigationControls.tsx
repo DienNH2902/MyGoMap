@@ -155,7 +155,7 @@ export function NavigationControls({
 
         {/* Thanh Navigation thu gọn 1 hàng ngang */}
         <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-ink/85 p-3 shadow-2xl backdrop-blur-xl">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 pl-2">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wide text-cream/50">
                 Còn lại
@@ -172,7 +172,7 @@ export function NavigationControls({
               )}
             </div>
 
-            <div className="h-7 w-[3px] bg-ink/10" />
+            <div className="h-7 w-[3px] bg-gray-400" />
 
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wide text-cream/50">
