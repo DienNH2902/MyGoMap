@@ -820,7 +820,7 @@ export function MapExperience() {
       </div>
 
       {isArrivalStopModalOpen && navigation.stopArrivalInfo && (
-        <div className="pointer-events-auto fixed left-1/2 top-60 z-[9999] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 overflow-hidden rounded-3xl border border-emerald-400/30 bg-ink/95 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="pointer-events-auto fixed left-1/2 top-72 z-[9999] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 overflow-hidden rounded-3xl border border-emerald-400/30 bg-ink/95 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-4 duration-300">
           <div className="p-5">
             {/* Header */}
             <div className="flex items-start gap-3">
