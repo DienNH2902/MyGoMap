@@ -2297,7 +2297,7 @@
         ]
       ],
       "paint": {
-        "line-color": "violet",
+        "line-color": "#A16207",
         "line-gap-width": [
           "interpolate",
           [
@@ -2402,7 +2402,7 @@
         ]
       ],
       "paint": {
-        "line-color": "purple",
+        "line-color": "#CA8A04",
         "line-width": [
           "interpolate",
           [
@@ -6087,7 +6087,7 @@
         "text-letter-spacing": 0.05
       },
       "paint": {
-        "text-color": "purple",
+        "text-color": "#431407",
         "text-halo-color": "white",
         "text-halo-width": 2.2
       }
