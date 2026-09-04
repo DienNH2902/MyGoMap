@@ -112,6 +112,8 @@ interface NavigationState {
    * quyền GPS), vì arrival đã có UI Modal riêng đẹp hơn ở MapExperience.tsx.
    */
   hasArrived: boolean;
+  /** Thông tin popup "đã đến mốc dừng chân" — null khi không hiện. */
+  stopArrivalInfo: StopArrivalInfo | null;
 }
 
 interface NotificationState {
@@ -132,6 +134,16 @@ export interface NavigationStopPoint {
 // mốc dừng chân là điểm ghé qua tạm, không cần đi sát tuyệt đối.
 const STOP_ARRIVAL_THRESHOLD_METERS = 1000;
 
+/** Dữ liệu hiển thị lên popup mỗi khi tới một mốc dừng chân. */
+export interface StopArrivalInfo {
+  stopOrder: number;
+  areaLabel: string;
+  traveledKm: number;
+  remainingKm: number;
+}
+
+// Popup "đã đến mốc dừng chân" tự ẩn sau chừng này.
+const STOP_ARRIVAL_NOTIFICATION_DURATION_MS = 50000;
 
 /**
  * TRƯỚC ĐÂY: reroute (gọi API TomTom) còn bị kích hoạt theo THỜI GIAN
@@ -946,6 +958,32 @@ function getRouteBearingAtPosition(
   }
 }
 
+/** Lấy nhãn khu vực (huyện, tỉnh) từ toạ độ — dùng chung API Nominatim như
+ *  popup click-chọn-điểm trong MapView.tsx. */
+async function reverseGeocodeAreaLabel(
+  lat: number,
+  lon: number,
+): Promise<string> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`,
+    );
+    const data = await res.json();
+    const address = data?.address ?? {};
+    const district =
+      address.county ||
+      address.district ||
+      address.city_district ||
+      address.town ||
+      address.suburb;
+    const province = address.state || address.city || address.province;
+    const parts = [district, province].filter(Boolean);
+    return parts.length > 0 ? parts.join(", ") : (data?.display_name ?? "");
+  } catch {
+    return "";
+  }
+}
+
 export function useNavigationTracking(
   map: MapLibreMap | null,
   route: RouteGeometry | null,
@@ -965,6 +1003,7 @@ export function useNavigationTracking(
     isFollowing: true,
     hasArrived: false,
     speedKmh: null,
+    stopArrivalInfo: null,
   });
 
   // Trạng thái "đang dẫn đường lúc trang bị tải lại" + "đang Về giữa" — chỉ
@@ -1073,6 +1112,11 @@ export function useNavigationTracking(
   // Đảm bảo thông báo "Bạn đã đến nơi" chỉ xuất hiện một lần
   // trong mỗi phiên navigation.
   const arrivalNotifiedRef = useRef(false);
+
+  const stopArrivalTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const stopArrivalRequestIdRef = useRef(0);
 
   // Đánh dấu camera đang được app điều khiển.
   // Dùng để tránh việc easeTo/flyTo của chính app bị hiểu nhầm
@@ -2086,42 +2130,96 @@ export function useNavigationTracking(
    * localStorage — để performReroute() ở các lần gọi sau (kể cả sau khi
    * trang reload) không còn bắt đi qua lại mốc này nữa.
    */
-  const checkStopArrival = useCallback((userLat: number, userLon: number) => {
-    const orderedStops = stopsRef.current;
-    if (orderedStops.length === 0) return;
+  const checkStopArrival = useCallback(
+    (userLat: number, userLon: number, remainingKm: number | null) => {
+      const orderedStops = stopsRef.current;
+      if (orderedStops.length === 0) return;
 
-    const nextStop = orderedStops.find(
-      (stop) => !visitedStopIdsRef.current.has(stop.id),
-    );
-    if (!nextStop) return; // Đã qua hết mọi mốc.
-
-    try {
-      const distanceMeters = turf.distance(
-        turf.point([userLon, userLat]),
-        turf.point([nextStop.lon, nextStop.lat]),
-        { units: "meters" },
+      const nextStopIndex = orderedStops.findIndex(
+        (stop) => !visitedStopIdsRef.current.has(stop.id),
       );
+      if (nextStopIndex === -1) return; // Đã qua hết mọi mốc.
 
-      if (
-        Number.isFinite(distanceMeters) &&
-        distanceMeters <= STOP_ARRIVAL_THRESHOLD_METERS
-      ) {
-        visitedStopIdsRef.current.add(nextStop.id);
+      const nextStop = orderedStops[nextStopIndex];
+      if (!nextStop) return;
 
-        if (isNavigatingRef.current) {
-          savePersistedNavigationSession(
-            true,
-            isFollowingRef.current,
-            undefined,
-            undefined,
-            Array.from(visitedStopIdsRef.current),
+      try {
+        const distanceMeters = turf.distance(
+          turf.point([userLon, userLat]),
+          turf.point([nextStop.lon, nextStop.lat]),
+          { units: "meters" },
+        );
+
+        if (
+          Number.isFinite(distanceMeters) &&
+          distanceMeters <= STOP_ARRIVAL_THRESHOLD_METERS
+        ) {
+          visitedStopIdsRef.current.add(nextStop.id);
+
+          if (isNavigatingRef.current) {
+            savePersistedNavigationSession(
+              true,
+              isFollowingRef.current,
+              undefined,
+              undefined,
+              Array.from(visitedStopIdsRef.current),
+            );
+          }
+
+          // "Đã đi được" = tổng quãng đường lộ trình gốc (route.distanceKm,
+          // tuyến TĨNH lúc lập kế hoạch) trừ đi quãng còn lại hiện tại.
+          const totalKm = route?.distanceKm ?? null;
+          const traveledKm =
+            totalKm !== null && remainingKm !== null
+              ? Math.max(0, totalKm - remainingKm)
+              : 0;
+
+          const requestId = ++stopArrivalRequestIdRef.current;
+
+          setState((prev) => ({
+            ...prev,
+            stopArrivalInfo: {
+              stopOrder: nextStopIndex + 1,
+              areaLabel: "Đang xác định khu vực…",
+              traveledKm,
+              remainingKm: remainingKm ?? 0,
+            },
+          }));
+
+          if (stopArrivalTimerRef.current) {
+            clearTimeout(stopArrivalTimerRef.current);
+          }
+          stopArrivalTimerRef.current = setTimeout(() => {
+            setState((prev) => ({ ...prev, stopArrivalInfo: null }));
+          }, STOP_ARRIVAL_NOTIFICATION_DURATION_MS);
+
+          // Tra khu vực (huyện/tỉnh) không đồng bộ — cập nhật lại popup khi có
+          // kết quả, bỏ qua nếu trong lúc chờ đã có mốc dừng MỚI HƠN ghi đè.
+          void reverseGeocodeAreaLabel(nextStop.lat, nextStop.lon).then(
+            (areaLabel) => {
+              if (requestId !== stopArrivalRequestIdRef.current) return;
+              if (!areaLabel) return;
+
+              setState((prev) =>
+                prev.stopArrivalInfo
+                  ? {
+                      ...prev,
+                      stopArrivalInfo: { ...prev.stopArrivalInfo, areaLabel },
+                    }
+                  : prev,
+              );
+            },
           );
         }
+      } catch (err) {
+        console.warn(
+          "Không thể kiểm tra trạng thái đã tới mốc dừng chân:",
+          err,
+        );
       }
-    } catch (err) {
-      console.warn("Không thể kiểm tra trạng thái đã tới mốc dừng chân:", err);
-    }
-  }, []);
+    },
+    [route],
+  );
 
   /**
    * Kiểm tra khoảng cách trực tiếp từ vị trí GPS hiện tại tới điểm đến.
@@ -2351,7 +2449,11 @@ export function useNavigationTracking(
         }
 
         checkArrival(latitude, longitude);
-        checkStopArrival(latitude, longitude);
+        checkStopArrival(
+          latitude,
+          longitude,
+          remaining?.distanceToDestination ?? null,
+        );
 
         setState((prev) => ({
           ...prev,
@@ -2424,7 +2526,11 @@ export function useNavigationTracking(
         );
 
         checkArrival(latitude, longitude);
-        checkStopArrival(latitude, longitude);
+        checkStopArrival(
+          latitude,
+          longitude,
+          remaining?.distanceToDestination ?? null,
+        );
 
         setState((prev) => {
           // Throttle camera updates: chỉ cập nhật camera mỗi 800ms để tránh giật
@@ -2631,6 +2737,7 @@ export function useNavigationTracking(
       isFollowing: false,
       hasArrived: false,
       speedKmh: null,
+      stopArrivalInfo: null,
     });
 
     if (map) {
@@ -2668,6 +2775,9 @@ export function useNavigationTracking(
       }
       if (programmaticCameraTimerRef.current) {
         clearTimeout(programmaticCameraTimerRef.current);
+      }
+      if (stopArrivalTimerRef.current) {
+        clearTimeout(stopArrivalTimerRef.current);
       }
     };
   }, []);

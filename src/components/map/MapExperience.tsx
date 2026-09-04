@@ -107,6 +107,9 @@ export function MapExperience() {
 
   // State quản lý Modal "Bạn đã đến nơi"
   const [isArrivalModalOpen, setIsArrivalModalOpen] = useState(false);
+
+  const [isArrivalStopModalOpen, setIsArrivalStopModalOpen] = useState(false);
+
   const navigationStops = useMemo(
     () =>
       planner.customStops
@@ -138,6 +141,16 @@ export function MapExperience() {
       setIsArrivalModalOpen(true);
     }
   }, [navigation.hasArrived]);
+
+  // Hiện Modal khi hook xác nhận người dùng đã đến điểm dừng.
+  useEffect(() => {
+    if (navigation.stopArrivalInfo) {
+      setIsArrivalStopModalOpen(true);
+    }
+
+    // Không cần state riêng vì useNavigationTracking đã tự
+    // xoá stopArrivalInfo sau thời gian hiển thị.
+  }, [navigation.stopArrivalInfo]);
 
   // Bật cờ chặn fitBounds NGAY khi biết có phiên dẫn đường cần resume — làm
   // ở effect riêng (chạy sớm, không phụ thuộc isMapReady/plan.route) để cờ
@@ -805,6 +818,102 @@ export function MapExperience() {
           isNavigating={navigation.isNavigating}
         />
       </div>
+
+      {isArrivalStopModalOpen && navigation.stopArrivalInfo && (
+        <div className="pointer-events-auto fixed left-1/2 top-20 z-[9998] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 overflow-hidden rounded-3xl border border-emerald-400/30 bg-ink/95 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="p-5">
+            {/* Header */}
+            <div className="flex items-start gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-7 w-7 text-emerald-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
+                  Đã đến điểm dừng
+                </p>
+
+                <p className="mt-0.5 text-lg font-extrabold text-cream">
+                  Điểm dừng {navigation.stopArrivalInfo.stopOrder}
+                </p>
+              </div>
+            </div>
+
+            {/* Khu vực */}
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-cream/40">
+                Khu vực
+              </p>
+
+              <p className="mt-1 text-sm font-semibold leading-relaxed text-cream">
+                📍 {navigation.stopArrivalInfo.areaLabel}
+              </p>
+            </div>
+
+            {/* Thống kê */}
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-cream/40">
+                  Đã đi được
+                </p>
+
+                <p className="mt-1 text-xl font-extrabold text-emerald-400">
+                  {navigation.stopArrivalInfo.traveledKm.toFixed(1)}
+                  <span className="ml-1 text-xs font-semibold text-cream/50">
+                    km
+                  </span>
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-cream/40">
+                  Còn lại
+                </p>
+
+                <p className="mt-1 text-xl font-extrabold text-accent-gold">
+                  {navigation.stopArrivalInfo.remainingKm.toFixed(1)}
+                  <span className="ml-1 text-xs font-semibold text-cream/50">
+                    km
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            {/* Footer / Ghi chú */}
+            <div className="mt-4 flex items-center justify-center gap-2 text-center text-xs text-cream/50">
+              <span>✓</span>
+              <span>Tiếp tục hành trình đến điểm dừng tiếp theo</span>
+            </div>
+
+            {/* Nút Đóng (Đưa vào trong p-5) */}
+            <button
+              type="button"
+              onClick={() => setIsArrivalStopModalOpen(false)}
+              className="mt-5 w-full rounded-2xl bg-accent-gold px-5 py-3 text-sm font-extrabold text-ink shadow-lg transition hover:brightness-110 active:scale-[0.98]"
+            >
+              Đóng
+            </button>
+          </div>
+
+          {/* Thanh thời gian 5 giây */}
+          <div className="h-1 w-full bg-white/5">
+            <div className="h-full w-full origin-left animate-[shrink_5s_linear_forwards] bg-emerald-400" />
+          </div>
+        </div>
+      )}
 
       {/* MODAL THÔNG BÁO ĐÃ ĐẾN NƠI */}
       {isArrivalModalOpen && (
