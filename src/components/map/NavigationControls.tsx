@@ -155,7 +155,7 @@ export function NavigationControls({
 
         {/* Thanh Navigation thu gọn 1 hàng ngang */}
         <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-ink/85 p-3 shadow-2xl backdrop-blur-xl">
-          <div className="flex items-center gap-2 pl-2">
+          <div className="flex items-center gap-4 pl-2">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wide text-cream/50">
                 Còn lại
@@ -201,7 +201,7 @@ export function NavigationControls({
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4"
+              className="h-7 w-7"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -213,7 +213,7 @@ export function NavigationControls({
                 d="M6 18L18 6M6 6l12 12"
               />
             </svg>
-            Thoát
+            {/* Thoát */}
           </button>
         </div>
       </div>
