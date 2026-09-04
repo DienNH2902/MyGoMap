@@ -154,7 +154,7 @@ export function RouteDirectionsPanel({
                         </p>
                         <p className="text-[11px] text-cream/50">
                           {formatStepDistance(step.distanceMeters)}
-                          {step.streetName ? ` · ${step.streetName}` : ""}
+                          {step.streetName ? ` -- trên ${step.streetName}` : ""}
                         </p>
                       </div>
                     </li>
@@ -196,7 +196,7 @@ export function RouteDirectionsPanel({
                       </p>
                       <p className="text-[11px] text-cream/50">
                         {formatStepDistance(step.distanceMeters)}
-                        {step.streetName ? ` · ${step.streetName}` : ""}
+                        {step.streetName ? ` -- trên ${step.streetName}` : ""}
                       </p>
                     </div>
                   </li>
