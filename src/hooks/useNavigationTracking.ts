@@ -223,6 +223,15 @@ const NAVIGATION_SESSION_STORAGE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 giờ
 // chuyến đi.
 const ARRIVAL_AUTO_STOP_DELAY_MS = 1500;
 
+// Khi hướng di chuyển thực tế (GPS heading lúc đang chạy đủ nhanh, hoặc la
+// bàn thiết bị lúc đứng yên/đi chậm) lệch QUÁ ngưỡng này so với hướng tuyến
+// đường tại vị trí hiện tại — dấu hiệu người dùng đang đi sai/đi ngược
+// hướng chỉ dẫn — mũi tên sẽ XOAY THEO HƯỚNG THIẾT BỊ thay vì khoá cứng
+// theo tuyến, để không gây hiểu lầm "vẫn đang đi đúng" trong khi thực ra
+// đang đi ngược lại. Khi hướng thiết bị quay về lại trong ngưỡng này so
+// với tuyến, mũi tên tự khoá lại theo tuyến như bình thường.
+const ARROW_HEADING_DEVIATION_THRESHOLD_DEGREES = 90;
+
 interface PersistedNavigationSession {
   isNavigating: boolean;
   isFollowing: boolean;
@@ -1872,7 +1881,8 @@ export function useNavigationTracking(
       // 3. XÁC ĐỊNH HEADING
       // ============================================================
 
-      // GPS heading chỉ dùng cho dead-reckoning vị trí.
+      // GPS heading dùng cho dead-reckoning vị trí VÀ (mới) để phát hiện
+      // người dùng đang đi ngược/đi sai hướng chỉ dẫn — xem bước 3b.
       const isMovingFastEnoughForGpsHeading = (speed ?? 0) > 0.6;
 
       isGpsHeadingActiveRef.current = isMovingFastEnoughForGpsHeading;
@@ -1889,21 +1899,63 @@ export function useNavigationTracking(
 
       if (routeBearing !== null) {
         routeBearingRef.current = routeBearing;
+      }
 
-        if (smoothedBearingRef.current === null) {
-          smoothedBearingRef.current = routeBearing;
-        } else {
-          smoothedBearingRef.current = smoothAngle(
-            smoothedBearingRef.current,
-            routeBearing,
-            0.3,
-          );
-        }
+      // Hướng "thiết bị" hiện tại: ưu tiên GPS heading khi đang di chuyển
+      // đủ nhanh để tin được, nếu không thì dùng la bàn thiết bị
+      // (currentHeadingRef, cập nhật bởi effect deviceorientation phía
+      // trên), cuối cùng mới rơi về hướng tuyến nếu không có gì khác.
+      let effectiveMovementHeading: number;
+
+      if (
+        isMovingFastEnoughForGpsHeading &&
+        heading !== null &&
+        Number.isFinite(heading)
+      ) {
+        effectiveMovementHeading = heading;
+      } else if (Number.isFinite(currentHeadingRef.current)) {
+        effectiveMovementHeading = currentHeadingRef.current;
+      } else {
+        effectiveMovementHeading = routeBearing ?? 0;
+      }
+
+      // ============================================================
+      // 3b. XÁC ĐỊNH BEARING CHO MŨI TÊN — khoá theo tuyến, TRỪ KHI hướng
+      // thiết bị thực tế lệch quá ARROW_HEADING_DEVIATION_THRESHOLD_DEGREES
+      // so với hướng tuyến (đi sai/đi ngược) — lúc đó xoay theo hướng thiết
+      // bị thay vì khoá cứng theo tuyến. Quay lại đúng hướng (lệch trong
+      // ngưỡng) thì tự khoá lại theo tuyến như cũ.
+      // ============================================================
+
+      let targetBearing: number;
+
+      if (routeBearing !== null) {
+        const headingDeviation = getBearingDifference(
+          effectiveMovementHeading,
+          routeBearing,
+        );
+
+        targetBearing =
+          headingDeviation > ARROW_HEADING_DEVIATION_THRESHOLD_DEGREES
+            ? effectiveMovementHeading
+            : routeBearing;
+      } else {
+        targetBearing = effectiveMovementHeading;
+      }
+
+      if (smoothedBearingRef.current === null) {
+        smoothedBearingRef.current = targetBearing;
+      } else {
+        smoothedBearingRef.current = smoothAngle(
+          smoothedBearingRef.current,
+          targetBearing,
+          0.3,
+        );
       }
 
       // GPS heading vẫn được dùng cho dead-reckoning,
       // nhưng KHÔNG dùng để xoay mũi tên.
-      let effectiveMovementHeading: number;
+      // let effectiveMovementHeading: number;
 
       if (
         isMovingFastEnoughForGpsHeading &&
