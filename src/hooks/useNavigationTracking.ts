@@ -143,7 +143,7 @@ export interface StopArrivalInfo {
 }
 
 // Popup "đã đến mốc dừng chân" tự ẩn sau chừng này.
-const STOP_ARRIVAL_NOTIFICATION_DURATION_MS = 50000;
+const STOP_ARRIVAL_NOTIFICATION_DURATION_MS = 10000;
 
 /**
  * TRƯỚC ĐÂY: reroute (gọi API TomTom) còn bị kích hoạt theo THỜI GIAN

@@ -910,7 +910,7 @@ export function MapExperience() {
 
           {/* Thanh thời gian 5 giây */}
           <div className="h-1 w-full bg-white/5">
-            <div className="h-full w-full origin-left animate-[shrink_5s_linear_forwards] bg-emerald-400" />
+            <div className="h-full w-full origin-left animate-[shrink_10s_linear_forwards] bg-emerald-400" />
           </div>
         </div>
       )}
