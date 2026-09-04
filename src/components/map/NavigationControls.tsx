@@ -196,7 +196,7 @@ export function NavigationControls({
           <button
             type="button"
             {...stopTapHandlers}
-            className="touch-manipulation flex h-11 items-center gap-1.5 rounded-xl bg-red-500 px-4 text-md font-semibold text-white shadow-md transition hover:bg-red-600 active:scale-95 shrink-0"
+            className="touch-manipulation flex h-11 items-center gap-1.5 rounded-xl bg-red-500 px-4 text-2xl font-semibold text-white shadow-md transition hover:bg-red-600 active:scale-95 shrink-0"
             style={{ WebkitTapHighlightColor: "transparent" }}
           >
             <svg
@@ -222,20 +222,20 @@ export function NavigationControls({
 
   // Nút "Bắt đầu chỉ đường" — CHỈ HIỆN TRÊN MOBILE
   return (
-    <div className="pointer-events-auto absolute bottom-32 left-1/2 z-0 -translate-x-1/2 md:hidden">
+    <div className="pointer-events-auto absolute bottom-20 left-12 z-0 -translate-x-1/2 md:hidden">
       <button
         type="button"
         {...startTapHandlers}
-        className="touch-manipulation flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-xl transition hover:opacity-90 active:scale-95"
+        className="touch-manipulation flex items-center gap-1 border-4 border-orange-600 rounded-full bg-primary p-3 text-lg font-semibold text-white shadow-xl transition hover:opacity-90 active:scale-95"
         style={{ WebkitTapHighlightColor: "transparent" }}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
+          className="h-7 w-7"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
-          strokeWidth={2}
+          strokeWidth={2.5}
         >
           <path
             strokeLinecap="round"
@@ -243,7 +243,7 @@ export function NavigationControls({
             d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
           />
         </svg>
-        Chỉ đường
+        {/* Đi */}
       </button>
     </div>
   );
