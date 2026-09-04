@@ -53,7 +53,7 @@ export function RouteStatsBar({
     <div className="pointer-events-none absolute bottom-4 left-2 right-2 z-30 flex max-w-[calc(100vw-1rem)] flex-wrap justify-end gap-1.5 sm:bottom-auto sm:left-auto sm:right-4 sm:top-4 sm:max-w-none sm:flex-nowrap sm:gap-2">
       {/* 1. Tổng quãng đường */}
       <div className="pointer-events-auto min-w-[100px] flex-1 rounded-xl border border-white/10 bg-ink/85 px-2.5 py-1.5 shadow-xl backdrop-blur-md transition-all sm:min-w-0 sm:flex-none sm:rounded-2xl sm:px-4 sm:py-2.5">
-        <p className="whitespace-nowrap text-[9px] font-medium uppercase tracking-wide text-cream/50 sm:text-[10px]">
+        <p className="whitespace-nowrap text-[11px] font-medium uppercase tracking-wide text-cream/50 sm:text-[10px]">
           Quãng đường
         </p>
         <p
@@ -65,7 +65,7 @@ export function RouteStatsBar({
 
       {/* 2. Thời gian ước tính */}
       <div className="pointer-events-auto min-w-[100px] flex-1 rounded-xl border border-white/10 bg-ink/85 px-2.5 py-1.5 shadow-xl backdrop-blur-md transition-all sm:min-w-0 sm:flex-none sm:rounded-2xl sm:px-4 sm:py-2.5">
-        <p className="whitespace-nowrap text-[9px] font-medium uppercase tracking-wide text-cream/50 sm:text-[10px]">
+        <p className="whitespace-nowrap text-[11px] font-medium uppercase tracking-wide text-cream/50 sm:text-[10px]">
           Thời gian
         </p>
         <p
@@ -91,7 +91,7 @@ export function RouteStatsBar({
 
       {/* 4. Điểm dừng */}
       <div className="pointer-events-auto min-w-[100px] flex-1 rounded-xl border border-white/10 bg-ink/85 px-2.5 py-1.5 shadow-xl backdrop-blur-md transition-all sm:min-w-0 sm:flex-none sm:rounded-2xl sm:px-4 sm:py-2.5">
-        <p className="whitespace-nowrap text-[9px] font-medium uppercase tracking-wide text-cream/50 sm:text-[10px]">
+        <p className="whitespace-nowrap text-[11px] font-medium uppercase tracking-wide text-cream/50 sm:text-[10px]">
           Điểm dừng
         </p>
         <p
