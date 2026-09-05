@@ -43,14 +43,31 @@ export function RouteDirectionsPanel({
 
   const steps = route?.steps ?? [];
 
-  // Mốc offset tích lũy (m tính từ điểm xuất phát) của từng chặng — dùng để
-  // biết đã đi tới chặng thứ mấy rồi.
-  const cumulativeOffsets = useMemo(() => {
+  /**
+   * Mốc offset (m tính từ điểm xuất phát) TẠI ĐÓ thao tác của từng chặng
+   * `steps[i]` THỰC SỰ xảy ra.
+   *
+   * `steps[i].distanceMeters` là quãng đường CỦA ĐOẠN ĐƯỜNG SAU KHI đã thực
+   * hiện xong thao tác `i` (đi tiếp trên đường mới cho tới khi tới thao tác
+   * kế tiếp) — KHÔNG phải quãng đường cần đi trước khi thực hiện thao tác
+   * `i`. Vì vậy offset thật của chặng `i` (i>0) = TỔNG distanceMeters của
+   * các chặng TRƯỚC nó (0..i-1), không tính chính nó; chặng đầu tiên
+   * ("Xuất phát") coi như xảy ra ngay tại offset 0.
+   *
+   * TRƯỚC ĐÂY: offset của chặng `i` bị tính CỘNG LUÔN distanceMeters của
+   * chính chặng `i` — khiến bảng chỉ dẫn đếm ngược "còn Xm" nhưng vẫn ghép
+   * với CÂU CHỈ DẪN CỦA CHẶNG ĐANG ĐI (đã xong), chỉ đổi sang câu chỉ dẫn
+   * đúng khi đã ĐI QUA điểm rẽ thật — đây chính là lý do "tới nơi rẽ mới
+   * thấy hướng dẫn rẽ, không kịp chuẩn bị trước".
+   */
+  const maneuverOffsets = useMemo(() => {
+    const offsets: number[] = [];
     let total = 0;
-    return steps.map((step) => {
+    steps.forEach((step) => {
+      offsets.push(total);
       total += step.distanceMeters;
-      return total;
     });
+    return offsets;
   }, [steps]);
 
   const distanceTraveledMeters =
@@ -64,16 +81,14 @@ export function RouteDirectionsPanel({
       : 0;
 
   const currentStepIndex = isNavigating
-    ? cumulativeOffsets.findIndex((offset) => offset > distanceTraveledMeters)
+    ? maneuverOffsets.findIndex((offset) => offset > distanceTraveledMeters)
     : -1;
 
   const currentStep: RouteStep | null =
     currentStepIndex >= 0 ? (steps[currentStepIndex] ?? null) : null;
 
   const currentStepOffset =
-    currentStepIndex >= 0
-      ? (cumulativeOffsets[currentStepIndex] ?? null)
-      : null;
+    currentStepIndex >= 0 ? (maneuverOffsets[currentStepIndex] ?? null) : null;
 
   const remainingToTurnMeters =
     currentStep != null && currentStepOffset != null
