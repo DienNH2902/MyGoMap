@@ -1106,6 +1106,14 @@ export function useNavigationTracking(
   const smoothedLatRef = useRef<number | null>(null);
   const smoothedLonRef = useRef<number | null>(null);
   const smoothedBearingRef = useRef<number | null>(null);
+
+  // true khi mũi tên đang ở chế độ "xoay theo hướng thiết bị" (lệch tuyến
+  // > ARROW_HEADING_DEVIATION_THRESHOLD_DEGREES) — dùng để chọn hệ số làm
+  // mượt NHANH HƠN cho cả smoothedBearingRef lẫn renderedBearingRef (xem
+  // animateMarker), vì hệ số 0.3 vốn tối ưu cho việc khoá êm theo tuyến lại
+  // gây trễ rõ rệt khi cần xoay gấp theo hướng thiết bị thực tế.
+  const arrowUsingDeviceHeadingRef = useRef(false);
+
   const routeBearingRef = useRef<number | null>(null);
   const lastCameraUpdateRef = useRef<number>(0);
   // Tốc độ hiện tại (km/h) đã làm mượt bằng EMA từ speed GPS (m/s) — dùng
@@ -1738,10 +1746,21 @@ export function useNavigationTracking(
       }
 
       if (targetBearing !== null) {
+        // Chế độ theo hướng thiết bị cần xoay NHANH HƠN hẳn (0.55 thay vì
+        // 0.3) — đây là 1 trong 2 tầng gây trễ ~1s được nhắc ở trên, tầng
+        // còn lại là smoothedBearingRef trong updateMarker (xem bên dưới).
+        const bearingFrameLerp = arrowUsingDeviceHeadingRef.current
+          ? 0.55
+          : 0.3;
+
         renderedBearingRef.current =
           renderedBearingRef.current === null
             ? targetBearing
-            : smoothAngle(renderedBearingRef.current, targetBearing, 0.3);
+            : smoothAngle(
+                renderedBearingRef.current,
+                targetBearing,
+                bearingFrameLerp,
+              );
       }
 
       marker.setLngLat([renderedLonRef.current, renderedLatRef.current]);
@@ -1927,31 +1946,45 @@ export function useNavigationTracking(
       // ngưỡng) thì tự khoá lại theo tuyến như cũ.
       // ============================================================
 
-      let targetBearing: number;
+            let targetBearing: number;
+            let isUsingDeviceHeading: boolean;
 
-      if (routeBearing !== null) {
-        const headingDeviation = getBearingDifference(
-          effectiveMovementHeading,
-          routeBearing,
-        );
+            if (routeBearing !== null) {
+              const headingDeviation = getBearingDifference(
+                effectiveMovementHeading,
+                routeBearing,
+              );
 
-        targetBearing =
-          headingDeviation > ARROW_HEADING_DEVIATION_THRESHOLD_DEGREES
-            ? effectiveMovementHeading
-            : routeBearing;
-      } else {
-        targetBearing = effectiveMovementHeading;
-      }
+              isUsingDeviceHeading =
+                headingDeviation > ARROW_HEADING_DEVIATION_THRESHOLD_DEGREES;
 
-      if (smoothedBearingRef.current === null) {
-        smoothedBearingRef.current = targetBearing;
-      } else {
-        smoothedBearingRef.current = smoothAngle(
-          smoothedBearingRef.current,
-          targetBearing,
-          0.3,
-        );
-      }
+              targetBearing = isUsingDeviceHeading
+                ? effectiveMovementHeading
+                : routeBearing;
+            } else {
+              // Không có tuyến để khoá theo — coi như luôn ở chế độ theo hướng
+              // thiết bị, cần xoay nhanh/chính xác như mọi lúc lệch tuyến khác.
+              isUsingDeviceHeading = true;
+              targetBearing = effectiveMovementHeading;
+            }
+
+            arrowUsingDeviceHeadingRef.current = isUsingDeviceHeading;
+
+            // Theo hướng thiết bị (đi sai/đi ngược) cần xoay NHANH + CHÍNH XÁC
+            // hơn hẳn khoá-theo-tuyến — 0.6 thay vì 0.3, giảm độ trễ cảm nhận
+            // được từ ~1s xuống gần tức thời, trong khi chế độ khoá-theo-tuyến
+            // (đi đúng) vẫn mượt như cũ, không đổi gì.
+            const bearingSmoothingFactor = isUsingDeviceHeading ? 0.6 : 0.3;
+
+            if (smoothedBearingRef.current === null) {
+              smoothedBearingRef.current = targetBearing;
+            } else {
+              smoothedBearingRef.current = smoothAngle(
+                smoothedBearingRef.current,
+                targetBearing,
+                bearingSmoothingFactor,
+              );
+            }
 
       // GPS heading vẫn được dùng cho dead-reckoning,
       // nhưng KHÔNG dùng để xoay mũi tên.
@@ -2730,6 +2763,7 @@ export function useNavigationTracking(
     smoothedLonRef.current = null;
     smoothedBearingRef.current = null;
     routeBearingRef.current = null;
+    arrowUsingDeviceHeadingRef.current = false;
     smoothedSpeedKmhRef.current = null;
     isGpsHeadingActiveRef.current = false;
     lastCameraUpdateRef.current = 0;
