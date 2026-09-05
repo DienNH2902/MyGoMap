@@ -106,6 +106,10 @@
   bottom: 90px !important; /* Thay đổi con số này theo ý bạn */
 }
 
+.maplibregl-user-location-dot {
+  z-index: 10 !important;
+}
+
 /* PWA/iOS: tránh hiệu ứng highlight mặc định khi chạm các nút cài app. */
 @media (hover: none) and (pointer: coarse) {
   button,

@@ -363,6 +363,11 @@ export function MapView({
     { id: string; dotEl: HTMLDivElement; marker: Marker }[]
   >([]);
 
+  const userHeadingMarkerRef = useRef<Marker | null>(null);
+  const userHeadingElementRef = useRef<HTMLDivElement | null>(null);
+  const userLocationRef = useRef<[number, number] | null>(null);
+  const currentDeviceHeadingRef = useRef<number | null>(null);
+
   const previousRouteCoordsRef = useRef<string | null>(null);
 
   const sovereigntyMarkersRef = useRef<Marker[]>([]);
@@ -440,6 +445,28 @@ export function MapView({
       "bottom-right",
     );
 
+    const requestCompassPermission = async () => {
+      try {
+        const OrientationEvent =
+          DeviceOrientationEvent as typeof DeviceOrientationEvent & {
+            requestPermission?: (
+              absolute?: boolean,
+            ) => Promise<"granted" | "denied">;
+          };
+
+        if (typeof OrientationEvent.requestPermission !== "function") {
+          return true;
+        }
+
+        const permission = await OrientationEvent.requestPermission(true);
+
+        return permission === "granted";
+      } catch (error) {
+        console.warn("Compass permission request failed:", error);
+        return false;
+      }
+    };
+
     const geolocateControl = new GeolocateControl({
       positionOptions: {
         // Bật GPS thật (chip GPS trên điện thoại) thay vì chỉ định vị theo
@@ -455,6 +482,123 @@ export function MapView({
       showUserLocation: true,
       showAccuracyCircle: true,
     });
+
+    // Vùng compass riêng cho chấm định vị của MapLibre.
+    // Không thay đổi GeolocateControl — chỉ bổ sung vùng hướng thiết bị
+    // và cập nhật trực tiếp từ cảm biến deviceorientation để phản hồi
+    // nhanh hơn nhiều so với chờ GPS.
+    // Vùng compass riêng cho chấm định vị của MapLibre.
+    const headingEl = document.createElement("div");
+
+    headingEl.style.width = "120px";
+    headingEl.style.height = "120px";
+    headingEl.style.pointerEvents = "none";
+    headingEl.style.position = "relative";
+    headingEl.style.transformOrigin = "50% 50%";
+    headingEl.style.willChange = "transform";
+    headingEl.style.zIndex = "0";
+
+    const cone = document.createElement("div");
+
+    // Tạo hình quạt xòe mượt dạng chùm sáng (Google Maps style)
+    cone.style.position = "absolute";
+    cone.style.left = "50%";
+    cone.style.top = "50%";
+    cone.style.width = "90px";
+    cone.style.height = "90px";
+    // Đẩy tâm xoay về đúng vị trí tâm chấm xanh GPS
+    cone.style.transform = "translate(-50%, -50%)";
+    cone.style.transformOrigin = "50% 50%";
+    cone.style.willChange = "transform";
+    cone.style.borderRadius = "50%";
+
+    // Màu xanh dương cố định, hơi trong suốt để nhìn thấy bản đồ bên dưới
+    cone.style.background =
+      "conic-gradient(from 300deg at 50% 50%, rgba(37, 99, 235, 0.42) 0deg, rgba(37, 99, 235, 0.42) 60deg, transparent 60deg)";
+      cone.style.webkitMaskImage =
+        "radial-gradient(circle at 50% 50%, #000 15%, transparent 100%)";
+      cone.style.maskImage =
+        "radial-gradient(circle at 50% 50%, #000 15%, transparent 100%)";
+
+    headingEl.appendChild(cone);
+
+    userHeadingElementRef.current = cone;
+
+    const headingMarker = new Marker({
+      element: headingEl,
+      anchor: "center",
+      rotationAlignment: "viewport",
+      pitchAlignment: "viewport",
+    });
+
+    userHeadingMarkerRef.current = headingMarker;
+
+    const normalizeHeading = (heading: number) => {
+      return (heading + 360) % 360;
+    };
+
+    const getDeviceHeading = (event: DeviceOrientationEvent): number | null => {
+      let heading: number | null = null;
+
+      // iOS Safari
+      if (
+        "webkitCompassHeading" in event &&
+        typeof (event as any).webkitCompassHeading === "number"
+      ) {
+        heading = (event as any).webkitCompassHeading;
+      } else if (event.alpha !== null) {
+        // Android / các trình duyệt hỗ trợ alpha
+        const screenAngle =
+          typeof window.screen.orientation?.angle === "number"
+            ? window.screen.orientation.angle
+            : typeof window.orientation === "number"
+              ? window.orientation
+              : 0;
+
+        heading = 360 - event.alpha + screenAngle;
+      }
+
+      if (heading === null || !Number.isFinite(heading)) {
+        return null;
+      }
+
+      return normalizeHeading(heading);
+    };
+
+    const handleOrientation = (event: DeviceOrientationEvent) => {
+      const heading = getDeviceHeading(event);
+
+      if (heading === null) return;
+
+      currentDeviceHeadingRef.current = heading;
+
+      if (userHeadingElementRef.current) {
+        userHeadingElementRef.current.style.transform = `translate(-50%, -50%) rotate(${heading}deg)`;
+      }
+    };
+
+    const handleGeolocate = (event: any) => {
+      const longitude = event?.coords?.longitude;
+      const latitude = event?.coords?.latitude;
+
+      if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) {
+        return;
+      }
+
+      const position: [number, number] = [longitude, latitude];
+
+      userLocationRef.current = position;
+
+      if (!isNavigating && userHeadingMarkerRef.current) {
+        userHeadingMarkerRef.current.setLngLat(position).addTo(map);
+      }
+    };
+
+    geolocateControl.on("geolocate", handleGeolocate);
+
+    if (window.DeviceOrientationEvent) {
+      window.addEventListener("deviceorientation", handleOrientation, true);
+    }
 
     // Trước đây khi định vị lỗi (bị từ chối quyền, timeout, hay trang chạy
     // qua HTTP không an toàn) thì KHÔNG có gì hiển thị cho người dùng biết —
@@ -479,6 +623,28 @@ export function MapView({
     });
 
     map.addControl(geolocateControl, "bottom-right");
+
+    const geolocateButton = geolocateControl._container?.querySelector(
+      ".maplibregl-ctrl-geolocate",
+    ) as HTMLButtonElement | null;
+
+    if (geolocateButton) {
+      const handleCompassPermission = () => {
+        void requestCompassPermission();
+      };
+
+      geolocateButton.addEventListener("pointerdown", handleCompassPermission, {
+        capture: true,
+      });
+
+      map.once("remove", () => {
+        geolocateButton.removeEventListener(
+          "pointerdown",
+          handleCompassPermission,
+          { capture: true },
+        );
+      });
+    }
 
     map.on("load", () => {
       // Geolocation API chỉ hoạt động trên "secure context" (HTTPS, hoặc
@@ -506,11 +672,39 @@ export function MapView({
     return () => {
       sovereigntyMarkersRef.current.forEach((marker) => marker.remove());
       sovereigntyMarkersRef.current = [];
+
+      geolocateControl.off("geolocate", handleGeolocate);
+
+      window.removeEventListener("deviceorientation", handleOrientation, true);
+
+      userHeadingMarkerRef.current?.remove();
+      userHeadingMarkerRef.current = null;
+      userHeadingElementRef.current = null;
+      userLocationRef.current = null;
+      currentDeviceHeadingRef.current = null;
+
       removeOffRouteConnectorLayer(map);
       map.remove();
       mapRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const marker = userHeadingMarkerRef.current;
+
+    if (!marker) return;
+
+    if (isNavigating) {
+      marker.remove();
+      return;
+    }
+
+    const position = userLocationRef.current;
+
+    if (position) {
+      marker.setLngLat(position).addTo(mapRef.current!);
+    }
+  }, [isNavigating]);
 
   useEffect(() => {
     const map = mapRef.current;
