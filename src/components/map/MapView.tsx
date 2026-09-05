@@ -43,6 +43,15 @@ const STORAGE_KEY_GENDER = "mygomap_user_gender";
 const ALTERNATIVE_ROUTE_SOURCE_PREFIX = "mygomap-alternative-route-source";
 const ALTERNATIVE_ROUTE_LAYER_PREFIX = "mygomap-alternative-route-layer";
 
+// Vùng bấm vô hình, RỘNG HƠN NHIỀU so với đường vẽ thật — MapLibre hit-test
+// click dựa trên line-width thực tế của layer, nên đường mảnh (4-5px) rất
+// khó bấm trúng trên di động. Layer này dùng cùng nguồn dữ liệu, cùng hình
+// dạng với đường hiển thị, chỉ khác line-width lớn hơn hẳn + gần như trong
+// suốt (opacity 0.01, không phải 0 — vẫn cần > 0 để chắc chắn được vẽ/hit-
+// test, chỉ là mắt thường không thấy được) — không đổi gì về mặt hình ảnh.
+const ROUTE_HIT_AREA_SUFFIX = "-hitarea";
+const ROUTE_HIT_AREA_LINE_WIDTH = 26;
+
 // Layer RIÊNG cho đoạn "nối tạm" khi người dùng lệch khỏi ngưỡng bám đường
 // (xem RouteGeometry.offRouteConnector) — cố tình tách biệt hoàn toàn khỏi
 // ROUTE_SOURCE_ID/ROUTE_LAYER_ID, dùng màu + kiểu nét khác hẳn (cam cảnh
@@ -367,7 +376,7 @@ export function MapView({
   const activeSegmentLayersRef = useRef<string[]>([]);
 
   const alternativeRouteLayersRef = useRef<
-    { layerId: string; sourceId: string }[]
+    { layerId: string; sourceId: string; hitLayerId: string }[]
   >([]);
 
   // Khi đang ở chế độ dẫn đường (isNavigating), useNavigationTracking đã tự
@@ -655,11 +664,32 @@ export function MapView({
       if (existingSource && "setData" in existingSource) {
         (existingSource as GeoJSONSource).setData(mainGeojson);
       } else {
-        map.addSource(ROUTE_SOURCE_ID, { type: "geojson", data: mainGeojson });
+        map.addSource(ROUTE_SOURCE_ID, {
+          type: "geojson",
+          data: mainGeojson,
+        });
 
+        const routeHitAreaLayerId = `${ROUTE_LAYER_ID}${ROUTE_HIT_AREA_SUFFIX}`;
+
+        if (map.getLayer(routeHitAreaLayerId)) {
+          map.removeLayer(routeHitAreaLayerId);
+        }
         if (map.getLayer(ROUTE_LAYER_ID)) {
           map.removeLayer(ROUTE_LAYER_ID);
         }
+
+        // Vùng bấm rộng, vô hình — xem giải thích ở ROUTE_HIT_AREA_SUFFIX.
+        map.addLayer({
+          id: routeHitAreaLayerId,
+          type: "line",
+          source: ROUTE_SOURCE_ID,
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: {
+            "line-color": theme.routeColor,
+            "line-width": ROUTE_HIT_AREA_LINE_WIDTH,
+            "line-opacity": 0.01,
+          },
+        });
 
         map.addLayer({
           id: ROUTE_LAYER_ID,
@@ -884,15 +914,21 @@ export function MapView({
     if (!map) return;
 
     const clearAlternativeRoutes = () => {
-      alternativeRouteLayersRef.current.forEach(({ layerId, sourceId }) => {
-        if (map.getLayer(layerId)) {
-          map.removeLayer(layerId);
-        }
+      alternativeRouteLayersRef.current.forEach(
+        ({ layerId, sourceId, hitLayerId }) => {
+          if (map.getLayer(hitLayerId)) {
+            map.removeLayer(hitLayerId);
+          }
 
-        if (map.getSource(sourceId)) {
-          map.removeSource(sourceId);
-        }
-      });
+          if (map.getLayer(layerId)) {
+            map.removeLayer(layerId);
+          }
+
+          if (map.getSource(sourceId)) {
+            map.removeSource(sourceId);
+          }
+        },
+      );
 
       alternativeRouteLayersRef.current = [];
     };
@@ -945,9 +981,30 @@ export function MapView({
           },
         });
 
+        // Vùng bấm rộng, vô hình, cùng nguồn dữ liệu với tuyến phụ này.
+        const hitLayerId = `${layerId}${ROUTE_HIT_AREA_SUFFIX}`;
+        if (map.getLayer(hitLayerId)) {
+          map.removeLayer(hitLayerId);
+        }
+        map.addLayer({
+          id: hitLayerId,
+          type: "line",
+          source: sourceId,
+          layout: {
+            "line-cap": "round",
+            "line-join": "round",
+          },
+          paint: {
+            "line-color": "#FACC15",
+            "line-width": ROUTE_HIT_AREA_LINE_WIDTH,
+            "line-opacity": 0.01,
+          },
+        });
+
         alternativeRouteLayersRef.current.push({
           layerId,
           sourceId,
+          hitLayerId,
         });
       });
 
@@ -1021,22 +1078,24 @@ export function MapView({
     };
 
     const applyRouteClickHandlers = () => {
-      // Tuyến đang được chọn luôn nằm ở ROUTE_LAYER_ID.
-      // Ví dụ:
-      // selectedRouteChoiceIndex = 0 -> ROUTE_LAYER_ID là tuyến chính.
-      // selectedRouteChoiceIndex = 1 -> ROUTE_LAYER_ID là tuyến phụ 1.
-      if (map.getLayer(ROUTE_LAYER_ID)) {
-        addRouteClickHandler(ROUTE_LAYER_ID, selectedRouteChoiceIndex);
+      // Tuyến đang được chọn luôn nằm ở ROUTE_LAYER_ID — nhưng giờ lắng
+      // nghe click/hover trên layer HIT-AREA rộng hơn của nó, không phải
+      // trực tiếp layer hiển thị (đường mảnh) nữa.
+      const mainHitLayerId = `${ROUTE_LAYER_ID}${ROUTE_HIT_AREA_SUFFIX}`;
+      if (map.getLayer(mainHitLayerId)) {
+        addRouteClickHandler(mainHitLayerId, selectedRouteChoiceIndex);
       }
 
-      // Các tuyến còn lại là alternative layers.
+      // Các tuyến còn lại là alternative layers — cùng vậy, bấm trên
+      // hit-area rộng của từng tuyến phụ.
       routeChoices.forEach((_, index) => {
         if (index === selectedRouteChoiceIndex) return;
 
         const layerId = `${ALTERNATIVE_ROUTE_LAYER_PREFIX}-${index}`;
+        const hitLayerId = `${layerId}${ROUTE_HIT_AREA_SUFFIX}`;
 
-        if (map.getLayer(layerId)) {
-          addRouteClickHandler(layerId, index);
+        if (map.getLayer(hitLayerId)) {
+          addRouteClickHandler(hitLayerId, index);
         }
       });
     };
