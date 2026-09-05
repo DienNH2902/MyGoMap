@@ -1727,7 +1727,23 @@ export function useNavigationTracking(
 
     const targetLat = smoothedLatRef.current;
     const targetLon = smoothedLonRef.current;
-    const targetBearing = smoothedBearingRef.current;
+    // Khi đang ở chế độ "xoay theo hướng thiết bị" (lệch tuyến quá
+    // ARROW_HEADING_DEVIATION_THRESHOLD_DEGREES), lấy TRỰC TIẾP la bàn
+    // thiết bị (currentHeadingRef — được effect deviceorientation cập nhật
+    // liên tục ở tần suất cảm biến, thường nhanh hơn NHIỀU so với nhịp GPS
+    // fix) làm mục tiêu MỖI KHUNG HÌNH, thay vì đọc smoothedBearingRef.
+    //
+    // TRƯỚC ĐÂY: dù đang ở chế độ này, mục tiêu vẫn là smoothedBearingRef —
+    // giá trị đó CHỈ được updateMarker() làm mới mỗi khi có một tọa độ GPS
+    // mới (watchPosition/getCurrentPosition), có thể cách nhau 1-2 giây do
+    // maximumAge/tốc độ GPS thực tế. Nghĩa là dù la bàn đã xoay xong từ lâu,
+    // mũi tên vẫn "đứng chờ" tới lần GPS fix kế tiếp mới biết để xoay theo —
+    // đây chính là nguồn gốc độ trễ ~1s và cảm giác giật/lag được mô tả.
+    // Đọc thẳng currentHeadingRef ở đây (chạy mỗi frame, ~60fps) giúp mũi
+    // tên bám sát la bàn gần như tức thời, mượt đúng như compass thật.
+    const targetBearing = arrowUsingDeviceHeadingRef.current
+      ? currentHeadingRef.current
+      : smoothedBearingRef.current;
 
     if (targetLat !== null && targetLon !== null) {
       if (renderedLatRef.current === null || renderedLonRef.current === null) {
@@ -1746,11 +1762,11 @@ export function useNavigationTracking(
       }
 
       if (targetBearing !== null) {
-        // Khi đang theo hướng thiết bị, ưu tiên phản hồi nhanh từ cảm biến.
-        // Không dùng smoothing quá thấp vì sẽ tạo cảm giác mũi tên bị trễ
-        // khi người dùng xoay điện thoại nhanh.
+        // Chế độ theo hướng thiết bị cần xoay NHANH HƠN hẳn (0.55 thay vì
+        // 0.3) — đây là 1 trong 2 tầng gây trễ ~1s được nhắc ở trên, tầng
+        // còn lại là smoothedBearingRef trong updateMarker (xem bên dưới).
         const bearingFrameLerp = arrowUsingDeviceHeadingRef.current
-          ? 0.82
+          ? 0.55
           : 0.3;
 
         renderedBearingRef.current =
@@ -1974,11 +1990,11 @@ export function useNavigationTracking(
       // hơn hẳn khoá-theo-tuyến — 0.6 thay vì 0.3, giảm độ trễ cảm nhận
       // được từ ~1s xuống gần tức thời, trong khi chế độ khoá-theo-tuyến
       // (đi đúng) vẫn mượt như cũ, không đổi gì.
-      const bearingSmoothingFactor = isUsingDeviceHeading ? 0.82 : 0.3;
+      const bearingSmoothingFactor = isUsingDeviceHeading ? 0.6 : 0.3;
 
       if (smoothedBearingRef.current === null) {
         smoothedBearingRef.current = targetBearing;
-      } else if (!isUsingDeviceHeading) {
+      } else {
         smoothedBearingRef.current = smoothAngle(
           smoothedBearingRef.current,
           targetBearing,
