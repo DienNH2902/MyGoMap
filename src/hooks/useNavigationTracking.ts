@@ -1040,6 +1040,8 @@ export function useNavigationTracking(
       : null,
   );
 
+  const wasUsingDeviceHeadingRef = useRef(false);
+
   // Camera (zoom/pitch/bearing/tốc độ) tại thời điểm phiên trước bị lưu —
   // CHỈ dùng đúng MỘT LẦN cho lần "về giữa" đầu tiên ngay sau khi resume,
   // để tránh camera nhảy về preset "đứng yên" (tốc độ mặc định = 0) rồi
@@ -1762,21 +1764,29 @@ export function useNavigationTracking(
       }
 
       if (targetBearing !== null) {
-        // Chế độ theo hướng thiết bị cần xoay NHANH HƠN hẳn (0.55 thay vì
-        // 0.3) — đây là 1 trong 2 tầng gây trễ ~1s được nhắc ở trên, tầng
-        // còn lại là smoothedBearingRef trong updateMarker (xem bên dưới).
-        const bearingFrameLerp = arrowUsingDeviceHeadingRef.current
-          ? 0.75
-          : 0.75;
+        const isUsingDeviceHeading = arrowUsingDeviceHeadingRef.current;
 
-        renderedBearingRef.current =
-          renderedBearingRef.current === null
-            ? targetBearing
-            : smoothAngle(
-                renderedBearingRef.current,
-                targetBearing,
-                bearingFrameLerp,
-              );
+        // Khi vừa quay trở lại vùng bám tuyến (<= 130°):
+        // bỏ smooth và bám thẳng ngay theo hướng tuyến.
+        const justReturnedToRoute =
+          wasUsingDeviceHeadingRef.current && !isUsingDeviceHeading;
+
+        if (justReturnedToRoute) {
+          renderedBearingRef.current = targetBearing;
+        } else {
+          const bearingFrameLerp = isUsingDeviceHeading ? 0.75 : 0.3;
+
+          renderedBearingRef.current =
+            renderedBearingRef.current === null
+              ? targetBearing
+              : smoothAngle(
+                  renderedBearingRef.current,
+                  targetBearing,
+                  bearingFrameLerp,
+                );
+        }
+
+        wasUsingDeviceHeadingRef.current = isUsingDeviceHeading;
       }
 
       marker.setLngLat([renderedLonRef.current, renderedLatRef.current]);
