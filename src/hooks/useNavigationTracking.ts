@@ -1746,11 +1746,11 @@ export function useNavigationTracking(
       }
 
       if (targetBearing !== null) {
-        // Chế độ theo hướng thiết bị cần xoay NHANH HƠN hẳn (0.55 thay vì
-        // 0.3) — đây là 1 trong 2 tầng gây trễ ~1s được nhắc ở trên, tầng
-        // còn lại là smoothedBearingRef trong updateMarker (xem bên dưới).
+        // Khi đang theo hướng thiết bị, ưu tiên phản hồi nhanh từ cảm biến.
+        // Không dùng smoothing quá thấp vì sẽ tạo cảm giác mũi tên bị trễ
+        // khi người dùng xoay điện thoại nhanh.
         const bearingFrameLerp = arrowUsingDeviceHeadingRef.current
-          ? 0.55
+          ? 0.82
           : 0.3;
 
         renderedBearingRef.current =
@@ -1946,45 +1946,45 @@ export function useNavigationTracking(
       // ngưỡng) thì tự khoá lại theo tuyến như cũ.
       // ============================================================
 
-            let targetBearing: number;
-            let isUsingDeviceHeading: boolean;
+      let targetBearing: number;
+      let isUsingDeviceHeading: boolean;
 
-            if (routeBearing !== null) {
-              const headingDeviation = getBearingDifference(
-                effectiveMovementHeading,
-                routeBearing,
-              );
+      if (routeBearing !== null) {
+        const headingDeviation = getBearingDifference(
+          effectiveMovementHeading,
+          routeBearing,
+        );
 
-              isUsingDeviceHeading =
-                headingDeviation > ARROW_HEADING_DEVIATION_THRESHOLD_DEGREES;
+        isUsingDeviceHeading =
+          headingDeviation > ARROW_HEADING_DEVIATION_THRESHOLD_DEGREES;
 
-              targetBearing = isUsingDeviceHeading
-                ? effectiveMovementHeading
-                : routeBearing;
-            } else {
-              // Không có tuyến để khoá theo — coi như luôn ở chế độ theo hướng
-              // thiết bị, cần xoay nhanh/chính xác như mọi lúc lệch tuyến khác.
-              isUsingDeviceHeading = true;
-              targetBearing = effectiveMovementHeading;
-            }
+        targetBearing = isUsingDeviceHeading
+          ? effectiveMovementHeading
+          : routeBearing;
+      } else {
+        // Không có tuyến để khoá theo — coi như luôn ở chế độ theo hướng
+        // thiết bị, cần xoay nhanh/chính xác như mọi lúc lệch tuyến khác.
+        isUsingDeviceHeading = true;
+        targetBearing = effectiveMovementHeading;
+      }
 
-            arrowUsingDeviceHeadingRef.current = isUsingDeviceHeading;
+      arrowUsingDeviceHeadingRef.current = isUsingDeviceHeading;
 
-            // Theo hướng thiết bị (đi sai/đi ngược) cần xoay NHANH + CHÍNH XÁC
-            // hơn hẳn khoá-theo-tuyến — 0.6 thay vì 0.3, giảm độ trễ cảm nhận
-            // được từ ~1s xuống gần tức thời, trong khi chế độ khoá-theo-tuyến
-            // (đi đúng) vẫn mượt như cũ, không đổi gì.
-            const bearingSmoothingFactor = isUsingDeviceHeading ? 0.6 : 0.3;
+      // Theo hướng thiết bị (đi sai/đi ngược) cần xoay NHANH + CHÍNH XÁC
+      // hơn hẳn khoá-theo-tuyến — 0.6 thay vì 0.3, giảm độ trễ cảm nhận
+      // được từ ~1s xuống gần tức thời, trong khi chế độ khoá-theo-tuyến
+      // (đi đúng) vẫn mượt như cũ, không đổi gì.
+      const bearingSmoothingFactor = isUsingDeviceHeading ? 0.82 : 0.3;
 
-            if (smoothedBearingRef.current === null) {
-              smoothedBearingRef.current = targetBearing;
-            } else {
-              smoothedBearingRef.current = smoothAngle(
-                smoothedBearingRef.current,
-                targetBearing,
-                bearingSmoothingFactor,
-              );
-            }
+      if (smoothedBearingRef.current === null) {
+        smoothedBearingRef.current = targetBearing;
+      } else if (!isUsingDeviceHeading) {
+        smoothedBearingRef.current = smoothAngle(
+          smoothedBearingRef.current,
+          targetBearing,
+          bearingSmoothingFactor,
+        );
+      }
 
       // GPS heading vẫn được dùng cho dead-reckoning,
       // nhưng KHÔNG dùng để xoay mũi tên.
