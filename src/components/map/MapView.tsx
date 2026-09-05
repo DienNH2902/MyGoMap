@@ -373,6 +373,7 @@ export function MapView({
   const sovereigntyMarkersRef = useRef<Marker[]>([]);
 
   const wasNavigatingRef = useRef(isNavigating);
+  const isNavigatingRef = useRef(isNavigating);
 
   const [gender, setGender] = useState<GenderTheme>("nam");
 
@@ -515,10 +516,10 @@ export function MapView({
     // Màu xanh dương cố định, hơi trong suốt để nhìn thấy bản đồ bên dưới
     cone.style.background =
       "conic-gradient(from 300deg at 50% 50%, rgba(37, 99, 235, 0.42) 0deg, rgba(37, 99, 235, 0.42) 60deg, transparent 60deg)";
-      cone.style.webkitMaskImage =
-        "radial-gradient(circle at 50% 50%, #000 15%, transparent 100%)";
-      cone.style.maskImage =
-        "radial-gradient(circle at 50% 50%, #000 15%, transparent 100%)";
+    cone.style.webkitMaskImage =
+      "radial-gradient(circle at 50% 50%, #000 15%, transparent 100%)";
+    cone.style.maskImage =
+      "radial-gradient(circle at 50% 50%, #000 15%, transparent 100%)";
 
     headingEl.appendChild(cone);
 
@@ -589,7 +590,7 @@ export function MapView({
 
       userLocationRef.current = position;
 
-      if (!isNavigating && userHeadingMarkerRef.current) {
+      if (!isNavigatingRef.current && userHeadingMarkerRef.current) {
         userHeadingMarkerRef.current.setLngLat(position).addTo(map);
       }
     };
@@ -688,6 +689,10 @@ export function MapView({
       mapRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    isNavigatingRef.current = isNavigating;
+  }, [isNavigating]);
 
   useEffect(() => {
     const marker = userHeadingMarkerRef.current;

@@ -107,7 +107,7 @@
 }
 
 .maplibregl-user-location-dot {
-  z-index: 10 !important;
+  z-index: 2 !important;
 }
 
 /* PWA/iOS: tránh hiệu ứng highlight mặc định khi chạm các nút cài app. */
