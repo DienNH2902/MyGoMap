@@ -528,7 +528,7 @@ export function MapView({
     const headingMarker = new Marker({
       element: headingEl,
       anchor: "center",
-      rotationAlignment: "viewport",
+      rotationAlignment: "map",
       pitchAlignment: "viewport",
     });
 

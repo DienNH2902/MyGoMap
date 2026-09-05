@@ -70,7 +70,7 @@ export function NavigationControls({
 
   if (isNavigating) {
     return (
-      <div className="pointer-events-auto absolute bottom-4 left-1/2 z-10 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 flex flex-col items-center gap-2">
+      <div className="pointer-events-auto absolute bottom-4 left-1/2 z-20 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 flex flex-col items-center gap-2">
         {/* Nút Về giữa được căn giữa bằng self-center */}
         {isNavigating && !isFollowing && (
           <button
@@ -222,7 +222,7 @@ export function NavigationControls({
 
   // Nút "Bắt đầu chỉ đường" — CHỈ HIỆN TRÊN MOBILE
   return (
-    <div className="pointer-events-auto absolute bottom-20 left-12 z-0 -translate-x-1/2 md:hidden">
+    <div className="pointer-events-auto absolute bottom-20 left-12 z-10 -translate-x-1/2 md:hidden">
       <button
         type="button"
         {...startTapHandlers}
