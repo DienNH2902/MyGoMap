@@ -428,56 +428,60 @@ export function MapExperience() {
 
   return (
     <div className="fixed inset-x-0 bottom-0 top-[var(--header-h)] h-[calc(100dvh-var(--header-h))] overflow-hidden">
-      <MapView
-        start={planner.start}
-        end={planner.end}
-        route={displayRoute}
-        isNavigating={navigation.isNavigating}
-        stops={planner.plan?.stops ?? []}
-        customStops={planner.customStops}
-        activeStopId={planner.activeStopId}
-        onSelectStop={planner.setActiveStopId}
-        activePoiId={planner.activePoiId}
-        onSelectPoi={planner.setActivePoiId}
-        onSelectStartFromMap={planner.setStart}
-        onSelectEndFromMap={planner.setEnd}
-        onSelectCustomStopFromMap={planner.addCustomStopFromMap}
-        mapStyleId={mapStyleId}
-        showTrafficLayer={planner.avoidTraffic}
-        aroundPois={aroundSearchResults}
-        activeAroundPoiId={activeAroundPoiId}
-        onSelectAroundPoi={setActiveAroundPoiId}
-        onOpenAroundSearchFromMap={(place) => {
-          setAroundSearchCenter(place);
-          setAroundSearchResults([]);
-          setActiveAroundPoiId(null);
-        }}
-        onNavigateToMapPoint={(place) => {
-          void quickSearch.selectDestination(place);
-        }}
-        onLocationError={setLocationError}
-        onMapReady={(map) => {
-          mapRef.current = map;
-          setIsMapReady(true);
-        }}
-        isQuickSearch={quickSearch.hasSearched}
-        preventAutoFitBounds={fitBoundsSuppressed}
-        routeChoices={planner.plan?.routeChoices ?? []}
-        selectedRouteChoiceIndex={(() => {
-          const choices = planner.plan?.routeChoices;
+      <div className="relative z-0 h-full w-full">
+        <MapView
+          start={planner.start}
+          end={planner.end}
+          route={displayRoute}
+          isNavigating={navigation.isNavigating}
+          stops={planner.plan?.stops ?? []}
+          customStops={planner.customStops}
+          activeStopId={planner.activeStopId}
+          onSelectStop={planner.setActiveStopId}
+          activePoiId={planner.activePoiId}
+          onSelectPoi={planner.setActivePoiId}
+          onSelectStartFromMap={planner.setStart}
+          onSelectEndFromMap={planner.setEnd}
+          onSelectCustomStopFromMap={planner.addCustomStopFromMap}
+          mapStyleId={mapStyleId}
+          showTrafficLayer={planner.avoidTraffic}
+          aroundPois={aroundSearchResults}
+          activeAroundPoiId={activeAroundPoiId}
+          onSelectAroundPoi={setActiveAroundPoiId}
+          onOpenAroundSearchFromMap={(place) => {
+            setAroundSearchCenter(place);
+            setAroundSearchResults([]);
+            setActiveAroundPoiId(null);
+          }}
+          onNavigateToMapPoint={(place) => {
+            void quickSearch.selectDestination(place);
+          }}
+          onLocationError={setLocationError}
+          onMapReady={(map) => {
+            mapRef.current = map;
+            setIsMapReady(true);
+          }}
+          isQuickSearch={quickSearch.hasSearched}
+          preventAutoFitBounds={fitBoundsSuppressed}
+          routeChoices={planner.plan?.routeChoices ?? []}
+          selectedRouteChoiceIndex={(() => {
+            const choices = planner.plan?.routeChoices;
 
-          if (!choices || !planner.plan?.route) return 0;
+            if (!choices || !planner.plan?.route) return 0;
 
-          const currentCoords = JSON.stringify(planner.plan.route.coordinates);
+            const currentCoords = JSON.stringify(
+              planner.plan.route.coordinates,
+            );
 
-          const index = choices.findIndex(
-            (choice) => JSON.stringify(choice.coordinates) === currentCoords,
-          );
+            const index = choices.findIndex(
+              (choice) => JSON.stringify(choice.coordinates) === currentCoords,
+            );
 
-          return index >= 0 ? index : 0;
-        })()}
-        onSelectRouteChoice={planner.selectRouteChoice}
-      />
+            return index >= 0 ? index : 0;
+          })()}
+          onSelectRouteChoice={planner.selectRouteChoice}
+        />
+      </div>
 
       {/* Tìm đường nhanh: chỉ nhập "Nơi đến", điểm A luôn = vị trí GPS */}
       <QuickDestinationCard
@@ -820,7 +824,7 @@ export function MapExperience() {
 
       {/* ROUTE PLANNER PANEL - DESKTOP HOẶC BOTTOM DRAWER SLIDE TRÊN MOBILE */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-30 pb-[var(--safe-bottom)] transition-transform duration-300 md:static md:pb-0 ${
+        className={`fixed inset-x-0 bottom-0 z-50 pb-[var(--safe-bottom)] transition-transform duration-300 md:static md:pb-0 ${
           isPanelCollapsed
             ? "translate-y-[calc(100%-3rem-var(--safe-bottom))] md:translate-y-0"
             : "translate-y-0"
