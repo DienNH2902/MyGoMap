@@ -132,7 +132,7 @@ export interface NavigationStopPoint {
 // Trong 50m tính là "đã đến" một mốc dừng chân — ngưỡng RỘNG HƠN
 // ARRIVAL_THRESHOLD_METERS (30m, dành cho đích cuối, cần chính xác hơn) vì
 // mốc dừng chân là điểm ghé qua tạm, không cần đi sát tuyệt đối.
-const STOP_ARRIVAL_THRESHOLD_METERS = 1000;
+const STOP_ARRIVAL_THRESHOLD_METERS = 200;
 
 /** Dữ liệu hiển thị lên popup mỗi khi tới một mốc dừng chân. */
 export interface StopArrivalInfo {
