@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { ServiceWorkerRegistration } from "@/components/common/ServiceWorkerRegistration";
 import { MobileRedirect } from "@/components/common/MobileRedirect";
+import { WakeLockManager } from "@/components/common/WakeLockManager";
 
 // Be Vietnam Pro: full Vietnamese diacritic support, used for both headings and body text.
 const beVietnamPro = Be_Vietnam_Pro({
@@ -82,6 +83,7 @@ export default function RootLayout({
       <body className="h-[100dvh] w-full bg-surface font-display text-ink antialiased">
         <MobileRedirect />
         <ServiceWorkerRegistration />
+        <WakeLockManager />
         <Header />
         {children}
       </body>
