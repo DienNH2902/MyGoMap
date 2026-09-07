@@ -59,7 +59,7 @@ export function WakeLockManager() {
         }
 
         wakeLockRef.current = sentinel;
-        console.log("[WakeLock] Đã bật — màn hình sẽ không tự tắt.");
+        console.log("[WakeLock-Sáng màn hình] Đã bật — màn hình sẽ không tự tắt.");
       } catch (err) {
         // Có thể bị từ chối (tab không active, pin yếu tự chặn trên một số
         // thiết bị Android...) — im lặng bỏ qua, đây chỉ là tiện ích phụ,
