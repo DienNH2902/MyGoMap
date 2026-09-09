@@ -11,7 +11,7 @@ const withPWA = withPWAInit({
   // luôn thất bại. Tắt register ở đây và tự đăng ký thủ công bằng
   // ServiceWorkerRegistration.tsx (mount trong app/layout.tsx) — cách được
   // next-pwa/cộng đồng khuyến nghị chính thức cho App Router.
-  register: true,
+  register: false,
   skipWaiting: true,
   // MẶC ĐỊNH next-pwa precache TOÀN BỘ thư mục /public ngay từ bước cài đặt
   // service worker — kể cả file KHÔNG liên quan gì đến app shell. Dự án này
