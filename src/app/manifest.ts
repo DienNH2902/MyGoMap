@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
-  // Các thông tin cơ bản của PWA
+  // Các thông tin cơ bản của PWA cho mobile web app
   return {
     id: "/",
     name: "Mỳ Gõ Map — Phượt Việt Nam",
