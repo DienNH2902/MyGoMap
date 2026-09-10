@@ -24,7 +24,7 @@ export default function MapPage() {
     const mobileCheck = isMobileDevice();
     setIsMobile(mobileCheck);
 
-    // Nếu là Mobile -> Cho phép truy cập thẳng, không cần check localStorage
+    // Nếu là Mobile -> Cho phép truy cập thẳng, không cần check localStorage, tối giản cho mobile vì không cần thiết
     if (mobileCheck) {
       setIsAuthorized(true);
       return;
