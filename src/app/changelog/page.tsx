@@ -140,7 +140,7 @@ export default function ChangelogPage() {
 
               {isLoading ? (
                 <div className="py-12 text-center text-cream/60 font-mono text-sm">
-                  Đang tải lịch sử commit từ GitHub...
+                  Đang tải lịch sử commits từ GitHub...
                 </div>
               ) : error ? (
                 <div className="py-8 text-center text-rose-400 text-sm bg-rose-500/10 rounded-xl border border-rose-500/20">
