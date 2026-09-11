@@ -20,7 +20,7 @@ export default function MapPage() {
   const [isMobile, setIsMobile] = useState<boolean>(false);
 
   useEffect(() => {
-    // Kiểm tra xem có phải mobile không
+    // Kiểm tra xem có phải mobile không để xét validate render UI như nào
     const mobileCheck = isMobileDevice();
     setIsMobile(mobileCheck);
 
