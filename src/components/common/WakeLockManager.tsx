@@ -38,7 +38,7 @@ export function WakeLockManager() {
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !("wakeLock" in navigator)) {
-      // Trình duyệt không hỗ trợ Wake Lock API — bỏ qua, không có gì để làm.
+      // Trình duyệt không hỗ trợ Wake Lock API — bỏ qua, không có gì để làm, return luôn.
       return;
     }
 
