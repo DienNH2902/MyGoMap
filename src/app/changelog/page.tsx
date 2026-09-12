@@ -12,6 +12,25 @@ interface CommitData {
   htmlUrl: string;
 }
 
+interface GitHubCommitAuthor {
+  name: string;
+  date: string;
+}
+
+interface GitHubUser {
+  avatar_url?: string;
+}
+
+interface GitHubCommitItem {
+  sha: string;
+  commit: {
+    message: string;
+    author: GitHubCommitAuthor;
+  };
+  author?: GitHubUser | null;
+  html_url: string;
+}
+
 const ITEMS_PER_PAGE = 10;
 
 // Hàm định dạng ngày giờ theo chuẩn Việt Nam
@@ -35,23 +54,26 @@ export default function ChangelogPage() {
 
   // State quản lý trang hiện tại
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
 
   useEffect(() => {
     async function fetchGitHubCommits() {
       try {
         setIsLoading(true);
-        // Tải 50 commits gần nhất để xử lý phân trang client-side mượt mà
+        setError(null);
+
+        // Tải commits theo đúng trang hiện tại để xử lý phân trang client-side mượt mà
         const res = await fetch(
-          "https://api.github.com/repos/DienNH2902/MyGoMap/commits?per_page=50",
+          `https://api.github.com/repos/DienNH2902/MyGoMap/commits?per_page=${ITEMS_PER_PAGE}&page=${currentPage}`,
         );
 
         if (!res.ok) {
           throw new Error("Không thể tải dữ liệu commit từ GitHub API");
         }
 
-        const data = await res.json();
+        const data: GitHubCommitItem[] = await res.json();
 
-        const mappedCommits: CommitData[] = data.map((item: any) => ({
+        const mappedCommits: CommitData[] = data.map((item) => ({
           sha: item.sha,
           message: item.commit.message,
           authorName: item.commit.author.name,
@@ -61,20 +83,42 @@ export default function ChangelogPage() {
         }));
 
         setCommits(mappedCommits);
-      } catch (err: any) {
-        setError(err.message || "Đã xảy ra lỗi khi tải lịch sử cập nhật.");
+
+        const linkHeader = res.headers.get("Link");
+
+        if (linkHeader) {
+          const lastPageMatch = linkHeader.match(/<([^>]+)>;\s*rel="last"/);
+
+          if (lastPageMatch?.[1]) {
+            const lastPageUrl = new URL(lastPageMatch[1]);
+            const lastPage = Number(lastPageUrl.searchParams.get("page"));
+
+            if (Number.isFinite(lastPage) && lastPage > 0) {
+              setTotalPages(lastPage);
+            }
+          } else {
+            setTotalPages(currentPage);
+          }
+        } else {
+          setTotalPages(currentPage);
+        }
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message || "Đã xảy ra lỗi khi tải lịch sử cập nhật.");
+        } else {
+          setError("Đã xảy ra lỗi khi tải lịch sử cập nhật.");
+        }
       } finally {
         setIsLoading(false);
       }
     }
 
     fetchGitHubCommits();
-  }, []);
+  }, [currentPage]);
 
   // Tính toán dữ liệu hiển thị theo trang
-  const totalPages = Math.ceil(commits.length / ITEMS_PER_PAGE) || 1;
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const currentCommits = commits.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const currentCommits = commits;
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -238,8 +282,7 @@ export default function ChangelogPage() {
                   <div className="mt-6 flex flex-col items-center justify-between gap-4 border-t border-cream/10 pt-4 sm:flex-row">
                     <span className="text-xs font-mono text-cream/60">
                       Hiển thị {startIndex + 1} -{" "}
-                      {Math.min(startIndex + ITEMS_PER_PAGE, commits.length)}{" "}
-                      trên tổng số {commits.length} commits
+                      {startIndex + currentCommits.length} commits
                     </span>
 
                     <div className="flex items-center gap-2">
