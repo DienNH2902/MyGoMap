@@ -62,7 +62,7 @@ export default function ChangelogPage() {
         setIsLoading(true);
         setError(null);
 
-        // Tải commits theo đúng trang hiện tại để xử lý phân trang client-side mượt mà
+        // Tải commits theo đúng trang hiện tại để xử lý phân trang client-side mượt mà, tối đa 1000 commits
         const res = await fetch(
           `https://api.github.com/repos/DienNH2902/MyGoMap/commits?per_page=${ITEMS_PER_PAGE}&page=${currentPage}`,
         );
