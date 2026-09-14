@@ -66,7 +66,7 @@ export default function ChangelogPage() {
         const res = await fetch(
           `https://api.github.com/repos/DienNH2902/MyGoMap/commits?per_page=${ITEMS_PER_PAGE}&page=${currentPage}`,
         );
-
+        // Trả về nếu không lấy được data
         if (!res.ok) {
           throw new Error("Không thể tải dữ liệu commit từ GitHub API");
         }
