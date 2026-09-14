@@ -13,6 +13,8 @@ import Image from "next/image";
  * box that can't return anything would look broken. Saying so clearly here
  * is more honest and less confusing than that.
  */
+
+// trang hiển thì khi pwa offline
 export default function OfflinePage() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-surface px-6 text-center">
