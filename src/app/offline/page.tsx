@@ -29,7 +29,7 @@ export default function OfflinePage() {
 
       <div className="space-y-2">
         <h1 className="font-display text-xl font-bold text-ink">
-          Bạn đang ngoại tuyến
+          Bạn đang ngoại tuyến mất giồi!!!
         </h1>
         <p className="max-w-sm text-sm leading-relaxed text-ink/60">
           Mỳ Gõ Map cần kết nối Internet để tải bản đồ, tìm đường và gợi ý
