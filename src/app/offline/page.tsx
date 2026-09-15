@@ -14,7 +14,7 @@ import Image from "next/image";
  * is more honest and less confusing than that.
  */
 
-// trang hiển thì khi pwa offline
+// trang hiển thì khi pwa offline, hiện vẫn chưa hiện :))
 export default function OfflinePage() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-surface px-6 text-center">
