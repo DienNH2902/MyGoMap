@@ -20,7 +20,7 @@ export default function OfflinePage() {
     <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-surface px-6 text-center">
       <Image
         src="/icons/icon-192x192.png"
-        alt="Mỳ Gõ Map"
+        alt="Mỳ Gõ Map Icon"
         width={96}
         height={96}
         className="rounded-3xl shadow-lg"
