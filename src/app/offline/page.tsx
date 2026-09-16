@@ -33,7 +33,7 @@ export default function OfflinePage() {
         </h1>
         <p className="max-w-sm text-sm leading-relaxed text-ink/60">
           Mỳ Gõ Map cần kết nối Internet để tải bản đồ, tìm đường và gợi ý
-          địa điểm dọc tuyến đường. Hãy kiểm tra Wi-Fi/dữ liệu di động rồi thử
+          địa điểm dọc tuyến đường. Hãy kiểm tra kết nối Wi-Fi/dữ liệu di động rồi thử
           lại nhé.
         </p>
       </div>
