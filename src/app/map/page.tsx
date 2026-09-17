@@ -50,7 +50,7 @@ export default function MapPage() {
     );
   }
 
-  // 2. Không đủ điều kiện truy cập (chỉ áp dụng cho desktop)
+  // 2. Không đủ điều kiện truy cập (chỉ áp dụng cho desktop, mobile thì bỏ qua trang này)
   if (!isAuthorized && !isMobile) {
     return (
       <main className="flex h-dvh w-full items-center justify-center bg-surface">
