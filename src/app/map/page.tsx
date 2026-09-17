@@ -30,7 +30,7 @@ export default function MapPage() {
       return;
     }
 
-    // Nếu là Desktop -> Kiểm tra thông tin người dùng trong localStorage
+    // Nếu là Desktop -> Kiểm tra thông tin người dùng trong localStorage, mobile thì bỏ qua bước này
     const savedName = localStorage.getItem(STORAGE_KEY_USER_NAME);
     const savedGender = localStorage.getItem(STORAGE_KEY_USER_GENDER);
 
